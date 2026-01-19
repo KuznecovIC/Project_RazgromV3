@@ -1,0 +1,123 @@
+═══════════════════════════════════════════════════════════════
+КОМАНДЫ ДЛЯ СОЗДАНИЯ ПРОЕКТА SOUNDCLOUD С DJANGO + REACT
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│ ШАГ 1: СОЗДАНИЕ DJANGO ПРОЕКТА (BACKEND)                    │
+└─────────────────────────────────────────────────────────────┘
+
+# Создание виртуального окружения
+python -m venv venv
+
+# Активация виртуального окружения (Windows PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# Установка Django и необходимых пакетов
+pip install django
+pip install djangorestframework
+pip install django-cors-headers
+
+# Создание Django проекта
+django-admin startproject soundcloud_clone .
+
+# Создание приложения API
+python manage.py startapp api
+
+# Применение миграций
+python manage.py migrate
+
+# Создание суперпользователя (опционально)
+python manage.py createsuperuser
+
+# Запуск Django сервера
+python manage.py runserver
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ШАГ 2: СОЗДАНИЕ REACT ПРОЕКТА (FRONTEND)                   │
+└─────────────────────────────────────────────────────────────┘
+
+# Создание React приложения (в корневой папке проекта)
+npx create-react-app frontend
+
+# Переход в папку frontend
+cd frontend
+
+# Установка дополнительных пакетов (axios для API запросов)
+npm install axios
+
+# Запуск React приложения
+npm start
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ШАГ 3: НАСТРОЙКА DJANGO ДЛЯ РАБОТЫ С REACT                  │
+└─────────────────────────────────────────────────────────────┘
+
+# В файле settings.py добавить в INSTALLED_APPS:
+'rest_framework',
+'corsheaders',
+'api',
+
+# В файле settings.py добавить в MIDDLEWARE (в начало):
+'corsheaders.middleware.CorsMiddleware',
+
+# В файле settings.py добавить в конец:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# В файле urls.py добавить:
+from django.urls import path, include
+path('api/', include('api.urls')),
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ШАГ 4: НАСТРОЙКА REACT ДЛЯ РАБОТЫ С DJANGO                 │
+└─────────────────────────────────────────────────────────────┘
+
+# В файле package.json добавить в корень объекта:
+"proxy": "http://localhost:8000"
+
+# Или создать файл setupProxy.js в папке src/:
+# const { createProxyMiddleware } = require('http-proxy-middleware');
+# module.exports = function(app) {
+#   app.use(
+#     '/api',
+#     createProxyMiddleware({
+#       target: 'http://localhost:8000',
+#       changeOrigin: true,
+#     })
+#   );
+# };
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ПОРЯДОК ЗАПУСКА                                              │
+└─────────────────────────────────────────────────────────────┘
+
+1. Запустить Django сервер (в первом терминале):
+   python manage.py runserver
+
+2. Запустить React приложение (во втором терминале):
+   cd frontend
+   npm start
+
+3. Django будет на: http://localhost:8000
+4. React будет на: http://localhost:3000
+
+
+┌─────────────────────────────────────────────────────────────┐
+│ ПРОВЕРКА СВЯЗИ                                               │
+└─────────────────────────────────────────────────────────────┘
+
+# В React компоненте можно делать запросы так:
+import axios from 'axios';
+
+axios.get('/api/your-endpoint/')
+  .then(response => console.log(response.data))
+  .catch(error => console.error(error));
+

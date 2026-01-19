@@ -1,0 +1,943 @@
+/* UploadPage.css - ТОЛЬКО для страницы загрузки */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --upload-bg: linear-gradient(180deg, #0f0a1a 0%, #1a1129 30%, #231a38 100%);
+  --upload-accent: #a855f7;
+  --upload-accent-light: #c084fc;
+  --upload-surface: rgba(20, 14, 30, 0.55);
+  --upload-surface-light: rgba(30, 22, 45, 0.65);
+  --upload-border: rgba(168, 85, 247, 0.3);
+  --upload-text: rgba(255, 255, 255, 0.95);
+  --upload-text-secondary: rgba(255, 255, 255, 0.6);
+  --pixel-font: 'Press Start 2P', monospace;
+}
+
+/* Пиксельный шрифт для всей страницы загрузки */
+.upload-page,
+.upload-page input,
+.upload-page textarea,
+.upload-page select,
+.upload-page button,
+.upload-page .upload-label,
+.upload-page .section-title,
+.upload-page .drop-text,
+.upload-page .file-name,
+.upload-page .track-preview-title,
+.upload-page .track-preview-artist,
+.upload-page .username,
+.upload-page .preview-header h3 {
+  font-family: var(--pixel-font) !important;
+}
+
+/* Для обычного текста в описаниях/подсказках */
+.upload-subtitle,
+.preview-header p,
+.preview-tips li,
+.preview-info h4,
+.user-email,
+.drop-hint,
+.drop-formats,
+.publish-hint,
+.waveform-note,
+.progress-text,
+.upload-error p,
+.upload-success p {
+  font-family: 'Space Grotesk', sans-serif !important;
+}
+
+/* GridScan фон */
+.upload-gridscan-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  filter: blur(0.4px);
+}
+
+/* Дополнительный неоновый слой как в Home */
+.upload-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(140, 90, 255, 0.25),
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 80% 100%,
+      rgba(255, 110, 245, 0.15),
+      transparent 50%
+    );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.upload-page {
+  min-height: 100vh;
+  background: var(--upload-bg);
+  color: var(--upload-text);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.upload-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Заголовок */
+.upload-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 1rem;
+}
+
+.upload-title {
+  font-size: 3.5rem !important;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #a855f7, #ec4899) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: 
+    0 0 30px rgba(168, 85, 247, 0.4),
+    0 0 60px rgba(168, 85, 247, 0.2) !important;
+}
+
+.upload-subtitle {
+  font-size: 1.1rem;
+  color: var(--upload-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Glass эффект */
+.glass {
+  background: rgba(20, 14, 30, 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.glass-light {
+  background: rgba(30, 22, 45, 0.65);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+}
+
+/* Лейаут */
+.upload-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Drop Zones */
+.drop-zones-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.drop-zone {
+  border: 2px dashed var(--upload-border);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 240px;
+  font-size: 0.9rem;
+}
+
+.drop-zone:hover {
+  border-color: var(--upload-accent-light);
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.drop-zone.drag-over {
+  background: rgba(168, 85, 247, 0.1) !important;
+  border-color: var(--upload-accent) !important;
+  border-style: solid !important;
+}
+
+.drop-zone.has-file {
+  border-style: solid;
+  border-color: var(--upload-accent);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+.drop-zone-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.drop-zone svg {
+  width: 48px;
+  height: 48px;
+  color: var(--upload-accent);
+  margin-bottom: 0.5rem;
+}
+
+.drop-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--upload-text);
+  margin: 0;
+}
+
+.drop-hint {
+  font-size: 0.9rem;
+  color: var(--upload-text-secondary);
+  margin: 0;
+}
+
+.drop-formats {
+  font-size: 0.85rem;
+  color: var(--upload-text-secondary);
+  margin: 0.5rem 0 0 0;
+  opacity: 0.7;
+}
+
+.cover-drop-zone {
+  min-height: 280px;
+}
+
+.cover-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--upload-text);
+  margin: 0;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size,
+.file-duration {
+  font-size: 0.8rem;
+  color: var(--upload-text-secondary);
+  margin: 0;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.drop-zone:hover .remove-file-btn,
+.drop-zone.has-file .remove-file-btn {
+  opacity: 1;
+}
+
+.remove-file-btn:hover {
+  background: rgba(220, 38, 38, 0.8);
+  transform: scale(1.1);
+}
+
+.remove-file-btn svg {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Секции */
+.upload-section {
+  padding: 2rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--upload-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-title svg {
+  width: 24px;
+  height: 24px;
+  color: var(--upload-accent);
+}
+
+/* Форма */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.upload-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--upload-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.title-input,
+.description-input,
+.tags-input,
+.genre-select {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--upload-text);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  font-family: var(--pixel-font) !important;
+}
+
+.title-input:focus,
+.description-input:focus,
+.tags-input:focus,
+.genre-select:focus {
+  outline: none;
+  border-color: var(--upload-accent);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+.description-input {
+  min-height: 80px;
+  resize: vertical;
+  font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.genre-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.form-row.checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--upload-text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.8rem;
+}
+
+.checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--upload-accent);
+}
+
+.checkbox-label.publish-option {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.checkbox-label.publish-option span {
+  font-weight: 600;
+  color: var(--upload-accent);
+}
+
+.publish-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--upload-text-secondary);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Прогресс */
+.upload-progress {
+  margin: 1rem 0;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--upload-accent), #ec4899);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--upload-text-secondary);
+}
+
+/* Сообщения */
+.upload-success {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 16px;
+  margin: 1rem 0;
+}
+
+.upload-success svg {
+  width: 48px;
+  height: 48px;
+  color: #22c55e;
+  margin-bottom: 1rem;
+  animation: successPulse 1.5s ease-in-out;
+}
+
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.upload-success h3 {
+  color: #22c55e;
+  margin: 0.5rem 0;
+  font-size: 1.3rem;
+}
+
+.upload-success p {
+  color: var(--upload-text-secondary);
+  margin: 0.25rem 0;
+}
+
+.waveform-note {
+  font-size: 0.9rem;
+  color: var(--upload-text-secondary);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.upload-error {
+  padding: 1rem 1.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 1rem 0;
+}
+
+.upload-error svg {
+  width: 20px;
+  height: 20px;
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.upload-error p {
+  color: #fca5a5;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ФИКС: Кнопки выровнены и подняты вверх */
+.upload-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 0.5rem;       /* ↓↓↓ ФИКС: было 2rem, стало 0.5rem */
+  padding-top: 0.5rem;      /* ↓↓↓ ФИКС: было 2rem, стало 0.5rem */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.upload-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  line-height: 1;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.upload-actions svg {
+  margin-top: -1px;
+}
+
+.cancel-btn {
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: var(--upload-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.upload-btn {
+  padding: 12px 36px;
+  background: linear-gradient(135deg, var(--upload-accent), #ec4899);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px rgba(168, 85, 247, 0.4),
+    0 0 40px rgba(168, 85, 247, 0.2);
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Preview Sidebar */
+.preview-sidebar {
+  overflow: hidden;
+  position: sticky;
+  top: 2rem;
+}
+
+.preview-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.preview-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--upload-text);
+  margin: 0 0 0.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.preview-header p {
+  font-size: 0.9rem;
+  color: var(--upload-text-secondary);
+  margin: 0;
+}
+
+.preview-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Track Preview Card - КАК В HOME */
+.track-preview-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: rgba(30, 22, 45, 0.7);
+}
+
+.track-preview-card:hover {
+  border-color: var(--upload-border);
+  transform: translateY(-2px);
+}
+
+.track-preview-cover {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* 🔥 КАК В HOME */
+  background: rgba(168, 85, 247, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.track-preview-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-preview-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--upload-accent);
+}
+
+.track-preview-placeholder svg {
+  width: 40px;
+  height: 40px;
+}
+
+.track-preview-info {
+  padding: 1.25rem;
+}
+
+/* ФИКС: Текст как в Home карточках */
+.track-preview-title {
+  font-size: 0.9rem; /* ≈14px */
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-preview-artist {
+  font-size: 0.7rem; /* ≈10px */
+  color: var(--upload-text-secondary);
+  opacity: 0.7;
+  margin: 0 0 0.75rem 0;
+}
+
+.track-preview-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ФИКС: Теги как в Home */
+.track-preview-genre {
+  font-size: 0.7rem; /* ≈10px */
+  font-weight: 600;
+  color: #e9d5ff;
+  background: rgba(168, 85, 247, 0.25);
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.track-preview-duration {
+  font-size: 0.7rem;
+  color: var(--upload-text-secondary);
+  opacity: 0.6;
+}
+
+/* User Preview */
+.preview-info h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--upload-text-secondary);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--upload-accent), #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.username {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--upload-text);
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-size: 0.7rem;
+  color: var(--upload-text-secondary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Preview Tips */
+.preview-tips h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--upload-text-secondary);
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-tips ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.preview-tips li {
+  font-size: 0.85rem;
+  color: var(--upload-text-secondary);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.preview-tips li:before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--upload-accent);
+  font-weight: bold;
+}
+
+.preview-tips li:last-child {
+  border-bottom: none;
+}
+
+/* Spinner */
+.spinner-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .upload-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .preview-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .upload-content {
+    padding: 1rem;
+  }
+  
+  .upload-title {
+    font-size: 2.2rem !important;
+  }
+  
+  .upload-subtitle {
+    font-size: 1rem;
+  }
+  
+  .drop-zones-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .upload-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .upload-section {
+    padding: 1.5rem;
+  }
+  
+  .preview-sidebar {
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-title {
+    font-size: 1.8rem !important;
+  }
+  
+  .upload-header {
+    padding: 0.5rem;
+  }
+  
+  .drop-zone {
+    padding: 2rem 1.5rem;
+    min-height: 200px;
+  }
+  
+  .checkbox-label {
+    min-width: 100%;
+  }
+  
+  .form-row.checkboxes {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

@@ -1,0 +1,452 @@
+.login-container {
+  position: relative;
+  min-height: 100vh;
+  background: #0a0a0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Press Start 2P', sans-serif;
+  overflow: hidden;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(15, 15, 20, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(192, 132, 252, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  display: block;
+}
+
+.form-group input {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #c084fc;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.1);
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #c084fc;
+}
+
+.checkbox-label span {
+  color: rgba(192, 132, 252, 0.8);
+  font-size: 0.7rem;
+  font-family: "'Press Start 2P', sans-serif";
+}
+
+/* Кнопка ЗАБЫЛИ ПАРОЛЬ? */
+.forgot-password-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  text-decoration: none;
+  position: relative;
+}
+
+.forgot-password-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c084fc, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.forgot-password-link:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.forgot-password-link:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.forgot-password-link span {
+  color: #c084fc;
+  font-size: 0.7rem;
+  font-family: "'Press Start 2P', sans-serif";
+  text-decoration: underline;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forgot-password-link:hover:not(:disabled) span {
+  color: #a855f7;
+}
+
+.error-message {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.error-message span {
+  color: #ff6b6b;
+  font-size: 0.7rem;
+  font-family: "'Press Start 2P', sans-serif";
+}
+
+.login-button {
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #5a3dff, #c084fc);
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #c084fc, #5a3dff);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(192, 132, 252, 0.4),
+    0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.login-button:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.login-button span {
+  position: relative;
+  z-index: 1;
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #2a1d66, #3a2966);
+  color: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+  transform: none;
+}
+
+.login-button:disabled:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #c084fc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Регистрационная ссылка */
+.register-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-family: 'Press Start 2P', sans-serif;
+  position: relative;
+}
+
+.register-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c084fc, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.register-link:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.register-link:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
+.register-link span {
+  color: #c084fc;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.register-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.register-link:hover:not(:disabled) span {
+  color: #a855f7;
+}
+
+/* Стили для капчи */
+.captcha-container {
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.captcha-error {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.captcha-error span {
+  color: #ff6b6b;
+  font-size: 0.7rem;
+  font-family: "'Press Start 2P', sans-serif";
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 30px 20px;
+  }
+  
+  .login-header h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .login-button {
+    padding: 14px;
+    font-size: 0.8rem;
+  }
+  
+  .form-group input {
+    padding: 12px 14px;
+    font-size: 0.7rem;
+  }
+  
+  .form-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .forgot-password-link {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 25px 15px;
+  }
+  
+  .login-header h1 {
+    font-size: 1.3rem !important;
+  }
+  
+  .login-footer {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .form-options {
+    gap: 10px;
+  }
+}
+
+
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.login-footer > div {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.login-footer .register-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Press Start 2P', sans-serif;
+  position: relative;
+}
+
+.login-footer .register-link span {
+  color: #c084fc;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.login-footer .register-link:hover:not(:disabled) span {
+  color: #a855f7;
+}
+
+.login-footer .register-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  text-decoration: none;
+}
+
+.forgot-password-link span {
+  color: #c084fc;
+  font-size: 0.7rem;
+  font-family: "'Press Start 2P', sans-serif";
+  text-decoration: underline;
+  letterSpacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-link:hover:not(:disabled) span {
+  color: #a855f7;
+}
+
+.forgot-password-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

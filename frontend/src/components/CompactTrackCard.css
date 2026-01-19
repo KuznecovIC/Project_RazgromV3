@@ -1,0 +1,201 @@
+.compact-track-card {
+    position: relative;
+    background: rgba(30, 30, 46, 0.6);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(132, 86, 255, 0.1);
+    cursor: default;
+    overflow: hidden;
+  }
+  
+  .compact-track-card:hover {
+    background: rgba(40, 40, 60, 0.8);
+    border-color: rgba(132, 86, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(132, 86, 255, 0.15);
+  }
+  
+  .compact-track-card.new-track {
+    border-color: rgba(132, 86, 255, 0.5);
+    background: rgba(132, 86, 255, 0.05);
+  }
+  
+  .new-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #8456ff, #c084fc);
+    color: white;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    z-index: 2;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .track-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  
+  .track-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .compact-track-card:hover .track-image {
+    transform: scale(1.05);
+  }
+  
+  .play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .play-overlay.visible {
+    opacity: 1;
+  }
+  
+  .play-button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(132, 86, 255, 0.9);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .play-button:hover {
+    background: #8456ff;
+    transform: scale(1.1);
+  }
+  
+  .play-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .track-info {
+    min-height: 80px;
+  }
+  
+  .track-title {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  .track-title:hover {
+    color: #8456ff;
+  }
+  
+  .track-artist {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  
+  .track-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  
+  .like-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .like-button:hover {
+    color: #ff4757;
+    transform: scale(1.1);
+  }
+  
+  .like-button.liked {
+    color: #ff4757;
+  }
+  
+  .like-button svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .track-duration {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .more-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .more-button:hover {
+    color: #8456ff;
+    transform: scale(1.1);
+  }
+  
+  .more-button svg {
+    width: 18px;
+    height: 18px;
+  }

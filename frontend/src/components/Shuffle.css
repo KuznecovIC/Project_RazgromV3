@@ -1,0 +1,56 @@
+/* Shuffle.css - ТОЛЬКО для Shuffle анимаций */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.shuffle-parent {
+  display: inline-block;
+  white-space: nowrap;
+  font-family: 'Press Start 2P', monospace;
+  text-transform: uppercase;
+  line-height: 1;
+  will-change: transform;
+  
+  /* ФИКС: текст всегда видимый */
+  visibility: visible !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  
+  text-shadow:
+    0 0 8px rgba(168, 85, 247, 0.7),
+    0 0 16px rgba(168, 85, 247, 0.4),
+    0 0 24px rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Убираем ненужные классы */
+.shuffle-parent.is-ready {
+  visibility: visible;
+}
+
+.shuffle-title {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow:
+    0 0 10px rgba(168, 85, 247, 0.8),
+    0 0 20px rgba(168, 85, 247, 0.5),
+    0 0 30px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* Wrapper и chars для анимации */
+.shuffle-char-wrapper {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: baseline;
+  position: relative;
+}
+
+.shuffle-char-wrapper > span {
+  display: inline-flex;
+  will-change: transform;
+}
+
+.shuffle-char {
+  line-height: 1;
+  display: inline-block;
+  text-align: center;
+  color: inherit !important;
+  font-family: inherit !important;
+}

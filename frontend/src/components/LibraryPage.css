@@ -1,0 +1,640 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.cdnfonts.com/css/monocraft');
+
+.library-page {
+  min-height: 100vh;
+  padding: 20px 20px 40px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.library-navigation {
+  max-width: 1200px;
+  margin: 0 auto 30px;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.library-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Overview стили */
+.library-overview-content {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.overview-section {
+  padding: 30px;
+}
+
+.library-section-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  margin: 0;
+}
+
+/* Общие стили для контента секций */
+.library-section-content {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  min-height: 400px;
+}
+
+.library-section-header {
+  margin-bottom: 25px;
+}
+
+.library-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.library-title-wrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
+.library-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.library-filter-buttons {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-btn.active {
+  background: rgba(132, 86, 255, 0.15);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  color: white;
+}
+
+.filter-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.library-tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.library-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 150px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-message {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.library-users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  border-color: rgba(132, 86, 255, 0.2);
+}
+
+.user-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(132, 86, 255, 0.2), rgba(255, 159, 252, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.user-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-card-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-card-avatar-fallback svg {
+  width: 24px;
+  height: 24px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.user-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-username {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+  font-family: 'Press Start 2P', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card-followers {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.user-card-follow-btn {
+  padding: 6px 12px;
+  background: rgba(132, 86, 255, 0.15);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  border-radius: 999px;
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.user-card-follow-btn:hover {
+  background: rgba(132, 86, 255, 0.25);
+}
+
+/* History стили */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.history-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.history-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.history-track-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.history-track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-track-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 2px;
+  font-family: 'Press Start 2P', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-track-artist {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-time {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Press Start 2P', sans-serif;
+  min-width: 80px;
+  text-align: right;
+}
+
+@media (max-width: 1024px) {
+  .library-tracks-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  
+  .library-users-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .library-page {
+    padding: 15px 15px 30px;
+  }
+  
+  .library-navigation {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+  }
+  
+  .overview-section,
+  .library-section-content {
+    padding: 20px;
+  }
+  
+  .library-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .library-filter-buttons {
+    align-self: stretch;
+    justify-content: center;
+  }
+  
+  .library-tracks-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+  
+  .library-users-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .history-track {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .history-time {
+    text-align: left;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .library-tracks-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  
+  .user-card {
+    padding: 12px;
+  }
+  
+  .user-card-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .user-card-avatar-fallback svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .filter-btn {
+    padding: 6px 8px;
+    font-size: 0.55rem;
+  }
+  
+  .filter-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Стиль для счетчика лайкнутых треков */
+.liked-tracks-count {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-block;
+  }
+  
+  /* Стиль для счетчика истории */
+  .history-count {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    margin-bottom: 20px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-block;
+  }
+
+/* Добавьте эти стили в конец существующего файла */
+
+/* Стили для поиска */
+.library-search-container {
+    margin-top: 15px;
+    max-width: 600px;
+  }
+  
+  .library-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .library-search-wrapper:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(132, 86, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(132, 86, 255, 0.1);
+  }
+  
+  .library-search-wrapper svg {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  
+  .library-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.65rem;
+    padding: 0;
+    outline: none;
+    min-width: 0;
+  }
+  
+  .library-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Press Start 2P', sans-serif;
+    letter-spacing: 0.3px;
+  }
+  
+  .library-search-clear {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+  }
+  
+  .library-search-clear:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .library-search-hint {
+    margin-top: 8px;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    padding-left: 4px;
+  }
+  
+  .search-query {
+    color: #8456ff;
+    font-weight: bold;
+  }
+  
+  /* Стили для информации о результатах поиска */
+  .library-search-results-info {
+    margin-bottom: 20px;
+  }
+  
+  .search-results-count {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-block;
+  }
+  
+  /* Стили для заголовка лайкнутых треков */
+  .liked-tracks-header {
+    margin-bottom: 25px;
+  }
+  
+  .search-filtered {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  /* Стили для пустых результатов поиска */
+  .no-search-results {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    text-align: center;
+  }
+  
+  .no-search-results p {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    margin-bottom: 10px;
+  }
+  
+  .no-search-results .search-suggestions {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+  }
+  
+  /* Стили для истории прослушивания */
+  .history-currently-playing {
+    color: #8456ff;
+    font-weight: bold;
+  }
+  
+  .library-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    min-height: 150px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+  }
+  
+  .library-loading-state p {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Press Start 2P', sans-serif;
+    letter-spacing: 0.3px;
+  }
+  
+  /* Адаптивные стили */
+  @media (max-width: 768px) {
+    .library-search-container {
+      max-width: 100%;
+    }
+    
+    .library-search-input {
+      font-size: 0.6rem;
+    }
+    
+    .library-search-hint {
+      font-size: 0.55rem;
+    }
+    
+    .history-currently-playing {
+      display: block;
+      margin-top: 5px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .library-search-wrapper {
+      padding: 8px 12px;
+    }
+    
+    .library-search-wrapper svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .library-search-input {
+      font-size: 0.55rem;
+    }
+    
+    .search-results-count {
+      font-size: 0.6rem;
+      padding: 6px 10px;
+    }
+  }

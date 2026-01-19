@@ -1,0 +1,1140 @@
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
+import GridScan from './GridScan';
+import Shuffle from './components/Shuffle';
+import Login from './Login';
+import Register from './Register';
+import ForgotPassword from './ForgotPassword';
+import ProtectedApp from './ProtectedApp';
+import TrackPage from './components/TrackPage';
+import UploadPage from './components/UploadPage';
+import './App.css';
+
+// ============================================
+// 🎯 ОСНОВНОЙ КОМПОНЕНТ APP
+// ============================================
+function App() {
+  // ============================================
+  // 1️⃣ ФУНКЦИЯ НОРМАЛИЗАЦИИ ТРЕКА
+  // ============================================
+  const normalizeTrack = useCallback((track) => {
+    console.log('🔧 App: Нормализация трека:', track.id, track.title);
+    
+    let audioUrl = '';
+    if (track.audio_url) {
+      audioUrl = track.audio_url;
+    } else if (track.audio_file) {
+      audioUrl = track.audio_file;
+    } else if (track.audio) {
+      audioUrl = track.audio;
+    }
+    
+    let coverUrl = '';
+    if (track.cover_url) {
+      coverUrl = track.cover_url;
+    } else if (typeof track.cover === 'string') {
+      coverUrl = track.cover;
+    } else if (track.cover && track.cover.url) {
+      coverUrl = track.cover.url;
+    } else {
+      coverUrl = 'http://localhost:8000/static/default_cover.jpg';
+    }
+    
+    let durationValue = 0;
+    if (track.duration_seconds !== undefined && track.duration_seconds !== null) {
+      durationValue = Number(track.duration_seconds);
+    } else if (track.duration !== undefined && track.duration !== null) {
+      if (typeof track.duration === 'number') {
+        durationValue = track.duration;
+      } else if (typeof track.duration === 'string') {
+        const parts = track.duration.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0], 10);
+          const seconds = parseInt(parts[1], 10);
+          if (!isNaN(minutes) && !isNaN(seconds)) {
+            durationValue = minutes * 60 + seconds;
+          }
+        }
+      }
+    }
+    
+    if (isNaN(durationValue)) {
+      durationValue = 0;
+    }
+    
+    let artistName = 'Unknown artist';
+    if (track.artist) {
+      artistName = track.artist;
+    } else if (track.uploaded_by?.username) {
+      artistName = track.uploaded_by.username;
+    }
+    
+    const normalized = {
+      id: track.id,
+      title: track.title || 'Без названия',
+      artist: artistName,
+      audio_url: audioUrl,
+      cover: coverUrl,
+      duration: durationValue,
+      play_count: track.play_count || 0,
+      like_count: track.like_count || 0,
+      uploaded_by: track.uploaded_by,
+      created_at: track.created_at,
+      source: track.source || 'server'
+    };
+    
+    console.log('✅ App: Нормализованный трек:', normalized);
+    return normalized;
+  }, []);
+
+  // ============================================
+  // 2️⃣ СОСТОЯНИЯ
+  // ============================================
+  const [tracksById, setTracksById] = useState({});
+  const [currentTrackId, setCurrentTrackId] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.7);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [sessionToken, setSessionToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [likedTrackIds, setLikedTrackIds] = useState([]);
+  const [recentTrackIds, setRecentTrackIds] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [isLoadingTrack, setIsLoadingTrack] = useState(false);
+  const [lastPathname, setLastPathname] = useState('');
+
+  // 🔧 REFS
+  const isSeekingRef = useRef(false);  // 🔥 ЕДИНСТВЕННЫЙ isSeekingRef
+  const audioRef = useRef(null);
+  const lastTrackIdRef = useRef(null);
+
+  // ============================================
+  // 🔥 3️⃣ SEEK TO (ЕДИНСТВЕННАЯ ФУНКЦИЯ ПЕРЕМОТКИ)
+  // ============================================
+  const seekTo = useCallback((time) => {
+    console.log('🎯 App: Seek to', time, 'seconds');
+    
+    if (!audioRef.current || !audioRef.current.duration) {
+      console.error('❌ App: Нет audio элемента для seek');
+      return;
+    }
+    
+    // 🔥 Устанавливаем флаг перемотки
+    isSeekingRef.current = true;
+    
+    // 🔥 Устанавливаем время напрямую
+    audioRef.current.currentTime = time;
+    
+    // 🔥 Обновляем состояние
+    setCurrentTime(time);
+    
+    // 🔥 Снимаем флаг через небольшое время
+    setTimeout(() => {
+      isSeekingRef.current = false;
+      console.log('✅ App: Завершена перемотка');
+    }, 100);
+    
+    // 🔥 УБИРАЕМ АВТОЗАПУСК ПОЛНОСТЬЮ!
+    // Play/Pause - ТОЛЬКО через кнопку
+  }, []);
+
+  // ============================================
+  // 4️⃣ TOGGLE PLAY/PAUSE
+  // ============================================
+  const togglePlayPause = useCallback(() => {
+    console.log('⏯️ App: togglePlayPause вызван', {
+      currentTrackId,
+      isPlaying,
+      audio: audioRef.current ? {
+        paused: audioRef.current.paused,
+        readyState: audioRef.current.readyState
+      } : 'no audio'
+    });
+    
+    if (!audioRef.current) {
+      console.error('❌ App: Нет audio элемента');
+      return;
+    }
+    
+    if (!currentTrackId) {
+      console.log('⚠️ App: Нет текущего трека');
+      return;
+    }
+    
+    const audio = audioRef.current;
+    
+    if (isPlaying) {
+      console.log('⏸️ App: Пауза');
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      console.log('▶️ App: Воспроизведение');
+      audio.play()
+        .then(() => {
+          console.log('✅ App: Воспроизведение успешно');
+          setIsPlaying(true);
+        })
+        .catch(error => {
+          console.error('❌ App: Ошибка воспроизведения:', error);
+          setIsPlaying(false);
+        });
+    }
+  }, [currentTrackId, isPlaying]);
+
+  // ============================================
+  // 5️⃣ ФУНКЦИИ РАБОТЫ С ТРЕКАМИ
+  // ============================================
+  
+  // ✅ ДОБАВЛЕНИЕ ТРЕКОВ
+  const addTracks = useCallback((tracks = []) => {
+    console.log(`📦 App: Добавление ${tracks.length} треков в стор`);
+    
+    setTracksById(prev => {
+      const updated = { ...prev };
+      tracks.forEach(track => {
+        if (!track?.id) return;
+        const normalized = normalizeTrack(track);
+        updated[track.id] = normalized;
+      });
+      return updated;
+    });
+  }, [normalizeTrack]);
+  
+  // 🔴 ЗАГРУЗКА ТРЕКА С СЕРВЕРА
+  const loadTrackFromServer = useCallback(async (trackId) => {
+    if (!trackId) return;
+    
+    console.log(`🔄 App: Загрузка трека ${trackId} с сервера...`);
+    setIsLoadingTrack(true);
+    
+    try {
+      const response = await fetch(`/api/tracks/${trackId}/`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const trackData = await response.json();
+      const normalizedTrack = normalizeTrack(trackData);
+      
+      setTracksById(prev => ({
+        ...prev,
+        [trackId]: normalizedTrack
+      }));
+      
+      console.log(`✅ App: Трек ${trackId} загружен с сервера:`, normalizedTrack.title);
+      
+      setCurrentTrackId(trackId);
+      
+    } catch (error) {
+      console.error(`❌ App: Ошибка загрузки трека ${trackId}:`, error);
+      
+      const demoFallback = {
+        1: {
+          id: 1,
+          title: "hard drive (slowed & muffled)",
+          artist: "griffinilla",
+          cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
+          audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          duration: 200
+        },
+        2: {
+          id: 2,
+          title: "Deutschland",
+          artist: "Rammstein",
+          cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+          audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+          duration: 322
+        },
+        3: {
+          id: 3,
+          title: "Sonne",
+          artist: "Rammstein",
+          cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+          audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+          duration: 245
+        }
+      };
+      
+      const demoTrack = demoFallback[trackId];
+      if (demoTrack) {
+        console.log(`✅ App: Используем демо-трек для ${trackId}`);
+        const normalizedDemoTrack = normalizeTrack(demoTrack);
+        setTracksById(prev => ({
+          ...prev,
+          [trackId]: normalizedDemoTrack
+        }));
+        setCurrentTrackId(trackId);
+      }
+    } finally {
+      setIsLoadingTrack(false);
+    }
+  }, [normalizeTrack]);
+
+  // ============================================
+  // 6️⃣ ФУНКЦИЯ ВОСПРОИЗВЕДЕНИЯ ТРЕКА
+  // ============================================
+  const playTrack = useCallback((track) => {
+    if (!track?.id) {
+      console.error('❌ App: Невалидный трек для воспроизведения');
+      return;
+    }
+    
+    console.log(`🎵 App: playTrack для трека ${track.id}`, track.title, {
+      currentTrackId,
+      isPlaying
+    });
+    
+    // Если это тот же трек, просто пауза/продолжение
+    if (currentTrackId === track.id) {
+      console.log('🔄 App: Тот же трек, переключаем паузу');
+      togglePlayPause();
+      return;
+    }
+    
+    const normalizedTrack = normalizeTrack(track);
+    
+    setTracksById(prev => ({
+      ...prev,
+      [track.id]: normalizedTrack
+    }));
+    
+    setCurrentTrackId(track.id);
+    
+    // 🔥 Обновляем историю прослушиваний
+    setRecentTrackIds(prev => {
+      const filtered = prev.filter(id => id !== track.id);
+      return [track.id, ...filtered].slice(0, 50);
+    });
+    
+    // 🔥 Добавляем в историю с timestamp
+    setHistory(prev => {
+      const newHistoryItem = {
+        trackId: track.id,
+        title: track.title,
+        artist: track.artist,
+        cover: track.cover || track.cover_url,
+        playedAt: new Date().toISOString()
+      };
+      
+      const filtered = prev.filter(item => item.trackId !== track.id);
+      return [newHistoryItem, ...filtered].slice(0, 100);
+    });
+    
+    console.log(`✅ App: Трек "${track.title}" установлен для воспроизведения`);
+  }, [currentTrackId, isPlaying, togglePlayPause, normalizeTrack]);
+
+  // ============================================
+  // 7️⃣ ОСТАЛЬНЫЕ ФУНКЦИИ ВОСПРОИЗВЕДЕНИЯ
+  // ============================================
+  
+  const playNextTrack = useCallback(() => {
+    console.log('⏭️ App: playNextTrack вызван');
+    
+    if (!likedTrackIds || likedTrackIds.length === 0) {
+      console.log('⚠️ App: Нет лайкнутых треков для автоплея');
+      return;
+    }
+    
+    let nextTrackId = null;
+    
+    if (currentTrackId) {
+      const currentIndex = likedTrackIds.indexOf(currentTrackId);
+      
+      if (currentIndex === -1) {
+        nextTrackId = likedTrackIds[0];
+      } else {
+        const nextIndex = (currentIndex + 1) % likedTrackIds.length;
+        nextTrackId = likedTrackIds[nextIndex];
+      }
+    } else {
+      nextTrackId = likedTrackIds[0];
+    }
+    
+    if (!nextTrackId) return;
+    
+    const nextTrack = tracksById[nextTrackId];
+    if (nextTrack) {
+      console.log('▶️ App: Автопереход к следующему треку', nextTrack.title);
+      playTrack(nextTrack);
+    }
+  }, [currentTrackId, likedTrackIds, tracksById, playTrack]);
+  
+  const playPreviousTrack = useCallback(() => {
+    if (!likedTrackIds || likedTrackIds.length === 0) return;
+    
+    if (!currentTrackId) {
+      const firstTrack = tracksById[likedTrackIds[0]];
+      if (firstTrack) playTrack(firstTrack);
+      return;
+    }
+    
+    const currentIndex = likedTrackIds.indexOf(currentTrackId);
+    if (currentIndex === -1) return;
+    
+    const prevIndex = currentIndex === 0 ? likedTrackIds.length - 1 : currentIndex - 1;
+    const prevTrackId = likedTrackIds[prevIndex];
+    const prevTrack = tracksById[prevTrackId];
+    
+    if (prevTrack) {
+      playTrack(prevTrack);
+    }
+  }, [currentTrackId, likedTrackIds, tracksById, playTrack]);
+
+  // ============================================
+  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: timeupdate (с учётом isSeekingRef)
+  // ============================================
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => {
+      if (isSeekingRef.current) return;  // 🔥 НЕ обновляем при перемотке
+      setCurrentTime(audio.currentTime);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, []);
+
+  // ============================================
+  // 8️⃣ ОТСЛЕЖИВАНИЕ URL (С УСИЛЕННОЙ ЗАЩИТОЙ)
+  // ============================================
+  useEffect(() => {
+    const checkURLForTrack = () => {
+      const path = window.location.pathname;
+      
+      if (path !== lastPathname) {
+        setLastPathname(path);
+        
+        const trackMatch = path.match(/\/track\/(\d+)/);
+        
+        if (trackMatch) {
+          const trackIdFromUrl = parseInt(trackMatch[1]);
+          
+          // 🔥 ГЛАВНАЯ ЗАЩИТА: если это тот же трек — НИЧЕГО НЕ ДЕЛАЕМ
+          if (trackIdFromUrl === currentTrackId) {
+            console.log('✅ App: Тот же трек в URL, игнорируем');
+            return;
+          }
+          
+          console.log('🌐 App: Определен trackId из URL:', trackIdFromUrl, {
+            currentTrackId,
+            lastTrackId: lastTrackIdRef.current
+          });
+          
+          console.log('🔄 App: Новый трек из URL, нужно загрузить:', trackIdFromUrl);
+          
+          const trackInStore = tracksById[trackIdFromUrl];
+          
+          if (trackInStore) {
+            console.log('✅ App: Трек уже в сторе, устанавливаем как текущий');
+            setCurrentTrackId(trackIdFromUrl);
+          } else {
+            console.log('🔄 App: Трека нет в сторе, нужно загрузить с сервера');
+            loadTrackFromServer(trackIdFromUrl);
+          }
+        }
+      }
+    };
+
+    checkURLForTrack();
+    const urlCheckInterval = setInterval(checkURLForTrack, 100);
+
+    return () => clearInterval(urlCheckInterval);
+  }, [currentTrackId, tracksById, lastPathname, loadTrackFromServer]);
+
+  // ============================================
+  // 9️⃣ АУДИО ЭЛЕМЕНТ И МЕТАДАННЫЕ
+  // ============================================
+  useEffect(() => {
+    console.log('🎵 App: Инициализация audio элемента');
+    
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.crossOrigin = 'anonymous';
+      audioRef.current.preload = 'metadata';
+      audioRef.current.volume = volume;
+      audioRef.current.loop = loopEnabled;
+      console.log('✅ App: Audio элемент создан');
+    }
+
+    const audio = audioRef.current;
+
+    const handleLoadedMetadata = () => {
+      console.log('✅ App: Метаданные загружены, duration:', audio.duration);
+      setDuration(audio.duration || 0);
+    };
+
+    const handleCanPlay = () => {
+      console.log('✅ App: Данные загружены, можно играть');
+      setIsLoadingTrack(false);
+    };
+
+    const handlePlay = () => {
+      console.log('▶️ App: Audio play event');
+      setIsPlaying(true);
+    };
+    
+    const handlePause = () => {
+      console.log('⏸️ App: Audio pause event');
+      setIsPlaying(false);
+    };
+    
+    const handleEnded = () => {
+      console.log('⏹️ App: Трек завершен');
+      setIsPlaying(false);
+      playNextTrack();
+    };
+
+    const handleError = (e) => {
+      console.error('❌ App: Ошибка audio:', e.target.error);
+      setIsPlaying(false);
+      setIsLoadingTrack(false);
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, [volume, loopEnabled, playNextTrack]);
+
+  // ============================================
+  // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: ЗАГРУЗКА ТРЕКА ПРИ СМЕНЕ currentTrackId
+  // ============================================
+  useEffect(() => {
+    if (!currentTrackId || !audioRef.current) {
+      console.log('⚠️ App: Нет трека для загрузки');
+      return;
+    }
+
+    const trackInfo = tracksById[currentTrackId];
+    if (!trackInfo) {
+      console.error('❌ App: Нет данных для трека:', currentTrackId);
+      return;
+    }
+
+    const audio = audioRef.current;
+    const newSrc = trackInfo.audio_url || '';
+
+    console.log('🔄 App: Обработка трека:', {
+      currentTrackId,
+      newSrc,
+      lastTrackId: lastTrackIdRef.current,
+      audioSrc: audio.src
+    });
+
+    // 🔴 ВАЖНО: ЕСЛИ ЭТО ТОТ ЖЕ САМЫЙ ТРЕК — НИЧЕГО НЕ ДЕЛАЕМ
+    if (lastTrackIdRef.current === currentTrackId) {
+      console.log('✅ App: Тот же трек, только управление воспроизведением');
+      return;
+    }
+
+    // 🔁 НОВЫЙ ТРЕК
+    console.log('🔄 App: Начинаем загрузку нового трека');
+    lastTrackIdRef.current = currentTrackId;
+    
+    audio.pause();
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setIsLoadingTrack(true);
+    
+    let audioUrl = newSrc;
+    if (!audioUrl || audioUrl.trim() === '') {
+      const publicTestTracks = {
+        1: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        2: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        3: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      };
+      audioUrl = publicTestTracks[currentTrackId] || publicTestTracks[1];
+    }
+    
+    console.log('🎵 App: Устанавливаем audio.src:', audioUrl);
+    
+    audio.src = audioUrl;
+    audio.load();
+    
+  }, [currentTrackId, tracksById]);
+
+  // ============================================
+  // 🔧 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+  // ============================================
+  
+  const handlePlayPause = useCallback(() => {
+    console.log('🎵 App: handlePlayPause вызван', {
+      currentTrackId,
+      isPlaying
+    });
+    
+    if (!currentTrackId) {
+      console.log('⚠️ App: Нет текущего трека для play/pause');
+      return;
+    }
+    
+    togglePlayPause();
+  }, [currentTrackId, isPlaying, togglePlayPause]);
+  
+  const handleVolumeChange = useCallback((newVolume) => {
+    setVolume(newVolume);
+    if (audioRef.current) audioRef.current.volume = newVolume;
+  }, []);
+  
+  const handleToggleLoop = useCallback(() => {
+    const newLoopEnabled = !loopEnabled;
+    setLoopEnabled(newLoopEnabled);
+    if (audioRef.current) audioRef.current.loop = newLoopEnabled;
+  }, [loopEnabled]);
+  
+  // ============================================
+  // ✅ ФУНКЦИИ ДЛЯ РАБОТЫ С АВТОРИЗАЦИЕЙ
+  // ============================================
+  
+  const getAuthToken = useCallback(() => {
+    return sessionToken || 
+           localStorage.getItem('accessToken') || 
+           localStorage.getItem('token') ||
+           localStorage.getItem('sessionToken') ||
+           localStorage.getItem('access');
+  }, [sessionToken]);
+
+  // ============================================
+  // 🚀 ГЛАВНОЕ ИСПРАВЛЕНИЕ: ЗАГРУЗКА ДАННЫХ С СЕРВЕРА ПРИ СТАРТЕ
+  // ============================================
+  
+  // 🔥 Функция загрузки лайкнутых треков с сервера
+  const fetchLikedTracks = useCallback(async (authToken) => {
+    try {
+      console.log('❤️ App: Загрузка лайкнутых треков с сервера...');
+      
+      const response = await fetch('http://localhost:8000/api/tracks/liked/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ App: Загружены лайкнутые треки:', data.tracks?.length || 0);
+        
+        const likedIds = data.tracks?.map(track => track.id) || [];
+        setLikedTrackIds(likedIds);
+        
+        // Сохраняем в localStorage для офлайн-доступа
+        localStorage.setItem('likedTracks', JSON.stringify(likedIds));
+        
+        // Добавляем треки в общий сторе
+        if (data.tracks && data.tracks.length > 0) {
+          addTracks(data.tracks);
+        }
+        
+        return likedIds;
+      } else {
+        console.error('❌ App: Ошибка загрузки лайкнутых треков:', response.status);
+        
+        // Пробуем загрузить из localStorage
+        const likedFromStorage = localStorage.getItem('likedTracks');
+        if (likedFromStorage) {
+          const likedArray = JSON.parse(likedFromStorage);
+          setLikedTrackIds(likedArray);
+          console.log('✅ App: Используем лайки из localStorage:', likedArray.length);
+        }
+      }
+    } catch (error) {
+      console.error('❌ App: Ошибка сети при загрузке лайков:', error);
+      
+      // Fallback: из localStorage
+      const likedFromStorage = localStorage.getItem('likedTracks');
+      if (likedFromStorage) {
+        const likedArray = JSON.parse(likedFromStorage);
+        setLikedTrackIds(likedArray);
+        console.log('✅ App: Используем лайки из localStorage:', likedArray.length);
+      }
+    }
+  }, [addTracks]);
+
+  // 🔥 Функция загрузки недавних треков с сервера
+  const fetchRecentTracks = useCallback(async (authToken) => {
+    try {
+      console.log('🕒 App: Загрузка недавних треков с сервера...');
+      
+      const response = await fetch('http://localhost:8000/api/tracks/recent/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ App: Загружены недавние треки:', data.tracks?.length || 0);
+        
+        const recentIds = data.tracks?.map(track => track.id) || [];
+        setRecentTrackIds(recentIds);
+        
+        // Добавляем треки в общий сторе
+        if (data.tracks && data.tracks.length > 0) {
+          addTracks(data.tracks);
+        }
+        
+        return recentIds;
+      } else {
+        console.log('⚠️ App: Нет недавних треков на сервере');
+      }
+    } catch (error) {
+      console.error('❌ App: Ошибка сети при загрузке недавних треков:', error);
+    }
+  }, [addTracks]);
+
+  // 🔥 Функция загрузки истории прослушиваний
+  const fetchHistory = useCallback(async (authToken) => {
+    try {
+      console.log('📚 App: Загрузка истории прослушиваний...');
+      
+      const response = await fetch('http://localhost:8000/api/tracks/history/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ App: Загружена история:', data.history?.length || 0);
+        
+        setHistory(data.history || []);
+        
+        // Добавляем треки из истории в общий сторе
+        if (data.tracks && data.tracks.length > 0) {
+          addTracks(data.tracks);
+        }
+        
+        return data.history;
+      } else {
+        console.log('⚠️ App: Нет истории на сервере');
+      }
+    } catch (error) {
+      console.error('❌ App: Ошибка сети при загрузке истории:', error);
+    }
+  }, [addTracks]);
+
+  // 🔥 Функция загрузки всех данных пользователя
+  const fetchUserData = useCallback(async () => {
+    const authToken = getAuthToken();
+    
+    if (!authToken) {
+      console.log('⚠️ App: Нет токена, пользовательские данные не загружены');
+      return;
+    }
+    
+    console.log('🔄 App: Начинаем загрузку пользовательских данных...');
+    
+    try {
+      // Параллельная загрузка всех данных
+      await Promise.all([
+        fetchLikedTracks(authToken),
+        fetchRecentTracks(authToken),
+        fetchHistory(authToken)
+      ]);
+      
+      console.log('✅ App: Все пользовательские данные загружены');
+    } catch (error) {
+      console.error('❌ App: Ошибка загрузки пользовательских данных:', error);
+    }
+  }, [getAuthToken, fetchLikedTracks, fetchRecentTracks, fetchHistory]);
+
+  const handleToggleLike = useCallback(async (trackId) => {
+    console.log('❤️ App: Обработка лайка трека', trackId);
+    
+    const authToken = getAuthToken();
+    if (!authToken) {
+      alert('Войдите в систему, чтобы ставить лайки');
+      return false;
+    }
+    
+    const currentLiked = likedTrackIds.includes(trackId);
+    const newLiked = !currentLiked;
+    
+    // Оптимистичное обновление UI
+    if (newLiked) {
+      setLikedTrackIds(prev => [...prev, trackId]);
+    } else {
+      setLikedTrackIds(prev => prev.filter(id => id !== trackId));
+    }
+    
+    localStorage.setItem('likedTracks', JSON.stringify(
+      newLiked ? [...likedTrackIds, trackId] : likedTrackIds.filter(id => id !== trackId)
+    ));
+    
+    try {
+      // ✅ ТОЛЬКО JWT (без CSRF!)
+      const response = await fetch('http://localhost:8000/api/tracks/like/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ 
+          track_id: trackId, 
+          liked: newLiked 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        // Откатываем изменения
+        if (newLiked) {
+          setLikedTrackIds(prev => prev.filter(id => id !== trackId));
+        } else {
+          setLikedTrackIds(prev => [...prev, trackId]);
+        }
+        alert(data.error || 'Ошибка при сохранении лайка');
+        return false;
+      }
+      
+      console.log('✅ App: Лайк успешно сохранен на сервере');
+      
+      setTracksById(prev => {
+        const updated = { ...prev };
+        if (updated[trackId]) {
+          updated[trackId] = {
+            ...updated[trackId],
+            like_count: data.like_count || (updated[trackId].like_count || 0) + (newLiked ? 1 : -1)
+          };
+        }
+        return updated;
+      });
+      
+      window.dispatchEvent(new CustomEvent('trackLikedFromApp', {
+        detail: { 
+          trackId: trackId, 
+          liked: newLiked,
+          count: data.like_count,
+          fromApp: true,
+          user: user?.username
+        }
+      }));
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ App: Сетевая ошибка лайка трека:', error);
+      // Откатываем изменения
+      if (newLiked) {
+        setLikedTrackIds(prev => prev.filter(id => id !== trackId));
+      } else {
+        setLikedTrackIds(prev => [...prev, trackId]);
+      }
+      alert('Сетевая ошибка при сохранении лайка');
+      return false;
+    }
+  }, [getAuthToken, likedTrackIds, user]);
+  
+  const checkTrackLiked = useCallback((trackId) => {
+    return likedTrackIds.includes(trackId);
+  }, [likedTrackIds]);
+
+  // ============================================
+  // 🚀 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+  // ============================================
+  useEffect(() => {
+    console.log('🎵 App: Инициализация приложения');
+    
+    const token = localStorage.getItem('access');
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        setSessionToken(token);
+        setUser(JSON.parse(savedUser));
+        setIsAuthenticated(true);
+        console.log('✅ App: Пользователь восстановлен');
+      } catch (error) {
+        localStorage.removeItem('access');
+        localStorage.removeItem('user');
+      }
+    }
+    
+    // 🔥 Загружаем демо-данные
+    const demoData = [
+      {
+        id: 1,
+        title: "hard drive (slowed & muffled)",
+        artist: "griffinilla",
+        cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGF8gEyh_MA8=&rs=AOn4CLDjiyHGoELcWa2t37NenbmBQ-JlSw",
+        audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        duration: 200,
+        duration_seconds: 200,
+        like_count: 56,
+        source: 'demo'
+      },
+      {
+        id: 2,
+        title: "Deutschland",
+        artist: "Rammstein", 
+        cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+        audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        duration: 322,
+        duration_seconds: 322,
+        like_count: 34,
+        source: 'demo'
+      },
+      {
+        id: 3,
+        title: "Sonne", 
+        artist: "Rammstein",
+        cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+        audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        duration: 245,
+        duration_seconds: 245,
+        like_count: 23,
+        source: 'demo'
+      }
+    ];
+    
+    addTracks(demoData);
+    
+    // 🔥 ГЛАВНОЕ: Загружаем пользовательские данные с сервера
+    if (isAuthenticated && sessionToken) {
+      fetchUserData();
+    }
+    
+    // 🔥 Загружаем лайки из localStorage как fallback
+    try {
+      const likedFromStorage = localStorage.getItem('likedTracks');
+      if (likedFromStorage) {
+        const likedArray = JSON.parse(likedFromStorage);
+        setLikedTrackIds(likedArray);
+        console.log('✅ App: Загружено лайков из localStorage:', likedArray.length);
+      }
+    } catch (error) {
+      console.error('❌ App: Ошибка загрузки лайков:', error);
+    }
+    
+    setIsLoading(false);
+  }, [addTracks, isAuthenticated, sessionToken, fetchUserData]);
+
+  // ============================================
+  // 👤 АВТОРИЗАЦИЯ
+  // ============================================
+  const handleLogin = (userData, tokens) => {
+    console.log('✅ App: Вход пользователя:', userData.username);
+    
+    setUser(userData);
+    setSessionToken(tokens?.access);
+    setIsAuthenticated(true);
+    
+    if (tokens?.access) localStorage.setItem('access', tokens.access);
+    if (tokens?.refresh) localStorage.setItem('refresh', tokens.refresh);
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    // 🔥 ГЛАВНОЕ: После входа загружаем данные с сервера
+    if (tokens?.access) {
+      setTimeout(() => {
+        fetchUserData();
+      }, 500);
+    }
+  };
+  
+  const handleLogout = () => {
+    console.log('👋 App: Выход пользователя');
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    setUser(null);
+    setSessionToken(null);
+    setIsAuthenticated(false);
+    setCurrentTrackId(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setLikedTrackIds([]);
+    setRecentTrackIds([]);
+    setHistory([]);
+    lastTrackIdRef.current = null;
+    
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    localStorage.removeItem('user');
+    localStorage.removeItem('likedTracks');
+  };
+
+  // ============================================
+  // 🖥️ РЕНДЕР
+  // ============================================
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <GridScan
+          className="background-gridscan"
+          sensitivity={0.65}
+          lineThickness={1}
+          linesColor="#ffffff"
+          gridScale={0.12}
+          scanColor="#8456ff"
+          scanOpacity={0.45}
+        />
+        <div className="loading-content">
+          <Shuffle
+            text="Loading..."
+            shuffleDirection="right"
+            duration={0.5}
+            animationMode="evenodd"
+            shuffleTimes={2}
+            ease="power3.out"
+            stagger={0.03}
+            threshold={0.1}
+            triggerOnce={false}
+            loop={true}
+            style={{ 
+              fontSize: '1.5rem',
+              fontFamily: "'Press Start 2P', sans-serif",
+              color: '#c084fc'
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <AuthProvider value={{ user, sessionToken }}>
+      <div className="App">
+        <Routes>
+          <Route
+            path="/login"
+            element={isAuthenticated ? 
+              <Navigate to="/" /> : 
+              <Login onLogin={handleLogin} />
+            }
+          />
+          <Route
+            path="/register"
+            element={isAuthenticated ? 
+              <Navigate to="/" /> : 
+              <Register onRegister={handleLogin} />
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={isAuthenticated ? 
+              <Navigate to="/" /> : 
+              <ForgotPassword />
+            }
+          />
+          <Route
+            path="/upload"
+            element={isAuthenticated ? 
+              <UploadPage
+                user={user}
+                sessionToken={sessionToken}
+                onLogout={handleLogout}
+                onUploadSuccess={(track) => {
+                  if (track) {
+                    addTracks([track]);
+                    playTrack(track);
+                  }
+                }}
+                getAuthToken={getAuthToken}
+              /> : 
+              <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/track/:trackId"
+            element={isAuthenticated ? 
+              <TrackPage
+                user={user}
+                sessionToken={sessionToken}
+                onLogout={handleLogout}
+                
+                currentTrack={currentTrackId}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                currentTime={currentTime}
+                duration={duration}
+                onSeek={seekTo}
+                volume={volume}
+                onVolumeChange={handleVolumeChange}
+                loopEnabled={loopEnabled}
+                onToggleLoop={handleToggleLoop}
+                
+                onToggleLike={handleToggleLike}
+                likedTracks={likedTrackIds}
+                checkTrackLiked={checkTrackLiked}
+                
+                trackData={tracksById}
+                getAuthToken={getAuthToken}
+              /> : 
+              <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/"
+            element={isAuthenticated ? 
+              <ProtectedApp
+                user={user}
+                onLogout={handleLogout}
+                
+                currentTrack={currentTrackId}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                onTogglePlayPause={togglePlayPause}
+                currentTime={currentTime}
+                duration={duration}
+                onSeek={seekTo}
+                volume={volume}
+                onVolumeChange={handleVolumeChange}
+                onNext={playNextTrack}
+                onPrevious={playPreviousTrack}
+                loopEnabled={loopEnabled}
+                onToggleLoop={handleToggleLoop}
+                
+                likedTrackIds={likedTrackIds}
+                onToggleLike={handleToggleLike}
+                
+                tracksById={tracksById}
+                recentTrackIds={recentTrackIds}
+                history={history}
+                
+                playTrack={playTrack}
+                addTracks={addTracks}
+                sessionToken={sessionToken}
+                isLoadingTrack={isLoadingTrack}
+                
+                getAuthToken={getAuthToken}
+              /> : 
+              <Navigate to="/login" />
+            }
+          />
+        </Routes>
+      </div>
+    </AuthProvider>
+  );
+}
+
+export default App;
