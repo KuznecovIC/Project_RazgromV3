@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ColorBendsBackground from './ColorBendsBackground';
+import { apiFetch } from './api/apiFetch'; // ✅ Импортируем apiFetch
 import './Login.css';
+
+// ✅ Импортируем API URL из конфигурации
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -23,13 +27,11 @@ const Login = ({ onLogin }) => {
   
   // Ключи Cloudflare Turnstile
   const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY || '0x4AAAAAACLl4TSRqjeGKzqP';
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const DEBUG_MODE = process.env.REACT_APP_DEBUG === 'true';
 
   useEffect(() => {
     // Загружаем Cloudflare Turnstile скрипт
     const loadTurnstileScript = () => {
-      // Проверяем, не загружен ли уже скрипт
       if (window.turnstile) {
         console.log('✅ Cloudflare Turnstile уже загружен');
         setCaptchaScriptLoaded(true);
@@ -46,7 +48,6 @@ const Login = ({ onLogin }) => {
       script.onload = () => {
         console.log('✅ Cloudflare Turnstile скрипт загружен');
         setCaptchaScriptLoaded(true);
-        // Даем время для инициализации
         setTimeout(() => {
           if (window.turnstile && captchaContainerRef.current) {
             renderTurnstile();
@@ -63,7 +64,6 @@ const Login = ({ onLogin }) => {
       document.head.appendChild(script);
     };
 
-    // Функция для рендеринга Turnstile
     const renderTurnstile = () => {
       if (!window.turnstile || !captchaContainerRef.current) {
         console.log('⏳ Ожидание загрузки Turnstile...');
@@ -72,12 +72,10 @@ const Login = ({ onLogin }) => {
 
       console.log('🎨 Рендеринг Turnstile виджета...');
       
-      // Очищаем контейнер перед рендерингом
       if (captchaContainerRef.current) {
         captchaContainerRef.current.innerHTML = '';
       }
 
-      // Уничтожаем предыдущий виджет если есть
       if (captchaWidgetId.current && window.turnstile) {
         try {
           window.turnstile.remove(captchaWidgetId.current);
@@ -86,7 +84,6 @@ const Login = ({ onLogin }) => {
         }
       }
 
-      // Рендерим новый виджет
       try {
         const widgetId = window.turnstile.render(captchaContainerRef.current, {
           sitekey: TURNSTILE_SITE_KEY,
@@ -122,15 +119,12 @@ const Login = ({ onLogin }) => {
       }
     };
 
-    // Загружаем скрипт при монтировании компонента
     loadTurnstileScript();
 
-    // Рендерим Turnstile когда скрипт загружен
     if (captchaScriptLoaded && captchaContainerRef.current) {
       renderTurnstile();
     }
 
-    // Очистка при размонтировании
     return () => {
       if (captchaWidgetId.current && window.turnstile) {
         try {
@@ -154,7 +148,6 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // Функция для обновления капчи
   const refreshCaptcha = () => {
     console.log('🔄 Обновление капчи...');
     
@@ -162,7 +155,6 @@ const Login = ({ onLogin }) => {
     setCaptchaError('');
     setCaptchaLoading(true);
     
-    // Уничтожаем текущий виджет
     if (captchaWidgetId.current && window.turnstile) {
       try {
         window.turnstile.remove(captchaWidgetId.current);
@@ -172,12 +164,10 @@ const Login = ({ onLogin }) => {
       }
     }
     
-    // Очищаем контейнер
     if (captchaContainerRef.current) {
       captchaContainerRef.current.innerHTML = '';
     }
     
-    // Перезагружаем скрипт если он не загружен
     if (!window.turnstile) {
       console.log('📥 Перезагрузка Turnstile скрипта...');
       const existingScript = document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]');
@@ -187,7 +177,6 @@ const Login = ({ onLogin }) => {
       
       setCaptchaScriptLoaded(false);
       
-      // Даем время для очистки
       setTimeout(() => {
         const script = document.createElement('script');
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -208,7 +197,6 @@ const Login = ({ onLogin }) => {
         document.head.appendChild(script);
       }, 100);
     } else {
-      // Если скрипт уже загружен, просто рендерим заново
       setTimeout(() => {
         if (captchaContainerRef.current) {
           try {
@@ -240,71 +228,17 @@ const Login = ({ onLogin }) => {
         }
       }, 300);
     }
-    
-    // Показываем сообщение об успехе
-    const message = document.createElement('div');
-    message.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(45deg, #3498db, #2980b9);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        z-index: 1000;
-        font-family: 'Press Start 2P', sans-serif;
-        font-size: 0.7rem;
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 2s forwards;
-      ">
-        🔄 Проверка обновлена!
-      </div>
-    `;
-    
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      @keyframes fadeOut {
-        to {
-          opacity: 0;
-          transform: translateX(100%);
-        }
-      }
-    `;
-    
-    document.head.appendChild(style);
-    document.body.appendChild(message.firstChild);
-    
-    setTimeout(() => {
-      if (message.firstChild && document.body.contains(message.firstChild)) {
-        document.body.removeChild(message.firstChild);
-      }
-      if (style && document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    }, 2500);
   };
 
+  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная функция входа
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Валидация формы
     if (!formData.email || !formData.password) {
       setError('Email и пароль обязательны');
       return;
     }
     
-    // Проверка капчи (только если не режим разработки)
     if (!DEBUG_MODE && !captchaToken) {
       setCaptchaError('Пожалуйста, пройдите проверку "Я не робот"');
       return;
@@ -315,156 +249,202 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      console.log('📤 Отправка входа:', {
-        email: formData.email.toLowerCase(),
-        captcha_token_length: captchaToken.length
-      });
+      console.log('📤 Login: Отправка данных для входа');
       
-      // Используем dev_token в режиме разработки или реальный токен
       const captchaToSend = DEBUG_MODE && !captchaToken ? 'dev_token' : captchaToken;
       
-      const response = await fetch(`${API_URL}/api/auth/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase(),
-          password: formData.password,
-          remember_me: formData.rememberMe,
-          captcha_token: captchaToSend
-        })
-      });
-
-      console.log('📥 Статус ответа (логин):', response.status);
-      
+      // 🔥 Вариант 1: Если ваш бэкенд использует /api/login/ и возвращает JWT
       let data;
+      
       try {
-        data = await response.json();
-        console.log('📊 Ответ сервера (логин):', data);
-      } catch (parseError) {
-        console.error('❌ Ошибка парсинга JSON:', parseError);
-        throw new Error('Сервер вернул некорректный ответ');
-      }
-
-      if (data.success) {
-        // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильное сохранение JWT токенов
-        if (data.tokens) {
-          // Сохраняем access токен для авторизации API запросов
-          localStorage.setItem('access', data.tokens.access);
-          console.log('✅ Access токен сохранен в localStorage:', 
-            data.tokens.access.substring(0, 20) + '...');
-          
-          // Сохраняем refresh токен если есть
-          if (data.tokens.refresh) {
-            localStorage.setItem('refresh', data.tokens.refresh);
-            console.log('✅ Refresh токен сохранен в localStorage');
-          }
-        } else {
-          console.warn('⚠️ Сервер не вернул JWT токены в ответе');
-        }
+        // Пробуем стандартный JWT endpoint
+        const response = await fetch(`${API_URL}/api/token/`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({
+            username: formData.email.toLowerCase(), // Django JWT ожидает username
+            password: formData.password
+          })
+        });
         
-        // Сохраняем информацию о пользователе
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          console.log('✅ Информация о пользователе сохранена');
-        }
-        
-        // Вызываем колбэк если есть
-        if (onLogin) {
-          // Передаем пользователя и токены в App.js
-          onLogin(data.user, {
-            access: data.tokens?.access,
-            refresh: data.tokens?.refresh
+        if (response.ok) {
+          data = await response.json();
+          console.log('✅ Login: Успешный ответ от /api/token/', {
+            hasAccess: !!data.access,
+            hasRefresh: !!data.refresh
           });
-        }
-        
-        // Показываем анимацию успеха
-        const successAnimation = document.createElement('div');
-        successAnimation.innerHTML = `
-          <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            animation: fadeIn 0.5s ease-in-out;
-          ">
-            <div style="
-              font-size: 5rem;
-              color: #c084fc;
-              margin-bottom: 30px;
-              animation: bounce 1s infinite;
-            ">
-              👋
-            </div>
-            <div style="
-              font-size: 2rem;
-              color: white;
-              font-family: 'Press Start 2P', sans-serif;
-              text-align: center;
-              margin-bottom: 20px;
-              background: linear-gradient(45deg, #c084fc, #a855f7);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-            ">
-              Добро пожаловать!
-            </div>
-            <div style="
-              font-size: 1rem;
-              color: rgba(255, 255, 255, 0.8);
-              font-family: 'Press Start 2P', sans-serif;
-              text-align: center;
-              max-width: 400px;
-              line-height: 1.5;
-            ">
-              Вход выполнен успешно.<br/>
-              Перенаправляем на главную страницу...
-            </div>
-          </div>
-        `;
-        
-        // Добавляем стили анимации
-        const animationStyle = document.createElement('style');
-        animationStyle.textContent = `
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-          }
-        `;
-        
-        document.head.appendChild(animationStyle);
-        document.body.appendChild(successAnimation.firstChild);
-        
-        // Перенаправление через 2 секунды
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
-      } else {
-        // Обработка ошибок
-        console.error('❌ Ошибка входа:', data.error);
-        
-        if (data.error && (data.error.includes('капч') || data.error.includes('безопасност') || data.error.includes('Turnstile'))) {
-          setCaptchaError(`${data.error} Нажмите "Обновить проверку" и попробуйте снова.`);
-          setCaptchaToken('');
-          refreshCaptcha(); // Автоматически обновляем капчу при ошибке
         } else {
-          setError(data.error || 'Ошибка входа');
+          // Пробуем кастомный эндпоинт
+          console.log('⚠️ Login: /api/token/ не сработал, пробуем /api/login/');
+          const customResponse = await fetch(`${API_URL}/api/login/`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+              email: formData.email.toLowerCase(),
+              password: formData.password,
+              remember_me: formData.rememberMe,
+              captcha_token: captchaToSend
+            })
+          });
+          
+          if (!customResponse.ok) {
+            throw new Error(`HTTP ${customResponse.status}`);
+          }
+          
+          data = await customResponse.json();
+          console.log('✅ Login: Успешный ответ от /api/login/', data);
+        }
+      } catch (error) {
+        console.error('❌ Login: Ошибка запроса:', error);
+        throw error;
+      }
+      
+      // 🔥 Получаем токены в зависимости от структуры ответа
+      const accessToken = data.access || data.token?.access || data.tokens?.access;
+      const refreshToken = data.refresh || data.token?.refresh || data.tokens?.refresh;
+      
+      if (!accessToken) {
+        throw new Error('Сервер не вернул токен доступа');
+      }
+      
+      console.log('✅ Login: Получены токены', { 
+        access: !!accessToken, 
+        refresh: !!refreshToken 
+      });
+      
+      // 🔥 Получаем данные пользователя
+      let userData = data.user || data;
+      
+      if (!userData.username && !userData.id) {
+        // Если сервер не вернул данные пользователя, запрашиваем их
+        try {
+          console.log('🔄 Login: Запрашиваем данные пользователя через /api/users/me/');
+          const userResponse = await apiFetch('/api/users/me/', {
+            method: 'GET'
+          });
+          
+          if (userResponse.ok) {
+            userData = await userResponse.json();
+          } else {
+            // Создаем минимальные данные
+            userData = {
+              username: formData.email.split('@')[0],
+              email: formData.email.toLowerCase(),
+              id: Date.now() // временный ID
+            };
+          }
+        } catch (error) {
+          console.warn('⚠️ Login: Не удалось получить данные пользователя', error);
+          userData = {
+            username: formData.email.split('@')[0],
+            email: formData.email.toLowerCase(),
+            id: Date.now()
+          };
         }
       }
+      
+      // 🔥 Вызываем колбэк onLogin с правильными данными
+      console.log('✅ Login: Вызываем onLogin с данными пользователя');
+      if (onLogin) {
+        onLogin(userData, {
+          access: accessToken,
+          refresh: refreshToken
+        });
+      }
+      
+      // 🔥 Показываем анимацию успеха
+      const successAnimation = document.createElement('div');
+      successAnimation.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.9);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+          animation: fadeIn 0.5s ease-in-out;
+        ">
+          <div style="
+            font-size: 5rem;
+            color: #c084fc;
+            margin-bottom: 30px;
+            animation: bounce 1s infinite;
+          ">
+            👋
+          </div>
+          <div style="
+            font-size: 2rem;
+            color: white;
+            font-family: 'Press Start 2P', sans-serif;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #c084fc, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          ">
+            Добро пожаловать!
+          </div>
+          <div style="
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Press Start 2P', sans-serif;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.5;
+          ">
+            Вход выполнен успешно.<br/>
+            Перенаправляем на главную страницу...
+          </div>
+        </div>
+      `;
+      
+      const animationStyle = document.createElement('style');
+      animationStyle.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+      `;
+      
+      document.head.appendChild(animationStyle);
+      document.body.appendChild(successAnimation.firstChild);
+      
+      // 🔥 Перенаправление через 2 секунды
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+      
     } catch (err) {
-      console.error('❌ Ошибка подключения к серверу:', err);
-      setError(`Ошибка подключения: ${err.message}\n\nПроверьте:\n1. Запущен ли сервер Django\n2. Правильный ли API_URL (${API_URL})`);
+      console.error('❌ Login: Ошибка при входе:', err);
+      
+      // 🔥 Улучшенная обработка ошибок
+      if (err.message.includes('401')) {
+        setError('Неверный email или пароль');
+      } else if (err.message.includes('404')) {
+        setError('Сервер авторизации недоступен. Пожалуйста, попробуйте позже.');
+      } else if (err.message.includes('токен')) {
+        setError('Ошибка авторизации. Пожалуйста, обновите страницу и попробуйте снова.');
+      } else {
+        setError('Не удалось войти. Проверьте данные и попробуйте снова.');
+      }
+      
+      // 🔥 Обновляем капчу при ошибке
+      if (!DEBUG_MODE) {
+        refreshCaptcha();
+      }
     } finally {
       setLoading(false);
     }
@@ -582,7 +562,7 @@ const Login = ({ onLogin }) => {
             </label>
           </div>
 
-          {/* Cloudflare Turnstile - ПРЯМАЯ ИНТЕГРАЦИЯ */}
+          {/* Cloudflare Turnstile */}
           <div className="captcha-container">
             <div style={{ 
               fontSize: '0.7rem', 
@@ -595,7 +575,6 @@ const Login = ({ onLogin }) => {
               ПРОВЕРКА БЕЗОПАСНОСТИ CLOUDFLARE
             </div>
             
-            {/* Контейнер для Turnstile */}
             <div 
               ref={captchaContainerRef}
               style={{
@@ -626,7 +605,6 @@ const Login = ({ onLogin }) => {
               ) : null}
             </div>
             
-            {/* Если Turnstile не загрузился, показываем альтернативу */}
             {!captchaScriptLoaded && !captchaLoading && (
               <div style={{
                 textAlign: 'center',
@@ -695,6 +673,27 @@ const Login = ({ onLogin }) => {
                 </span>
               </div>
             )}
+            
+            <div style={{ textAlign: 'center', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={refreshCaptcha}
+                disabled={captchaLoading}
+                style={{
+                  padding: '5px 10px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '4px',
+                  color: 'white',
+                  cursor: captchaLoading ? 'not-allowed' : 'pointer',
+                  fontFamily: "'Press Start 2P', sans-serif",
+                  fontSize: '0.6rem',
+                  opacity: captchaLoading ? 0.6 : 1
+                }}
+              >
+                {captchaLoading ? 'ОБНОВЛЕНИЕ...' : '🔄 ОБНОВИТЬ ПРОВЕРКУ'}
+              </button>
+            </div>
             
             <div style={{
               fontSize: '0.6rem',
@@ -766,11 +765,10 @@ const Login = ({ onLogin }) => {
           gap: '0px',
           marginTop: '20px'
         }}>
-          {/* "НЕТ АККАУНТА?" - в отдельной строке выше */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center',
-            marginBottom: '-10px' // Поднимаем ближе к кнопке
+            marginBottom: '-10px'
           }}>
             <span style={{ 
               fontSize: '0.8rem',
@@ -778,13 +776,12 @@ const Login = ({ onLogin }) => {
               color: 'rgba(255, 255, 255, 0.6)',
               letterSpacing: '0.5px',
               position: 'relative',
-              top: '-15px' // Поднимаем еще выше
+              top: '-15px'
             }}>
               НЕТ АККАУНТА?
             </span>
           </div>
           
-          {/* "ЗАРЕГИСТРИРОВАТЬСЯ" - в отдельной строке ниже */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center',
@@ -816,7 +813,6 @@ const Login = ({ onLogin }) => {
             </button>
           </div>
 
-          {/* Кнопка ЗАБЫЛИ ПАРОЛЬ? теперь под ЗАРЕГИСТРИРОВАТЬСЯ */}
           <button 
             type="button"
             onClick={goToForgotPassword}
@@ -846,7 +842,6 @@ const Login = ({ onLogin }) => {
         </div>
       </div>
 
-      {/* Глобальные стили для анимаций */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }

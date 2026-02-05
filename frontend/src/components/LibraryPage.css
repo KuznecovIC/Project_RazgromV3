@@ -638,3 +638,67 @@
       padding: 6px 10px;
     }
   }
+
+/* Стили для кликабельного автора в LibraryPage */
+.history-track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.history-track-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.history-item:hover .history-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Стили для кликабельного автора в CompactTrackCard (уже в App.css) */
+.compact-track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.compact-track-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.compact-track-card:hover .compact-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Стили для счетчика загруженных треков */
+.uploaded-tracks-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background: rgba(132, 86, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(132, 86, 255, 0.15);
+  display: inline-block;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 768px) {
+  .history-track-artist.clickable-artist {
+    font-size: 0.7rem;
+  }
+  
+  .compact-track-artist.clickable-artist {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-track-artist.clickable-artist {
+    font-size: 0.65rem;
+  }
+  
+  .compact-track-artist.clickable-artist {
+    font-size: 0.55rem;
+  }
+}

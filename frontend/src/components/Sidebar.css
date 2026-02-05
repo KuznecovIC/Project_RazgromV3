@@ -387,7 +387,7 @@
 /* === ВАЖНО: ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ НАЗВАНИЙ ТРЕКОВ === */
 .sidebar-track-title {
   margin: 0;
-  color: #ffffff !important; /* Важно: белый цвет по умолчанию */
+  color: #ffffff !important;
   font-size: 0.8rem !important;
   font-weight: 700 !important;
   line-height: 1.4 !important;
@@ -414,13 +414,42 @@
   background: none !important;
 }
 
-/* Убираем ховер эффекты с родительских элементов, которые могут перекрывать */
+/* Убираем ховер эффекты с родительских элементов */
 .sidebar-track-card:hover .sidebar-track-title:not(:hover) {
-  color: #ffffff !important; /* Остальные треки остаются белыми */
+  color: #ffffff !important;
 }
 
 .sidebar-track-wrapper:hover .sidebar-track-title:not(:hover) {
   color: #ffffff !important;
+}
+
+/* === КЛИКАБЕЛЬНЫЙ АВТОР (НОВОЕ) === */
+.sidebar-track-artist {
+  margin: 0 0 8px 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+  z-index: 5;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+/* Стиль для кликабельного автора */
+.sidebar-track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.sidebar-track-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.sidebar-track-card:hover .sidebar-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .sidebar-track-like-btn {
@@ -451,18 +480,6 @@
 .sidebar-track-like-btn svg {
   width: 14px;
   height: 14px;
-}
-
-.sidebar-track-artist {
-  margin: 0 0 8px 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.7rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 220px;
-  z-index: 5;
-  position: relative;
 }
 
 .sidebar-track-meta {
@@ -576,6 +593,91 @@
   width: 100%;
 }
 
+/* Стили для текущего играющего трека */
+.sidebar-track-wrapper.current-playing {
+  background: linear-gradient(
+    135deg,
+    rgba(132, 86, 255, 0.15),
+    rgba(132, 86, 255, 0.08)
+  );
+  border: 1px solid rgba(132, 86, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 4px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-track-wrapper.current-playing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #8456ff, #ff9ffc);
+  animation: pulseGlow 2s infinite;
+}
+
+.sidebar-track-wrapper.current-playing .sidebar-track-title {
+  color: #fff !important;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.5);
+}
+
+.sidebar-track-wrapper.current-playing .sidebar-track-artist {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.recently-played-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recently-played-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Общий ховер на враппер */
+.sidebar-track-wrapper {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 4px 0;
+  position: relative;
+}
+
+.sidebar-track-wrapper:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+}
+
+/* Убираем изменение цвета названия при ховере на враппер */
+.sidebar-track-wrapper:hover .sidebar-track-title {
+  color: #ffffff !important;
+}
+
+/* Исключение: при ховере непосредственно на название */
+.sidebar-track-wrapper .sidebar-track-title:hover {
+  color: #8456ff !important;
+}
+
+.sidebar-track-card:hover .sidebar-track-title:not(:hover) {
+  color: #ffffff !important;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .sidebar {
@@ -645,150 +747,4 @@
   text-align: left !important;
   width: auto !important;
   display: block !important;
-}
-
-/* Стили для текущего играющего трека */
-.sidebar-track-wrapper.current-playing {
-  background: linear-gradient(
-    135deg,
-    rgba(132, 86, 255, 0.15),
-    rgba(132, 86, 255, 0.08)
-  );
-  border: 1px solid rgba(132, 86, 255, 0.2);
-  border-radius: 8px;
-  padding: 8px;
-  margin: 4px 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.sidebar-track-wrapper.current-playing::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #8456ff, #ff9ffc);
-  animation: pulseGlow 2s infinite;
-}
-
-.sidebar-track-wrapper.current-playing .sidebar-track-title {
-  color: #fff !important;
-  text-shadow: 0 0 10px rgba(132, 86, 255, 0.5);
-}
-
-.sidebar-track-wrapper.current-playing .sidebar-track-artist {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.recently-played-section {
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.recently-played-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* === ВАЖНО: ИСПРАВЛЯЕМ HOVER ЭФФЕКТЫ === */
-
-/* Общий ховер на враппер - но не влияет на название */
-.sidebar-track-wrapper {
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border-radius: 8px;
-  padding: 8px;
-  margin: 4px 0;
-  position: relative;
-}
-
-.sidebar-track-wrapper:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(2px);
-}
-
-/* Убираем изменение цвета названия при ховере на враппер */
-.sidebar-track-wrapper:hover .sidebar-track-title {
-  color: #ffffff !important; /* Остается белым */
-}
-
-/* Исключение: при ховере непосредственно на название */
-.sidebar-track-wrapper .sidebar-track-title:hover {
-  color: #8456ff !important;
-}
-
-/* Карточка трека ховер - тоже не влияет на название */
-.sidebar-track-card:hover .sidebar-track-title:not(:hover) {
-  color: #ffffff !important;
-}
-
-/* Добавляем специальный класс для обработки ховера только на названии */
-.track-title-link {
-  display: block !important;
-  width: 100% !important;
-  text-decoration: none !important;
-  color: inherit !important;
-  cursor: pointer !important;
-  position: relative !important;
-  z-index: 100 !important;
-}
-
-/* Убираем все ховер эффекты с родителей при ховере на названии */
-.sidebar-track-title:hover ~ *,
-.sidebar-track-title:hover + .sidebar-track-like-btn {
-  opacity: 1 !important;
-}
-
-/* === ВАЖНО: Исправление конфликтов === */
-
-/* Убедимся, что стили из inline не переопределяются */
-.sidebar-track-card .sidebar-track-header .sidebar-track-title {
-  all: initial !important; /* Сброс всех стилей */
-  font-family: 'Press Start 2P', sans-serif !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  line-height: 1.4 !important;
-  color: #ffffff !important;
-  cursor: pointer !important;
-  transition: color 0.2s ease !important;
-  display: block !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  max-width: 200px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: none !important;
-  border: none !important;
-  position: relative !important;
-  z-index: 1000 !important;
-}
-
-/* Ховер эффект ТОЛЬКО на элементе title */
-.sidebar-track-card .sidebar-track-header .sidebar-track-title:hover {
-  color: #8456ff !important;
-  background: none !important;
-  text-decoration: none !important;
-}
-
-/* Убираем все другие ховеры */
-.sidebar-track-card:hover .sidebar-track-header .sidebar-track-title:not(:hover) {
-  color: #ffffff !important;
-}
-
-.sidebar-track-wrapper:hover .sidebar-track-card .sidebar-track-header .sidebar-track-title:not(:hover) {
-  color: #ffffff !important;
 }

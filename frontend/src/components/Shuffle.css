@@ -54,3 +54,9 @@
   color: inherit !important;
   font-family: inherit !important;
 }
+
+.shuffle-parent,
+.shuffle-parent * {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+}

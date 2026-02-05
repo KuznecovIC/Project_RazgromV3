@@ -1,8 +1,9 @@
-// LibraryPage.jsx - ИСПРАВЛЕННЫЙ (с единой архитектурой)
+// LibraryPage.jsx - ИСПРАВЛЕННЫЙ (кликабельные авторы)
 import React, { useState, useMemo, useEffect } from 'react';
-import Shuffle from './Shuffle';
-import CompactTrackCard from './CompactTrackCard';
-import GooeyNav from './GooeyNav';
+import { useNavigate } from 'react-router-dom';
+import Shuffle from '../components/Shuffle';
+import CompactTrackCard from '../components/CompactTrackCard';
+import GooeyNav from '../components/GooeyNav';
 import './LibraryPage.css';
 
 // Иконки
@@ -200,10 +201,34 @@ const formatTimeAgo = (timestamp) => {
   }
 };
 
-// История трека с обновляемым временем
-const HistoryTrackItem = ({ track, index, onTrackTitleClick }) => {
+// История трека с обновляемым временем и кликабельным автором
+const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) => {
   const [timeAgo, setTimeAgo] = useState(() => formatTimeAgo(track.playedAt));
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isArtistHovered, setIsArtistHovered] = useState(false);
+  const navigate = useNavigate();
+
+  // ✅ ФУНКЦИЯ ПЕРЕХОДА В ПРОФИЛЬ (1:1 из GlassMusicPlayer)
+  const handleArtistClick = (e) => {
+    e.stopPropagation();
+    
+    if (!track?.uploaded_by?.id) {
+      console.error("❌ LibraryPage: нет uploaded_by.id", track);
+      return;
+    }
+    
+    navigate(`/profile/${track.uploaded_by.id}`);
+  };
+
+  // ✅ Если onArtistClick передан, используем его (для обратной совместимости)
+  const handleActualArtistClick = (e) => {
+    e.stopPropagation();
+    if (onArtistClick && track?.uploaded_by?.id) {
+      onArtistClick(e, track);
+    } else {
+      handleArtistClick(e);
+    }
+  };
 
   // Обновляем время при монтировании и при изменении track
   useEffect(() => {
@@ -252,15 +277,21 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick }) => {
           >
             {track.title}
           </h5>
+          {/* ✅ ИСПРАВЛЕННЫЙ АВТОР: КЛИКАБЕЛЬНЫЙ */}
           <p 
-            className="history-track-artist"
+            className="history-track-artist clickable-artist"
+            onClick={handleActualArtistClick}
+            onMouseEnter={() => setIsArtistHovered(true)}
+            onMouseLeave={() => setIsArtistHovered(false)}
             style={{
               fontSize: '0.8rem',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontFamily: "'Press Start 2P', sans-serif"
+              color: isArtistHovered ? '#8456ff' : 'rgba(255, 255, 255, 0.7)',
+              fontFamily: "'Press Start 2P', sans-serif",
+              cursor: 'pointer',
+              transition: 'color 0.2s ease'
             }}
           >
-            {track.artist}
+            {track.uploaded_by?.username || track.artist}
           </p>
         </div>
         <div className="history-time">{timeAgo}</div>
@@ -322,6 +353,7 @@ const LibraryPage = ({
   
   // 🔗 Навигация
   onTrackTitleClick,
+  onArtistClick, // ← ДОБАВЛЕНО: обработчик клика по автору
   
   // 📤 Загруженные треки
   uploadedTracks = [],
@@ -345,7 +377,11 @@ const LibraryPage = ({
   const allTracks = useMemo(() => {
     return Object.values(tracksById || {}).filter(track => 
       track && track.id && track.title
-    ).sort((a, b) => b.id - a.id); // Сортируем по ID (новые сверху)
+    ).sort((a, b) => b.id - a.id).map(track => ({
+      ...track,
+      // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
+      uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
+    })); // Сортируем по ID (новые сверху)
   }, [tracksById]);
 
   // ✅ ЛАЙКНУТЫЕ ТРЕКИ (из tracksById + likedTrackIds)
@@ -354,6 +390,11 @@ const LibraryPage = ({
     return likedTrackIds
       .map(id => tracksById[id])
       .filter(Boolean)
+      .map(track => ({
+        ...track,
+        // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
+        uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
+      }))
       .sort((a, b) => b.id - a.id);
   }, [likedTrackIds, tracksById]);
 
@@ -366,7 +407,9 @@ const LibraryPage = ({
       .map(track => ({
         ...track,
         playedAt: new Date().toISOString(),
-        playedAtMs: Date.now() - Math.floor(Math.random() * 1000000) // Для демо
+        playedAtMs: Date.now() - Math.floor(Math.random() * 1000000), // Для демо
+        // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
+        uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
       }));
   }, [recentTrackIds, tracksById]);
 
@@ -379,6 +422,10 @@ const LibraryPage = ({
       cover: track.cover_url || track.cover || 'http://localhost:8000/static/default_cover.jpg',
       audio_url: track.audio_url || track.audio_file,
       duration: track.duration || 0,
+      uploaded_by: track.uploaded_by || { 
+        id: track.uploaded_by_id || 0, 
+        username: track.uploaded_by_username || track.artist 
+      },
       isUserTrack: true
     }));
   }, [uploadedTracks]);
@@ -538,6 +585,15 @@ const LibraryPage = ({
     }
   };
 
+  console.log('🎯 LibraryPage статус:', {
+    activeSection,
+    allTracksCount: allTracks.length,
+    likedTracksCount: likedTracksData.length,
+    recentTracksCount: recentlyPlayedTracks.length,
+    uploadedTracksCount: uploadedTracksData.length,
+    hasArtistClickHandler: !!onArtistClick
+  });
+
   // Рендеринг раздела Overview (главная страница)
   const renderOverview = () => {
     const filteredRecentTracks = searchTracks(recentTracksWithoutTime, searchQuery);
@@ -570,8 +626,9 @@ const LibraryPage = ({
                     isLiked={likedTrackIds.includes(track.id)}
                     onPlayPause={handlePlayWithHistory}
                     onToggleLike={onToggleLike}
-                    isNew={index === 0}
                     onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
+                    isNew={index === 0}
                   />
                 ))}
               </div>
@@ -601,6 +658,7 @@ const LibraryPage = ({
                     onPlayPause={handlePlayWithHistory}
                     onToggleLike={onToggleLike}
                     onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                   />
                 ))}
               </div>
@@ -629,8 +687,9 @@ const LibraryPage = ({
                     isLiked={likedTrackIds.includes(track.id)}
                     onPlayPause={handlePlayWithHistory}
                     onToggleLike={onToggleLike}
-                    isNew={true}
                     onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
+                    isNew={true}
                   />
                 ))}
               </div>
@@ -729,6 +788,7 @@ const LibraryPage = ({
                         onPlayPause={handlePlayWithHistory}
                         onToggleLike={onToggleLike}
                         onTrackTitleClick={handleTrackTitleClick}
+                        onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                       />
                     ))}
                   </div>
@@ -811,6 +871,7 @@ const LibraryPage = ({
                       track={track}
                       index={index}
                       onTrackTitleClick={handleTrackTitleClick}
+                      onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                     />
                   ))}
                 </div>

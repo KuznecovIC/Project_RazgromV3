@@ -855,3 +855,71 @@
     padding: 4px 7px;
   }
 }
+
+/* Стили для кликабельного автора в FeedPage */
+.track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.track-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.feed-track-card:hover .track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.feed-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  margin-top: 20px;
+}
+
+.empty-state-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.empty-state-icon svg {
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.3);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.empty-state-message {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  font-family: "'Monocraft', monospace";
+}
+
+.empty-state-submessage {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  width: 100%;
+  font-family: "'Monocraft', monospace";
+  max-width: 400px;
+  line-height: 1.5;
+}

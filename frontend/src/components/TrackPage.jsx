@@ -7,9 +7,9 @@ import FloatingLinesDropdown from './FloatingLinesDropdown';
 import logoMark from '../logo1.ico';
 import './TrackPage.css';
 import GlassMusicPlayer from './GlassMusicPlayer';
+import { apiFetch } from '../api/apiFetch';
 
-// Иконки (оставляем без изменений)
-
+// Иконки
 const IconPlay = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M8 5v14l11-7z" fill="currentColor" />
@@ -168,20 +168,12 @@ const TrackPage = ({
   likedTracks = [],
   checkTrackLiked,
   getAuthToken,
-  onSeek,  // ✅ ДОБАВИЛИ onSeek из пропсов
+  onSeek,
+  onPlayTrack,
 }) => {
   const { trackId } = useParams();
   const navigate = useNavigate();
   const currentTrackId = parseInt(trackId);
-  
-  console.log('🎧 TrackPage render', { 
-    currentTime, 
-    duration, 
-    trackId: currentTrackId,
-    currentTrackIdInApp: currentTrack,
-    isCurrentTrack: currentTrack === currentTrackId,
-    isPlaying 
-  });
   
   const [track, setTrack] = useState(null);
   const [comments, setComments] = useState([]);
@@ -199,44 +191,181 @@ const TrackPage = ({
   const [loadingLikes, setLoadingLikes] = useState(true);
   const [repeatActive, setRepeatActive] = useState(false);
   
-  // 🔥 ДОБАВЛЕНО: Ref для отслеживания перемотки
+  // 🔴 СОСТОЯНИЯ ДЛЯ FOLLOW СИСТЕМЫ
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  
+  // ✅ ДОБАВЛЕНО: состояние для реальных пользователей
+  const [usersWhoLiked, setUsersWhoLiked] = useState([]);
+  const [usersWhoReposted, setUsersWhoReposted] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  
   const isSeekingRef = useRef(false);
   const userMenuRef = useRef(null);
   
-  // ✅ 1️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильное получение токена
   const getAuthTokenForTrackPage = useCallback(() => {
-    console.log('🔑 TrackPage: Получение токена авторизации...');
-    
-    // Пробуем все возможные источники
-    const token = 
-      (getAuthToken && getAuthToken()) ||  // Из пропсов
-      sessionToken ||                       // Из сессии
-      localStorage.getItem('accessToken') || 
-      localStorage.getItem('access') ||
-      localStorage.getItem('token') ||
-      localStorage.getItem('sessionToken');
-    
-    console.log('🔑 TrackPage: Полученный токен:', token ? 'есть' : 'ОТСУТСТВУЕТ');
-    
-    if (!token) {
-      console.error('❌ TrackPage: Токен не найден!');
-    }
-    
-    return token;
+    return (getAuthToken && getAuthToken()) ||
+           sessionToken ||
+           localStorage.getItem('access') ||
+           localStorage.getItem('accessToken') ||
+           localStorage.getItem('token');
   }, [getAuthToken, sessionToken]);
   
   const isCurrentTrackPlaying = currentTrack === currentTrackId && isPlaying;
 
-  // ✅ ПРАВИЛЬНАЯ ФУНКЦИЯ: только пауза/продолжение
-  const togglePlayPause = useCallback(() => {
-    console.log(`🎵 TrackPage: togglePlayPause для трека ${currentTrackId}`);
+  // 🔴 ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СТАТУСА FOLLOW
+  const checkFollowStatus = useCallback(async (authorId) => {
+    const authToken = getAuthTokenForTrackPage();
+    if (!authToken) return false;
     
-    if (onPlayPause) {
-      onPlayPause();
+    try {
+      const response = await apiFetch(`/api/users/${authorId}/check-follow/`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.is_following || false;
+      }
+    } catch (error) {
+      console.error('❌ Ошибка проверки статуса подписки:', error);
     }
-  }, [currentTrackId, onPlayPause]);
+    return false;
+  }, [getAuthTokenForTrackPage]);
 
-  // ✅ Функция для обработки повтора
+  // 🔴 ФУНКЦИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ FOLLOW
+  const handleFollowToggle = async () => {
+    const authToken = getAuthTokenForTrackPage();
+    
+    if (!authToken) {
+      alert('Войдите в систему, чтобы подписываться на пользователей');
+      return;
+    }
+    
+    if (followLoading) return;
+    
+    const authorId = track?.uploaded_by?.id || track?.artistId;
+    if (!authorId) return;
+    
+    setFollowLoading(true);
+    
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const response = await apiFetch(`/api/users/${authorId}/follow/`, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        const newFollowingState = !isFollowing;
+        setIsFollowing(newFollowingState);
+        
+        // 🔴 ОБНОВЛЯЕМ КОЛИЧЕСТВО ПОДПИСЧИКОВ В РЕАЛЬНОМ ВРЕМЕНИ
+        if (track?.uploaded_by) {
+          const currentFollowers = parseInt(track.uploaded_by.followers_count || track.uploaded_by.followers || 0, 10) || 0;
+          const newCount = isFollowing 
+            ? Math.max(0, currentFollowers - 1)
+            : currentFollowers + 1;
+          
+          setTrack(prev => ({
+            ...prev,
+            uploaded_by: {
+              ...prev.uploaded_by,
+              followers: newCount,
+              followers_count: newCount
+            }
+          }));
+        }
+        
+        // 🔴 ДИСПАТЧИМ СОБЫТИЕ ДЛЯ ОБНОВЛЕНИЯ В ДРУГИХ КОМПОНЕНТАХ
+        const currentUserId = user?.id || null;
+        window.dispatchEvent(new CustomEvent('followStatusChanged', {
+          detail: {
+            targetUserId: authorId,
+            currentUserId, // ✅ КТО подписался
+            isFollowing: newFollowingState,
+            timestamp: Date.now()
+          }
+        }));
+        
+        console.log(`✅ ${newFollowingState ? 'Подписались на' : 'Отписались от'} пользователя ${authorId}`);
+        
+      } else {
+        alert(data.error || 'Ошибка при изменении подписки');
+        console.error('❌ Ошибка API подписки:', data.error);
+      }
+    } catch (error) {
+      console.error('❌ Сетевая ошибка подписки:', error);
+      alert('Сетевая ошибка при изменении подписки');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // ✅ Загрузка реальных пользователей
+  const loadUsersData = useCallback(async () => {
+    if (!currentTrackId) return;
+    
+    const authToken = getAuthTokenForTrackPage();
+    if (!authToken) {
+      setUsersWhoLiked([]);
+      setUsersWhoReposted([]);
+      return;
+    }
+    
+    setLoadingUsers(true);
+    
+    try {
+      // Загрузка пользователей, лайкнувших трек
+      try {
+        const likesResponse = await apiFetch(`/api/track/${currentTrackId}/likes/users/`);
+        if (likesResponse.ok) {
+          const likesData = await likesResponse.json();
+          setUsersWhoLiked(likesData.users || []);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка загрузки лайков пользователей:', error);
+        setUsersWhoLiked([]);
+      }
+      
+      // Загрузка пользователей, сделавших репост
+      try {
+        const repostsResponse = await apiFetch(`/api/track/${currentTrackId}/reposts/users/`);
+        if (repostsResponse.ok) {
+          const repostsData = await repostsResponse.json();
+          setUsersWhoReposted(repostsData.users || []);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка загрузки репостов пользователей:', error);
+        setUsersWhoReposted([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки пользовательских данных:', error);
+      setUsersWhoLiked([]);
+      setUsersWhoReposted([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [currentTrackId, getAuthTokenForTrackPage]);
+
+  const togglePlayPause = useCallback(() => {
+    if (!track) return;
+    
+    if (currentTrack !== currentTrackId) {
+      if (onPlayTrack) {
+        onPlayTrack(track);
+      } else if (onPlayPause) {
+        onPlayPause(track);
+      }
+    } else {
+      if (onPlayPause) {
+        onPlayPause();
+      }
+    }
+  }, [currentTrackId, currentTrack, track, onPlayTrack, onPlayPause]);
+
   const handleToggleLoop = useCallback(() => {
     setRepeatActive(prev => !prev);
     if (onToggleLoop) {
@@ -249,11 +378,15 @@ const TrackPage = ({
       id: 1,
       title: "hard drive (slowed & muffled)",
       artist: "griffinilla",
+      artistId: 101,
+      artistUsername: "griffinilla",
       cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
       audio_url: "/tracks/track1.mp3",
       duration: "3:20",
       hashtags: ["#slowed", "#lofi", "#electronic"],
-      artistInfo: {
+      uploaded_by: {
+        id: 101,
+        username: "griffinilla",
         name: "griffinilla",
         followers: "125k",
         tracks: 42
@@ -268,11 +401,15 @@ const TrackPage = ({
       id: 2,
       title: "Deutschland",
       artist: "Rammstein",
+      artistId: 102,
+      artistUsername: "rammstein",
       cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
       audio_url: "/tracks/track2.mp3",
       duration: "5:22",
       hashtags: ["#industrial", "#metal", "#german"],
-      artistInfo: {
+      uploaded_by: {
+        id: 102,
+        username: "rammstein",
         name: "Rammstein",
         followers: "2.4M",
         tracks: 156
@@ -282,56 +419,41 @@ const TrackPage = ({
         plays: 12457896,
         likes: 34
       }
-    },
-    3: {
-      id: 3,
-      title: "Sonne",
-      artist: "Rammstein",
-      cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-      audio_url: "/tracks/track3.mp3",
-      duration: "4:05",
-      hashtags: ["#industrial", "#metal", "#rock"],
-      artistInfo: {
-        name: "Rammstein",
-        followers: "2.4M",
-        tracks: 156
-      },
-      stats: {
-        reposts: 74521,
-        plays: 9874123,
-        likes: 23
-      }
     }
   };
 
+  // ✅ Загрузка трека
   const loadTrack = useCallback(async () => {
     if (!currentTrackId) return;
     
-    console.log(`🎵 TrackPage: Загрузка данных трека ${currentTrackId}...`);
     setIsLoading(true);
     
     try {
       let trackDataItem = trackData[currentTrackId] || demoData[currentTrackId];
       
       if (trackDataItem) {
-        console.log(`✅ Используем данные из trackData`);
         const formattedTrack = {
           id: trackDataItem.id,
           title: trackDataItem.title,
           artist: trackDataItem.artist || 'Неизвестный артист',
+          artistId: trackDataItem.artistId || trackDataItem.artist_id || trackDataItem.uploaded_by?.id || 1,
+          artistUsername: trackDataItem.artistUsername || trackDataItem.artist_username || trackDataItem.uploaded_by?.username || 'unknown',
           cover: trackDataItem.cover || trackDataItem.cover_url || '',
           audio_url: trackDataItem.audio_url || '',
           duration: trackDataItem.duration || '3:00',
           hashtags: trackDataItem.hashtags || [],
-          artistInfo: trackDataItem.artistInfo || {
+          uploaded_by: trackDataItem.uploaded_by || {
+            id: trackDataItem.artistId || 1,
+            username: trackDataItem.artistUsername || trackDataItem.artist || 'unknown',
             name: trackDataItem.artist || 'Неизвестный артист',
-            followers: "1k",
+            followers: trackDataItem.uploaded_by?.followers_count || trackDataItem.uploaded_by?.followers || 0,
+            followers_count: trackDataItem.uploaded_by?.followers_count || trackDataItem.uploaded_by?.followers || 0,
             tracks: 1
           },
-          stats: trackDataItem.stats || {
-            reposts: trackDataItem.repost_count || 0,
-            plays: trackDataItem.play_count || 0,
-            likes: trackDataItem.like_count || 0
+          stats: {
+            reposts: trackDataItem.repost_count || trackDataItem.stats?.reposts || 0,
+            plays: trackDataItem.play_count || trackDataItem.stats?.plays || 0,
+            likes: trackDataItem.like_count || trackDataItem.stats?.likes || 0
           }
         };
         
@@ -340,25 +462,22 @@ const TrackPage = ({
         analyzeImageColor(formattedTrack.cover);
         
         try {
-          const waveformResponse = await fetch(`/api/tracks/${currentTrackId}/waveform/`);
+          const waveformResponse = await apiFetch(`/api/track/${currentTrackId}/waveform/`);
           if (waveformResponse.ok) {
             const waveformData = await waveformResponse.json();
             setWaveformData(waveformData.waveform || []);
           }
         } catch (error) {
-          console.warn('⚠️ Ошибка загрузки waveform:', error);
           setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
         }
         
         await loadComments(currentTrackId);
+        await loadUsersData();
         setIsLoading(false);
-        
-        console.log(`✅ TrackPage: Данные трека ${currentTrackId} загружены (не играет)`);
         return;
       }
       
-      console.log(`🔄 Пробуем загрузить с сервера`);
-      const response = await fetch(`/api/tracks/${currentTrackId}/`);
+      const response = await apiFetch(`/api/track/${currentTrackId}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -370,20 +489,23 @@ const TrackPage = ({
         throw new Error(data.error);
       }
       
-      console.log(`✅ Загружен трек с сервера: ${data.title} (ID: ${data.id})`);
-      
       const formattedTrack = {
         id: data.id,
         title: data.title,
         artist: data.artist || 'Неизвестный артист',
+        artistId: data.artist_id || data.uploaded_by?.id || 1,
+        artistUsername: data.artist_username || data.uploaded_by?.username || 'unknown',
         cover: data.cover || data.cover_url || '',
         audio_url: data.audio_url || '',
         duration: data.duration || '3:00',
         hashtags: data.hashtags || [],
-        artistInfo: {
-          name: data.artist || (data.uploaded_by?.username || 'Неизвестный артист'),
-          followers: "1k",
-          tracks: 1
+        uploaded_by: data.uploaded_by || {
+          id: data.artist_id || 1,
+          username: data.artist_username || data.uploaded_by?.username || 'unknown',
+          name: data.artist || 'Неизвестный артист',
+          followers: data.uploaded_by?.followers_count || data.uploaded_by?.followers || 0,
+          followers_count: data.uploaded_by?.followers_count || data.uploaded_by?.followers || 0,
+          tracks: data.uploaded_by?.tracks_count || 1
         },
         stats: {
           reposts: data.repost_count || 0,
@@ -400,43 +522,103 @@ const TrackPage = ({
       }
       
       try {
-        const waveformResponse = await fetch(`/api/tracks/${currentTrackId}/waveform/`);
+        const waveformResponse = await apiFetch(`/api/track/${currentTrackId}/waveform/`);
         if (waveformResponse.ok) {
           const waveformData = await waveformResponse.json();
           setWaveformData(waveformData.waveform || []);
         }
       } catch (error) {
-        console.warn('⚠️ Ошибка загрузки waveform, используем дефолтный:', error);
         setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
       }
       
       await loadComments(currentTrackId);
+      await loadUsersData();
       
     } catch (error) {
       console.error('❌ Ошибка загрузки трека:', error);
       
       const demoTrack = demoData[currentTrackId];
       if (demoTrack) {
-        console.log(`✅ Используем демо-данные`);
         setTrack(demoTrack);
         setTrackLikesCount(demoTrack.stats.likes || 0);
         analyzeImageColor(demoTrack.cover);
         setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
         setComments([]);
+        setUsersWhoLiked([]);
+        setUsersWhoReposted([]);
       } else {
         setTrack(null);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [currentTrackId, trackData]);
+  }, [currentTrackId, trackData, loadUsersData]);
 
-  // ✅ 2️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: syncLikesWithBackend с правильным Authorization
+  // 🔴 ЗАГРУЗКА СТАТУСА FOLLOW ПОСЛЕ ЗАГРУЗКИ ТРЕКА
+  useEffect(() => {
+    const loadFollowStatus = async () => {
+      if (!track) return;
+      
+      const authorId = track.uploaded_by?.id || track.artistId;
+      if (!authorId) return;
+      
+      const authToken = getAuthTokenForTrackPage();
+      if (!authToken) {
+        setIsFollowing(false);
+        return;
+      }
+      
+      try {
+        const followingStatus = await checkFollowStatus(authorId);
+        setIsFollowing(followingStatus);
+      } catch (error) {
+        console.error('❌ Ошибка загрузки статуса подписки:', error);
+        setIsFollowing(false);
+      }
+    };
+    
+    if (track) {
+      loadFollowStatus();
+    }
+  }, [track, getAuthTokenForTrackPage, checkFollowStatus]);
+
+  // 🔴 СЛУШАТЕЛЬ ДЛЯ ОБНОВЛЕНИЯ СТАТУСА FOLLOW ИЗ ДРУГИХ КОМПОНЕНТОВ
+  useEffect(() => {
+    const handleFollowStatusChanged = (event) => {
+      const { targetUserId, isFollowing: newFollowing } = event.detail;
+      const authorId = track?.uploaded_by?.id || track?.artistId;
+      
+      if (targetUserId === authorId) {
+        setIsFollowing(newFollowing);
+        
+        // Обновляем количество подписчиков
+        if (track?.uploaded_by) {
+          const currentFollowers = parseInt(track.uploaded_by.followers_count || track.uploaded_by.followers || 0, 10) || 0;
+          const newCount = newFollowing ? currentFollowers + 1 : Math.max(0, currentFollowers - 1);
+          
+          setTrack(prev => ({
+            ...prev,
+            uploaded_by: {
+              ...prev.uploaded_by,
+              followers: newCount,
+              followers_count: newCount
+            }
+          }));
+        }
+      }
+    };
+    
+    window.addEventListener('followStatusChanged', handleFollowStatusChanged);
+    
+    return () => {
+      window.removeEventListener('followStatusChanged', handleFollowStatusChanged);
+    };
+  }, [track]);
+
   const syncLikesWithBackend = useCallback(async () => {
     const authToken = getAuthTokenForTrackPage();
     
     if (!authToken) {
-      console.log(`⚠️ TrackPage: Нет токена для синхронизации лайков`);
       setIsTrackLiked(checkTrackLiked ? checkTrackLiked(currentTrackId) : false);
       setLoadingLikes(false);
       return false;
@@ -444,23 +626,13 @@ const TrackPage = ({
     
     try {
       setLoadingLikes(true);
-      console.log(`🔄 TrackPage: Синхронизация лайков трека ${currentTrackId}`);
       
-      // ✅ ИСПРАВЛЕНО: Добавлен Authorization header
-      const response = await fetch(`http://localhost:8000/api/tracks/${currentTrackId}/check-like/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await apiFetch(`/api/track/${currentTrackId}/check-like/`);
       
       if (response.ok) {
         const data = await response.json();
         const serverLiked = data.liked || false;
         const serverLikeCount = data.like_count || 0;
-        
-        console.log(`✅ TrackPage: Серверные данные: liked=${serverLiked}, count=${serverLikeCount}`);
         
         setIsTrackLiked(serverLiked);
         setTrackLikesCount(serverLikeCount);
@@ -473,18 +645,16 @@ const TrackPage = ({
           if (serverLiked && currentIndex === -1) {
             likedArray.push(currentTrackId);
             localStorage.setItem('likedTracks', JSON.stringify(likedArray));
-            console.log(`💾 TrackPage: Добавлен лайк в localStorage`);
           } else if (!serverLiked && currentIndex !== -1) {
             likedArray.splice(currentIndex, 1);
             localStorage.setItem('likedTracks', JSON.stringify(likedArray));
-            console.log(`🗑️ TrackPage: Удален лайк из localStorage`);
           }
         }
         
         return serverLiked;
       }
     } catch (error) {
-      console.error('❌ TrackPage: Ошибка синхронизации лайков:', error);
+      console.error('❌ Ошибка синхронизации лайков:', error);
     } finally {
       setLoadingLikes(false);
     }
@@ -492,33 +662,27 @@ const TrackPage = ({
     return false;
   }, [currentTrackId, getAuthTokenForTrackPage, checkTrackLiked]);
 
-  // ✅ Загружаем данные трека при монтировании
   useEffect(() => {
     loadTrack();
     setRepeatActive(loopEnabled || false);
   }, [loadTrack, loopEnabled]);
 
-  // Синхронизация состояния лайков с App.js
   useEffect(() => {
     if (currentTrackId) {
-      console.log(`🔄 TrackPage: Начало синхронизации лайков для трека ${currentTrackId}`);
       const authToken = getAuthTokenForTrackPage();
       if (authToken) {
         syncLikesWithBackend();
       } else {
-        console.log(`⚠️ TrackPage: Нет токена, лайки недоступны`);
         setIsTrackLiked(checkTrackLiked ? checkTrackLiked(currentTrackId) : false);
         setLoadingLikes(false);
       }
     }
   }, [currentTrackId, syncLikesWithBackend, checkTrackLiked, getAuthTokenForTrackPage]);
 
-  // Слушаем глобальные события лайков
   useEffect(() => {
     const handleGlobalTrackLiked = (event) => {
       const { trackId: eventTrackId, liked } = event.detail;
       if (eventTrackId === currentTrackId) {
-        console.log(`📢 TrackPage: Получено глобальное событие лайка: ${eventTrackId} -> ${liked}`);
         setIsTrackLiked(liked);
         
         if (event.detail.count !== undefined) {
@@ -545,11 +709,9 @@ const TrackPage = ({
     };
   }, [currentTrackId, syncLikesWithBackend, getAuthTokenForTrackPage]);
 
-  // ✅ 3️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Лайк трека с правильными заголовками
+  // ✅ Лайк трека
   const handleTrackLike = async () => {
     const authToken = getAuthTokenForTrackPage();
-    
-    console.log('🔑 TrackPage: Токен для лайка:', authToken ? 'есть' : 'ОТСУТСТВУЕТ');
     
     if (!authToken) {
       alert('Войдите в систему, чтобы ставить лайки');
@@ -560,42 +722,19 @@ const TrackPage = ({
     
     const newLikedState = !isTrackLiked;
     
-    console.log('❤️ TrackPage: Обработка лайка трека:', {
-      trackId: currentTrackId,
-      from: isTrackLiked,
-      to: newLikedState,
-      currentCount: trackLikesCount,
-      user: user?.username
-    });
-    
     setSyncInProgress(true);
     
     try {
-      // ✅ ИСПРАВЛЕНО: Правильный URL и заголовки (без CSRF)
-      const response = await fetch('http://localhost:8000/api/tracks/like/', {
+      const response = await apiFetch(`/api/track/${currentTrackId}/toggle-like/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
         body: JSON.stringify({
-          track_id: currentTrackId,
           liked: newLikedState
         })
       });
       
       const data = await response.json();
       
-      console.log('📡 TrackPage: Ответ сервера на лайк:', {
-        status: response.status,
-        ok: response.ok,
-        data
-      });
-      
       if (response.ok && data.success) {
-        console.log('✅ TrackPage: Лайк сохранен на сервере:', data);
-        
-        // ТОЛЬКО ПОСЛЕ УСПЕШНОГО ОТВЕТА меняем UI
         setIsTrackLiked(newLikedState);
         
         if (data.like_count !== undefined) {
@@ -604,7 +743,6 @@ const TrackPage = ({
           setTrackLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
         }
         
-        // Обновляем localStorage
         const likedTracksStorage = localStorage.getItem('likedTracks');
         let likedArray = [];
         
@@ -647,13 +785,34 @@ const TrackPage = ({
           try {
             await onToggleLike(currentTrackId);
           } catch (error) {
-            console.error('❌ TrackPage: Ошибка вызова onToggleLike:', error);
+            console.error('❌ Ошибка вызова onToggleLike:', error);
           }
         }
         
-      } else {
-        console.error('❌ TrackPage: Ошибка сервера:', data.error);
+        // ✅ Обновляем список пользователей после лайка
+        if (newLikedState && user) {
+          setUsersWhoLiked(prev => {
+            const userAlreadyExists = prev.some(u => u.id === user.id || u.username === user.username);
+            if (!userAlreadyExists) {
+              return [
+                {
+                  id: user.id || 'current-user',
+                  username: user.username,
+                  avatar: user.avatar || '',
+                  name: user.name || user.username
+                },
+                ...prev
+              ];
+            }
+            return prev;
+          });
+        } else if (!newLikedState && user) {
+          setUsersWhoLiked(prev => 
+            prev.filter(u => !(u.id === user.id || u.username === user.username))
+          );
+        }
         
+      } else {
         if (data.error && data.error.includes('аутентификации')) {
           alert('Сессия истекла. Пожалуйста, войдите заново.');
           onLogout?.();
@@ -662,7 +821,7 @@ const TrackPage = ({
         }
       }
     } catch (error) {
-      console.error('❌ TrackPage: Сетевая ошибка лайка трека:', error);
+      console.error('❌ Сетевая ошибка лайка трека:', error);
       alert('Сетевая ошибка при сохранении лайка');
     } finally {
       setSyncInProgress(false);
@@ -710,35 +869,13 @@ const TrackPage = ({
     };
   };
 
-  // ✅ 4️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: loadComments с правильным Authorization
+  // Загрузка комментариев
   const loadComments = async (trackId) => {
     try {
-      const authToken = getAuthTokenForTrackPage();
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-      
-      console.log(`💬 TrackPage: Загрузка комментариев для трека ${trackId}...`);
-      
-      // ✅ ИСПРАВЛЕНО: Абсолютный URL
-      const response = await fetch(`http://localhost:8000/api/tracks/${trackId}/comments/`, {
-        method: 'GET',
-        headers: headers
-      });
-      
-      console.log('📡 TrackPage: Ответ сервера на загрузку комментариев:', {
-        status: response.status,
-        ok: response.ok
-      });
+      const response = await apiFetch(`/api/track/${trackId}/comments/`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ TrackPage: Загружено комментариев: ${data.comments?.length || 0}`);
-        
         setComments(data.comments || []);
         
         const likedCommentsSet = new Set();
@@ -749,20 +886,17 @@ const TrackPage = ({
         });
         setLikedComments(likedCommentsSet);
       } else {
-        console.log(`⚠️ TrackPage: Комментарии не загружены, статус: ${response.status}`);
         setComments([]);
       }
     } catch (error) {
-      console.error('❌ TrackPage: Ошибка загрузки комментариев:', error);
+      console.error('❌ Ошибка загрузки комментариев:', error);
       setComments([]);
     }
   };
 
-  // ✅ 5️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавление комментария с правильными заголовками
+  // Добавление комментария
   const handleAddComment = async () => {
     const authToken = getAuthTokenForTrackPage();
-    
-    console.log('🔑 TrackPage: Токен для комментария:', authToken ? 'есть' : 'ОТСУТСТВУЕТ');
     
     if (!newComment.trim() || isAddingComment) return;
     
@@ -772,44 +906,30 @@ const TrackPage = ({
     }
     
     setIsAddingComment(true);
-    console.log(`📝 TrackPage: Добавление комментария: "${newComment.substring(0, 30)}..."`);
     
     try {
-      // ✅ ИСПРАВЛЕНО: Абсолютный URL и правильные заголовки (без CSRF)
-      const response = await fetch(`http://localhost:8000/api/tracks/${currentTrackId}/comments/add/`, {
+      const response = await apiFetch(`/api/track/${currentTrackId}/add-comment/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
         body: JSON.stringify({ text: newComment })
       });
       
       const data = await response.json();
       
-      console.log('📡 TrackPage: Ответ сервера на добавление комментария:', {
-        status: response.status,
-        ok: response.ok,
-        data
-      });
-      
       if (response.ok && data.comment) {
-        console.log('✅ TrackPage: Комментарий добавлен:', data.comment);
         setComments([data.comment, ...comments]);
         setNewComment('');
       } else {
-        console.error('❌ TrackPage: Ошибка добавления комментария:', data.error);
         alert(`Ошибка при добавлении комментария: ${data.error || 'Неизвестная ошибка'}`);
       }
     } catch (error) {
-      console.error('❌ TrackPage: Сетевая ошибка добавления комментария:', error);
+      console.error('❌ Сетевая ошибка добавления комментария:', error);
       alert('Сетевая ошибка при отправке комментария');
     } finally {
       setIsAddingComment(false);
     }
   };
 
-  // ✅ 6️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Удаление комментария с правильными заголовками
+  // Удаление комментария
   const handleDeleteComment = async (commentId) => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -822,22 +942,11 @@ const TrackPage = ({
     setIsDeletingComment(true);
     
     try {
-      // ✅ ИСПРАВЛЕНО: Абсолютный URL и правильные заголовки (без CSRF)
-      const response = await fetch(`http://localhost:8000/api/comments/${commentId}/delete/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        }
-      });
-      
-      console.log('📡 TrackPage: Ответ сервера на удаление комментария:', {
-        status: response.status,
-        ok: response.ok
+      const response = await apiFetch(`/api/comments/${commentId}/delete/`, {
+        method: 'POST'
       });
       
       if (response.ok) {
-        console.log(`✅ TrackPage: Комментарий ${commentId} удален`);
         setComments(prevComments => prevComments.filter(c => c.id !== commentId));
         
         setLikedComments(prev => {
@@ -856,18 +965,16 @@ const TrackPage = ({
         alert(`Ошибка при удалении комментария: ${errorData.message || errorData.error || 'Неизвестная ошибка'}`);
       }
     } catch (error) {
-      console.error('❌ TrackPage: Сетевая ошибка удаления комментария:', error);
+      console.error('❌ Сетевая ошибка удаления комментария:', error);
       alert('Сетевая ошибка при удалении комментария');
     } finally {
       setIsDeletingComment(false);
     }
   };
 
-  // ✅ 7️⃣ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Лайк комментария с правильными заголовками
+  // Лайк комментария
   const handleLikeComment = async (commentId) => {
     const authToken = getAuthTokenForTrackPage();
-    
-    console.log('🔑 TrackPage: Токен для лайка комментария:', authToken ? 'есть' : 'ОТСУТСТВУЕТ');
     
     try {
       if (!authToken) {
@@ -878,19 +985,8 @@ const TrackPage = ({
       const isCurrentlyLiked = likedComments.has(commentId);
       const newLiked = !isCurrentlyLiked;
       
-      console.log('❤️ TrackPage: Лайк комментария:', {
-        commentId,
-        from: isCurrentlyLiked,
-        to: newLiked
-      });
-      
-      // ✅ ИСПРАВЛЕНО: Абсолютный URL и правильные заголовки (без CSRF)
-      const response = await fetch(`http://localhost:8000/api/comments/${commentId}/like/`, {
+      const response = await apiFetch(`/api/comments/${commentId}/like/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
         body: JSON.stringify({
           liked: newLiked
         })
@@ -898,16 +994,7 @@ const TrackPage = ({
       
       const data = await response.json();
       
-      console.log('📡 TrackPage: Ответ сервера на лайк комментария:', {
-        status: response.status,
-        ok: response.ok,
-        data
-      });
-      
       if (response.ok && data.success) {
-        console.log('✅ TrackPage: Лайк комментария сохранен:', data);
-        
-        // ТОЛЬКО ПОСЛЕ УСПЕШНОГО ОТВЕТА меняем UI
         const commentIndex = comments.findIndex(c => c.id === commentId);
         if (commentIndex === -1) return;
         
@@ -940,11 +1027,10 @@ const TrackPage = ({
         });
         
       } else {
-        console.error('❌ TrackPage: Ошибка сервера:', data.error);
         alert(data.error || 'Ошибка при сохранении лайка');
       }
     } catch (error) {
-      console.error('❌ TrackPage: Сетевая ошибка лайка комментария:', error);
+      console.error('❌ Сетевая ошибка лайка комментария:', error);
       alert('Сетевая ошибка при сохранении лайка');
     }
   };
@@ -956,33 +1042,21 @@ const TrackPage = ({
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ПРАВИЛЬНЫЙ seek
   const handleBarClick = useCallback((index) => {
     if (!duration || !waveformData.length || !onSeek) return;
     
     const percent = index / waveformData.length;
     const newTime = percent * duration;
     
-    console.log('🎯 TrackPage: Клик по палочке - SEEK:', {
-      index,
-      newTime: formatTime(newTime),
-      currentTime: formatTime(currentTime)
-    });
-    
-    // 🔥 Устанавливаем флаг перемотки
     isSeekingRef.current = true;
     
-    // 🔥 Вызываем onSeek из пропсов (главный контроллер плеера)
     onSeek(newTime);
     
-    // 🔥 Снимаем флаг через небольшое время
     setTimeout(() => {
       isSeekingRef.current = false;
-      console.log('✅ TrackPage: Завершена перемотка');
     }, 100);
   }, [duration, waveformData.length, onSeek, currentTime]);
 
-  // ✅ Единый источник progress
   const progress = duration > 0 ? currentTime / duration : 0;
   
   const getPlayedBarsCount = useCallback(() => {
@@ -1015,6 +1089,7 @@ const TrackPage = ({
       id: 2,
       title: "Deutschland",
       artist: "Rammstein",
+      artistId: 102,
       cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
       duration: "5:22"
     },
@@ -1022,6 +1097,7 @@ const TrackPage = ({
       id: 3,
       title: "Sonne",
       artist: "Rammstein",
+      artistId: 102,
       cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
       duration: "4:05"
     }
@@ -1032,6 +1108,7 @@ const TrackPage = ({
       id: 1,
       title: "Greatest Hits",
       artist: "griffinilla",
+      artistId: 101,
       cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
       trackCount: 12
     },
@@ -1039,6 +1116,7 @@ const TrackPage = ({
       id: 2,
       title: "Mutter",
       artist: "Rammstein",
+      artistId: 102,
       cover: "https://upload.wikimedia.org/wikipedia/en/7/71/Mutter_%28Rammstein_album%29_cover.jpg",
       trackCount: 11
     }
@@ -1049,6 +1127,7 @@ const TrackPage = ({
       id: 1,
       title: "Industrial Metal Essentials",
       creator: "MetalHead",
+      creatorId: 103,
       cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
       trackCount: 25
     },
@@ -1056,47 +1135,9 @@ const TrackPage = ({
       id: 2,
       title: "Lofi Study Mix",
       creator: "StudyBeats",
+      creatorId: 104,
       cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
       trackCount: 18
-    }
-  ];
-
-  const usersWhoLikedStatic = [
-    {
-      id: 1,
-      username: "metal_fan_88",
-      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=120&q=80",
-      tracksLiked: 124
-    },
-    {
-      id: 2,
-      username: "synthwave_dreamer",
-      avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=120&q=80",
-      tracksLiked: 89
-    },
-    {
-      id: 3,
-      username: "electronic_artist",
-      avatar: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=120&q=80",
-      tracksLiked: 256
-    }
-  ];
-
-  const usersWhoReposted = [
-    {
-      id: 4,
-      username: "repost_king",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80"
-    },
-    {
-      id: 5,
-      username: "darkwave",
-      avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=120&q=80"
-    },
-    {
-      id: 6,
-      username: "retro_soul",
-      avatar: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=120&q=80"
     }
   ];
 
@@ -1203,19 +1244,6 @@ const TrackPage = ({
       </div>
     );
   }
-
-  const usersWhoLiked = (() => {
-    const base = [...usersWhoLikedStatic];
-    if (isTrackLiked && user) {
-      base.unshift({
-        id: 'current-user',
-        username: user.username,
-        avatar: user.avatar || '',
-        tracksLiked: 0
-      });
-    }
-    return base;
-  })();
 
   return (
     <div className="track-page" style={{ background: backgroundColor }}>
@@ -1329,7 +1357,15 @@ const TrackPage = ({
                 aria-label="User menu"
               >
                 <div className="user-avatar-circle">
-                  <IconUserCircle />
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.username}
+                      className="user-avatar-image"
+                    />
+                  ) : (
+                    <IconUserCircle />
+                  )}
                 </div>
               </button>
               
@@ -1349,7 +1385,15 @@ const TrackPage = ({
                   
                   <div className="user-dropdown-header">
                     <div className="user-dropdown-avatar">
-                      <IconUserCircle />
+                      {user?.avatar ? (
+                        <img 
+                          src={user.avatar} 
+                          alt={user.username}
+                          className="user-dropdown-avatar-image"
+                        />
+                      ) : (
+                        <IconUserCircle />
+                      )}
                     </div>
                     <div className="user-dropdown-info">
                       <div className="user-dropdown-username">
@@ -1514,23 +1558,30 @@ const TrackPage = ({
             </div>
             
             <div className="track-artist-main">
-              <Shuffle
-                text={track.artist}
-                shuffleDirection="left"
-                duration={0.6}
-                animationMode="evenodd"
-                shuffleTimes={1}
-                ease="power3.out"
-                stagger={0.03}
-                threshold={0.1}
-                triggerOnce={true}
-                triggerOnHover={true}
-                style={{ 
-                  fontSize: '1.5rem',
-                  fontFamily: "'Press Start 2P', sans-serif",
-                  color: '#c084fc'
-                }}
-              />
+              <span
+                className="track-author-link"
+                onClick={() => navigate(`/profile/${track.uploaded_by?.id || track.artistId}`)}
+                title={`Перейти в профиль ${track.artist}`}
+                style={{ cursor: 'pointer', color: '#c084fc' }}
+              >
+                <Shuffle
+                  text={track.artist}
+                  shuffleDirection="left"
+                  duration={0.6}
+                  animationMode="evenodd"
+                  shuffleTimes={1}
+                  ease="power3.out"
+                  stagger={0.03}
+                  threshold={0.1}
+                  triggerOnce={true}
+                  triggerOnHover={true}
+                  style={{ 
+                    fontSize: '1.5rem',
+                    fontFamily: "'Press Start 2P', sans-serif",
+                    color: '#c084fc'
+                  }}
+                />
+              </span>
             </div>
             
             <div className="track-hashtags">
@@ -1698,15 +1749,31 @@ const TrackPage = ({
                   <IconUser />
                 </div>
                 <div className="artist-info">
-                  <h4>{track.artistInfo.name}</h4>
+                  <h4
+                    className="track-author-link"
+                    onClick={() => navigate(`/profile/${track.uploaded_by?.id || track.artistId}`)}
+                    title={`Перейти в профиль ${track.uploaded_by?.name || track.artist}`}
+                    style={{ cursor: 'pointer', color: '#ffffff' }}
+                  >
+                    {track.uploaded_by?.name || track.artist}
+                  </h4>
                   <div className="artist-stats">
-                    <span>{track.artistInfo.followers} followers</span>
+                    <span>{track.uploaded_by?.followers_count || track.uploaded_by?.followers || 0} followers</span>
                     <span className="stat-separator">•</span>
-                    <span>{track.artistInfo.tracks} tracks</span>
+                    <span>{track.uploaded_by?.tracks || 1} tracks</span>
                   </div>
                 </div>
                 <div className="artist-actions">
-                  <button className="follow-button">Follow</button>
+                  {/* 🔴 ИСПРАВЛЕННАЯ КНОПКА FOLLOW */}
+                  <button 
+                    className={`follow-button ${isFollowing ? 'following' : ''} ${followLoading ? 'loading' : ''}`}
+                    onClick={handleFollowToggle}
+                    disabled={followLoading || !getAuthTokenForTrackPage()}
+                    title={!getAuthTokenForTrackPage() ? "Войдите в систему, чтобы подписаться" : ""}
+                  >
+                    {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                  
                   <button className="repost-button">
                     <IconShare />
                     <span>Repost</span>
@@ -1744,19 +1811,36 @@ const TrackPage = ({
                 ) : (
                   comments.map(comment => {
                     const isCommentLiked = likedComments.has(comment.id);
+                    const userId = comment.user?.id || comment.user_id;
+                    const username = comment.user?.username || comment.username || 'Anonymous';
+                    
                     return (
                       <div key={comment.id} className="comment-item">
                         <div className="comment-user">
                           <div className="comment-avatar">
                             {comment.user?.avatar ? (
-                              <img src={comment.user.avatar} alt={comment.user.username} />
+                              <img 
+                                src={comment.user.avatar} 
+                                alt={username}
+                                className="track-author-link"
+                                onClick={() => userId && navigate(`/profile/${userId}`)}
+                                style={{ cursor: 'pointer' }}
+                                title={`Перейти в профиль ${username}`}
+                              />
                             ) : (
                               <IconUser />
                             )}
                           </div>
                           <div className="comment-info">
                             <div className="comment-header">
-                              <span className="comment-username">{comment.user?.username || 'Anonymous'}</span>
+                              <span 
+                                className="comment-username track-author-link"
+                                onClick={() => userId && navigate(`/profile/${userId}`)}
+                                title={`Перейти в профиль ${username}`}
+                                style={{ cursor: 'pointer', color: '#ffffff' }}
+                              >
+                                {username}
+                              </span>
                               <span className="comment-time">{comment.timestamp}</span>
                             </div>
                             <p className="comment-text">{comment.text}</p>
@@ -1833,11 +1917,17 @@ const TrackPage = ({
                         {relatedTrack.title}
                       </div>
                       <div 
-                        className="related-track-artist"
+                        className="related-track-artist track-author-link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${relatedTrack.artistId}`);
+                        }}
+                        title={`Перейти в профиль ${relatedTrack.artist}`}
                         style={{
                           fontSize: '0.8rem',
                           fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8'
+                          color: '#94a3b8',
+                          cursor: 'pointer'
                         }}
                       >
                         {relatedTrack.artist}
@@ -1887,11 +1977,17 @@ const TrackPage = ({
                         {playlist.title}
                       </div>
                       <div 
-                        className="playlist-creator"
+                        className="playlist-creator track-author-link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${playlist.creatorId}`);
+                        }}
+                        title={`Перейти в профиль ${playlist.creator}`}
                         style={{
                           fontSize: '0.8rem',
                           fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8'
+                          color: '#94a3b8',
+                          cursor: 'pointer'
                         }}
                       >
                         by {playlist.creator}
@@ -1913,37 +2009,71 @@ const TrackPage = ({
             </div>
 
             <div className="users-section">
-              <h3>Users who liked this track</h3>
-              <div className="users-grid">
-                {usersWhoLiked.map(userItem => (
-                  <div key={userItem.id} className="user-card">
-                    <div className="user-avatar">
-                      {userItem.avatar ? (
-                        <img src={userItem.avatar} alt={userItem.username} />
-                      ) : (
-                        <IconUser />
-                      )}
+              <h3>Users who liked this track ({usersWhoLiked.length})</h3>
+              {loadingUsers ? (
+                <div className="loading-users">
+                  <p>Loading users...</p>
+                </div>
+              ) : usersWhoLiked.length === 0 ? (
+                <div className="no-users">
+                  <p>No users have liked this track yet</p>
+                </div>
+              ) : (
+                <div className="users-grid">
+                  {usersWhoLiked.map(userItem => (
+                    <div key={userItem.id || userItem.username} className="user-card">
+                      <div className="user-avatar">
+                        {userItem.avatar ? (
+                          <img 
+                            src={userItem.avatar} 
+                            alt={userItem.username}
+                            className="track-author-link"
+                            onClick={() => navigate(`/profile/${userItem.id}`)}
+                            style={{ cursor: 'pointer' }}
+                            title={`Перейти в профиль ${userItem.username}`}
+                          />
+                        ) : (
+                          <IconUser />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="users-section">
-              <h3>Users who reposted</h3>
-              <div className="users-grid">
-                {usersWhoReposted.map(userItem => (
-                  <div key={userItem.id} className="user-card">
-                    <div className="user-avatar">
-                      {userItem.avatar ? (
-                        <img src={userItem.avatar} alt={userItem.username} />
-                      ) : (
-                        <IconUser />
-                      )}
+              <h3>Users who reposted ({usersWhoReposted.length})</h3>
+              {loadingUsers ? (
+                <div className="loading-users">
+                  <p>Loading users...</p>
+                </div>
+              ) : usersWhoReposted.length === 0 ? (
+                <div className="no-users">
+                  <p>No users have reposted this track yet</p>
+                </div>
+              ) : (
+                <div className="users-grid">
+                  {usersWhoReposted.map(userItem => (
+                    <div key={userItem.id || userItem.username} className="user-card">
+                      <div className="user-avatar">
+                        {userItem.avatar ? (
+                          <img 
+                            src={userItem.avatar} 
+                            alt={userItem.username}
+                            className="track-author-link"
+                            onClick={() => navigate(`/profile/${userItem.id}`)}
+                            style={{ cursor: 'pointer' }}
+                            title={`Перейти в профиль ${userItem.username}`}
+                          />
+                        ) : (
+                          <IconUser />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="albums-section">
@@ -1975,11 +2105,17 @@ const TrackPage = ({
                         {album.title}
                       </div>
                       <div 
-                        className="album-artist"
+                        className="album-artist track-author-link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${album.artistId}`);
+                        }}
+                        title={`Перейти в профиль ${album.artist}`}
                         style={{
                           fontSize: '0.8rem',
                           fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8'
+                          color: '#94a3b8',
+                          cursor: 'pointer'
                         }}
                       >
                         {album.artist}
@@ -2009,7 +2145,7 @@ const TrackPage = ({
         onPlayPause={togglePlayPause}
         currentTime={currentTime}
         duration={duration}
-        onSeek={onSeek}  // ✅ ПЕРЕДАЕМ onSeek дальше
+        onSeek={onSeek}
         isLiked={isTrackLiked}
         onToggleLike={handleTrackLike}
         volume={volume}

@@ -1,4 +1,4 @@
-// Sidebar.jsx - ИСПРАВЛЕННЫЙ (архитектурные фиксы)
+// Sidebar.jsx - ИСПРАВЛЕННЫЙ (кликабельные авторы)
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PixelSnow from './PixelSnow';
@@ -98,7 +98,8 @@ const SidebarTrackCard = React.memo(({
   onLikeClick,
   isHovered,
   onTrackTitleClick,
-  currentTime = 0
+  currentTime = 0,
+  onArtistClick // ← ДОБАВЛЕНО: функция клика по автору
 }) => {
   const durationSeconds = track.duration || 0;
   const isCurrentTrack = track.isCurrent;
@@ -112,6 +113,14 @@ const SidebarTrackCard = React.memo(({
     e.stopPropagation();
     if (onTrackTitleClick) {
       onTrackTitleClick(track.id);
+    }
+  };
+
+  // Функция клика по автору (точно как в GlassMusicPlayer)
+  const handleArtistClick = (e) => {
+    e.stopPropagation();
+    if (onArtistClick) {
+      onArtistClick(e, track);
     }
   };
 
@@ -178,8 +187,13 @@ const SidebarTrackCard = React.memo(({
           </button>
         </div>
         
-        <div className="sidebar-track-artist">
-          {track.artist}
+        {/* ИСПРАВЛЕННЫЙ БЛОК АВТОРА: КЛИКАБЕЛЬНЫЙ */}
+        <div 
+          className="sidebar-track-artist clickable-artist"
+          onClick={handleArtistClick}
+          title={track.uploaded_by?.username ? `Перейти в профиль ${track.uploaded_by.username}` : ''}
+        >
+          {track.uploaded_by?.username || track.artist}
         </div>
         
         <div className="sidebar-track-meta">
@@ -217,7 +231,7 @@ const Sidebar = React.memo(({
   // 🎵 Воспроизведение
   currentTrack, 
   isPlaying, 
-  onTogglePlayPause, // ✅ ВАЖНО: получаем togglePlayPause вместо onPlayPause
+  onTogglePlayPause,
   
   // ❤️ Лайки
   onToggleLike,
@@ -233,7 +247,7 @@ const Sidebar = React.memo(({
   // 👤 Пользователь
   user
 }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ← ДОБАВЛЕНО
   const [hoveredTrackId, setHoveredTrackId] = useState(null);
   const [activeTool, setActiveTool] = useState(null);
 
@@ -251,11 +265,20 @@ const Sidebar = React.memo(({
           cover: track.cover || 'http://localhost:8000/static/default_cover.jpg',
           duration: track.duration || 0,
           play_count: track.play_count || 0,
-          isCurrent: track.id === currentTrack
+          isCurrent: track.id === currentTrack,
+          // ВАЖНО: копируем uploaded_by из исходного трека
+          uploaded_by: track.uploaded_by || null
         };
       })
       .filter(Boolean)
       .sort((a, b) => b.id - a.id);
+    
+    console.log('🎵 Sidebar tracks:', tracks.map(t => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      uploaded_by: t.uploaded_by
+    })));
     
     return tracks;
   }, [likedTrackIds, tracksById, currentTrack]);
@@ -288,7 +311,19 @@ const Sidebar = React.memo(({
     }
   ], [navigate]);
 
-  // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ПРАВИЛЬНАЯ ЛОГИКА CLICK
+  // ✅ ФУНКЦИЯ ПЕРЕХОДА В ПРОФИЛЬ (1:1 из GlassMusicPlayer)
+  const handleArtistClick = useCallback((e, track) => {
+    e.stopPropagation();
+    
+    if (!track?.uploaded_by?.id) {
+      console.error("❌ Sidebar: нет uploaded_by.id", track);
+      return;
+    }
+    
+    navigate(`/profile/${track.uploaded_by.id}`);
+  }, [navigate]);
+
+  // ✅ ЛОГИКА CLICK
   const handleTrackClick = useCallback((trackId) => {
     console.log('🎵 Sidebar: Клик по треку', trackId, {
       isCurrent: trackId === currentTrack,
@@ -307,7 +342,7 @@ const Sidebar = React.memo(({
     if (trackId === currentTrack) {
       console.log('⏯️ Sidebar: Переключение play/pause текущего трека');
       if (onTogglePlayPause) {
-        onTogglePlayPause(); // ✅ Используем togglePlayPause
+        onTogglePlayPause();
       }
       return;
     }
@@ -486,6 +521,7 @@ const Sidebar = React.memo(({
                       onLikeClick={() => handleTrackLike(track.id)}
                       isHovered={hoveredTrackId === track.id}
                       onTrackTitleClick={handleTitleClick}
+                      onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ
                       currentTime={isCurrent ? currentTime : 0}
                     />
                   </div>

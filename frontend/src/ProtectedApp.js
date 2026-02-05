@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from './context/UserContext';
 import GridScan from './GridScan';
 import Shuffle from './components/Shuffle';
 import GooeyNav from './components/GooeyNav';
@@ -140,8 +141,19 @@ const IconSpinner = () => (
 
 // =============== ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ ===============
 
-const CompactTrackCard = ({ track, isPlaying, onPlayPause, isLiked, onToggleLike, isLoading = false, isNew = false, onTrackTitleClick }) => {
+const CompactTrackCard = ({ 
+  track, 
+  isPlaying, 
+  onPlayPause, 
+  isLiked, 
+  onToggleLike, 
+  isLoading = false, 
+  isNew = false, 
+  onTrackTitleClick,
+  onArtistClick // ← ДОБАВЛЕНО: обработчик клика по автору
+}) => {
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isArtistHovered, setIsArtistHovered] = useState(false);
   
   const getCoverUrl = useCallback((cover) => {
     if (!cover) return 'https://via.placeholder.com/300x300';
@@ -156,6 +168,14 @@ const CompactTrackCard = ({ track, isPlaying, onPlayPause, isLiked, onToggleLike
     
     return 'https://via.placeholder.com/300x300';
   }, []);
+  
+  // ✅ Функция клика по автору (точно как в GlassMusicPlayer)
+  const handleArtistClick = (e) => {
+    e.stopPropagation();
+    if (onArtistClick && track?.uploaded_by?.id) {
+      onArtistClick(e, track);
+    }
+  };
   
   return (
     <div className={`compact-track-card ${isPlaying ? 'playing' : ''}`}>
@@ -207,18 +227,24 @@ const CompactTrackCard = ({ track, isPlaying, onPlayPause, isLiked, onToggleLike
         >
           {track.title}
         </h4>
+        {/* ✅ ИСПРАВЛЕННЫЙ АВТОР: КЛИКАБЕЛЬНЫЙ */}
         <p 
-          className="compact-track-artist"
+          className="compact-track-artist clickable-artist"
+          onClick={handleArtistClick}
+          onMouseEnter={() => setIsArtistHovered(true)}
+          onMouseLeave={() => setIsArtistHovered(false)}
           style={{
             fontSize: '0.65rem',
-            color: 'rgba(255, 255, 255, 0.6)',
+            color: isArtistHovered ? '#8456ff' : 'rgba(255, 255, 255, 0.6)',
             fontFamily: "'Press Start 2P', sans-serif",
             marginBottom: '12px',
             lineHeight: '1.3',
-            minHeight: '1.3em'
+            minHeight: '1.3em',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease'
           }}
         >
-          {track.artist}
+          {track.uploaded_by?.username || track.artist}
         </p>
         <div className="compact-track-actions">
           <button
@@ -379,10 +405,18 @@ const ProtectedApp = ({
   sessionToken,
   addTracks,
   isLoadingTrack = false,
+  
+  // ✅ ДОБАВЛЕНО: navigate от App.js
+  navigate: parentNavigate 
 }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // 🎯 Получаем navigate из useNavigate
   const location = useLocation();
   
+  // ✅ Используем parentNavigate если он передан, иначе локальный navigate
+  const actualNavigate = parentNavigate || navigate;
+  
+  // ✅ ИСПОЛЬЗУЕМ UserContext для синхронизации аватара
+  const { user: globalUser, loading: userLoading, refreshUser } = useUser();
   const [sidebarKey, setSidebarKey] = useState(0);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
@@ -390,6 +424,9 @@ const ProtectedApp = ({
   // ✅ Загруженные треки пользователя
   const [uploadedTracks, setUploadedTracks] = useState([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
+
+  // ✅ Используем пользователя из UserContext (если есть), иначе из пропсов
+  const displayUser = globalUser || user;
 
   // ✅ Функция получения JWT токена (ТОЛЬКО JWT!)
   const getAuthToken = useCallback(() => {
@@ -474,7 +511,8 @@ const ProtectedApp = ({
       artist: "griffinilla",
       cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGF8gEyh_MA8=&rs=AOn4CLDjiyHGoELcWa2t37NenbmBQ-JlSw",
       audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      duration: "3:20"
+      duration: "3:20",
+      uploaded_by: { id: 1, username: "griffinilla" } // ← ДОБАВЛЕНО для демо
     },
     {
       id: 2,
@@ -482,7 +520,8 @@ const ProtectedApp = ({
       artist: "Rammstein",
       cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
       audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-      duration: "5:22"
+      duration: "5:22",
+      uploaded_by: { id: 2, username: "Rammstein" } // ← ДОБАВЛЕНО для демо
     },
     {
       id: 3,
@@ -490,12 +529,19 @@ const ProtectedApp = ({
       artist: "Rammstein",
       cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
       audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-      duration: "4:05"
+      duration: "4:05",
+      uploaded_by: { id: 2, username: "Rammstein" } // ← ДОБАВЛЕНО для демо
     }
   ];
 
   // ✅ Используем треки из tracksById или демо-данные
-  const displayTracks = allTracksArray.length > 0 ? allTracksArray.slice(0, 6) : tracksForYou;
+  const displayTracks = allTracksArray.length > 0 
+    ? allTracksArray.slice(0, 6).map(track => ({
+        ...track,
+        // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
+        uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
+      }))
+    : tracksForYou;
 
   // ✅ Загруженные треки пользователя для отображения
   const curatedTracks = uploadedTracks.length > 0 
@@ -503,9 +549,13 @@ const ProtectedApp = ({
         ...track,
         id: track.id || track.track_id,
         title: track.title || 'Без названия',
-        artist: track.artist || user?.username || 'Автор',
+        artist: track.artist || displayUser?.username || 'Автор',
         cover: track.cover_url || track.cover || '',
         audio_url: track.audio_url || track.audio_file,
+        uploaded_by: track.uploaded_by || { 
+          id: track.uploaded_by_id || displayUser?.id || 0, 
+          username: track.uploaded_by_username || displayUser?.username || track.artist 
+        },
         isUserTrack: true
       }))
     : [
@@ -516,6 +566,7 @@ const ProtectedApp = ({
           cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
           audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           duration: "4:15",
+          uploaded_by: { id: 3, username: "Synthwave Collective" }, // ← ДОБАВЛЕНО
           isUserTrack: false
         },
         {
@@ -525,6 +576,7 @@ const ProtectedApp = ({
           cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
           audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
           duration: "3:45",
+          uploaded_by: { id: 4, username: "Cyberpunk DJ" }, // ← ДОБАВЛЕНО
           isUserTrack: false
         },
         {
@@ -534,6 +586,7 @@ const ProtectedApp = ({
           cover: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
           audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
           duration: "5:10",
+          uploaded_by: { id: 5, username: "Retro Future" }, // ← ДОБАВЛЕНО
           isUserTrack: false
         }
       ];
@@ -597,7 +650,7 @@ const ProtectedApp = ({
             liked: newLikedState,
             count: data.like_count,
             fromApp: true,
-            user: user?.username
+            user: displayUser?.username
           }
         }));
         
@@ -615,7 +668,19 @@ const ProtectedApp = ({
       console.error('❌ ProtectedApp: Сетевая ошибка лайка трека:', error);
       alert('Сетевая ошибка при сохранении лайка');
     }
-  }, [getAuthToken, likedTrackIds, onToggleLike, onLogout, user]);
+  }, [getAuthToken, likedTrackIds, onToggleLike, onLogout, displayUser]);
+
+  // ✅ ФУНКЦИЯ ПЕРЕХОДА В ПРОФИЛЬ (1:1 из GlassMusicPlayer)
+  const handleArtistClick = useCallback((e, track) => {
+    e.stopPropagation();
+    
+    if (!track?.uploaded_by?.id) {
+      console.error("❌ ProtectedApp: нет uploaded_by.id", track);
+      return;
+    }
+    
+    actualNavigate(`/profile/${track.uploaded_by.id}`);
+  }, [actualNavigate]);
 
   // ✅ ИСПРАВЛЕННАЯ функция воспроизведения для CompactTrackCard
   const handlePlayPauseForTrackCard = useCallback((trackId, trackInfo = null) => {
@@ -657,7 +722,7 @@ const ProtectedApp = ({
     console.log('ProtectedApp: Navigation clicked:', item.label);
     
     if (item.label === 'Upload') {
-      navigate('/upload');
+      actualNavigate('/upload'); // ✅ Используем actualNavigate
       return;
     }
     
@@ -667,7 +732,7 @@ const ProtectedApp = ({
     } else if (item.label === 'Library') {
       page = 'library';
     }
-    navigate(`/?page=${page}`);
+    actualNavigate(`/?page=${page}`); // ✅ Используем actualNavigate
   };
 
   // ✅ Получаем текущую страницу из URL
@@ -696,7 +761,11 @@ const ProtectedApp = ({
     uploadedTracksCount: uploadedTracks.length,
     isLoadingTracks,
     currentPage,
-    showSidebar
+    showSidebar,
+    hasGlobalUser: !!globalUser,
+    userLoading,
+    hasParentNavigate: !!parentNavigate,
+    hasLocalNavigate: !!navigate
   });
 
   // ✅ Рендер секции с загруженными треками
@@ -721,6 +790,7 @@ const ProtectedApp = ({
             onPlayPause={handlePlayPauseForTrackCard}
             onToggleLike={handleToggleLike}
             onTrackTitleClick={handleTrackTitleClick}
+            onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
             isNew={track.isUserTrack}
             isLoading={isLoadingTrack}
           />
@@ -744,13 +814,26 @@ const ProtectedApp = ({
   }, []);
 
   // ✅ Обработчик выхода из системы
-  const handleLogout = useCallback(() => {
+  const handleLogoutAction = useCallback(() => {
     if (onLogout) {
       onLogout();
     }
     setShowUserMenu(false);
-    navigate('/');
-  }, [onLogout, navigate]);
+    actualNavigate('/'); // ✅ Используем actualNavigate
+  }, [onLogout, actualNavigate]);
+
+  // ✅ Функция получения URL аватара
+  const getAvatarUrl = () => {
+    if (displayUser?.avatar) {
+      // Если это полный URL
+      if (displayUser.avatar.startsWith('http')) {
+        return displayUser.avatar;
+      }
+      // Если это относительный путь
+      return `http://localhost:8000${displayUser.avatar}`;
+    }
+    return null;
+  };
 
   return (
     <div className="app" id="top">
@@ -835,7 +918,7 @@ const ProtectedApp = ({
                     aria-label={label}
                     onClick={() => {
                       if (label === 'Upload') {
-                        navigate('/upload');
+                        actualNavigate('/upload'); // ✅ Используем actualNavigate
                       }
                     }}
                   >
@@ -851,7 +934,21 @@ const ProtectedApp = ({
                   aria-label="User menu"
                 >
                   <div className="user-avatar-circle">
-                    <IconUserCircle />
+                    {userLoading ? (
+                      <IconSpinner />
+                    ) : getAvatarUrl() ? (
+                      <img
+                        src={getAvatarUrl()}
+                        className="user-avatar-img"
+                        alt="avatar"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <IconUserCircle />
+                    )}
                   </div>
                 </button>
                 
@@ -871,14 +968,26 @@ const ProtectedApp = ({
                     
                     <div className="user-dropdown-header">
                       <div className="user-dropdown-avatar">
-                        <IconUserCircle />
+                        {getAvatarUrl() ? (
+                          <img
+                            src={getAvatarUrl()}
+                            className="dropdown-avatar-img"
+                            alt=""
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <IconUserCircle />
+                        )}
                       </div>
                       <div className="user-dropdown-info">
                         <div className="user-dropdown-username">
-                          {user?.username || 'User'}
+                          {displayUser?.username || 'User'}
                         </div>
                         <div className="user-dropdown-email">
-                          {user?.email || 'user@example.com'}
+                          {displayUser?.email || 'user@example.com'}
                         </div>
                       </div>
                     </div>
@@ -890,7 +999,7 @@ const ProtectedApp = ({
                         className="user-dropdown-item"
                         onClick={() => {
                           setShowUserMenu(false);
-                          navigate('/profile');
+                          actualNavigate('/profile'); // ✅ Используем actualNavigate
                         }}
                       >
                         <IconProfile />
@@ -901,7 +1010,7 @@ const ProtectedApp = ({
                         className="user-dropdown-item"
                         onClick={() => {
                           setShowUserMenu(false);
-                          navigate('/settings');
+                          actualNavigate('/settings'); // ✅ Используем actualNavigate
                         }}
                       >
                         <IconDots />
@@ -912,7 +1021,7 @@ const ProtectedApp = ({
                       
                       <button
                         className="user-dropdown-item logout-item"
-                        onClick={handleLogout}
+                        onClick={handleLogoutAction}
                       >
                         <IconLogout />
                         <span>Log Out</span>
@@ -948,6 +1057,7 @@ const ProtectedApp = ({
                             onPlayPause={handlePlayPauseForTrackCard}
                             onToggleLike={handleToggleLike}
                             onTrackTitleClick={handleTrackTitleClick}
+                            onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                             isLoading={isLoadingTrack}
                           />
                         ))}
@@ -979,6 +1089,7 @@ const ProtectedApp = ({
                             onPlayPause={handlePlayPauseForTrackCard}
                             onToggleLike={handleToggleLike}
                             onTrackTitleClick={handleTrackTitleClick}
+                            onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                             isLoading={isLoadingTrack}
                           />
                         ))}
@@ -1007,6 +1118,7 @@ const ProtectedApp = ({
                     
                     // 🔗 Навигация
                     onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                     
                     // 📤 Загруженные треки
                     uploadedTracks={uploadedTracks}
@@ -1040,6 +1152,7 @@ const ProtectedApp = ({
                     
                     // 🔗 Навигация
                     onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={handleArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
                     
                     // 📤 Загруженные треки
                     uploadedTracks={uploadedTracks}
@@ -1062,7 +1175,7 @@ const ProtectedApp = ({
               path="/track/:trackId"
               element={
                 <TrackPage
-                  user={user}
+                  user={displayUser}
                   sessionToken={sessionToken}
                   onLogout={onLogout}
                   
@@ -1096,7 +1209,7 @@ const ProtectedApp = ({
               path="/upload"
               element={
                 <UploadPage
-                  user={user}
+                  user={displayUser}
                   sessionToken={sessionToken}
                   onUploadSuccess={(trackId) => {
                     if (trackId) {
@@ -1138,11 +1251,14 @@ const ProtectedApp = ({
           loopEnabled={loopEnabled}
           onToggleLoop={onToggleLoop}
           onTrackClick={handleTrackTitleClick}
-          trackInfo={currentTrackInfo}
+          trackInfo={tracksById[currentTrack]} // ✅ Важно передать полный объект
           isLoading={isLoadingTrack}
           
           // 🔑 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Передаем только функцию JWT токена
           getAuthToken={getAuthToken}
+          
+          // 🎯 ДОБАВЛЕНО: Передаем navigate для кликабельности артиста
+          navigate={actualNavigate} // ✅ Используем actualNavigate
         />
       )}
 
@@ -1159,11 +1275,14 @@ const ProtectedApp = ({
             likedTrackIds={likedTrackIds}
             tracksById={tracksById}
             playTrack={playTrack}
-            user={user}
+            user={displayUser}
             isLoadingTrack={isLoadingTrack}
             
             // 🔑 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Передаем только функцию JWT токена
             getAuthToken={getAuthToken}
+            
+            // 🎯 ПЕРЕДАЕМ navigate ДЛЯ КЛИКАБЕЛЬНОСТИ АВТОРА
+            navigate={actualNavigate} // ✅ Используем actualNavigate
           />
         </div>
       )}

@@ -108,6 +108,10 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
   const [dragOverAudio, setDragOverAudio] = useState(false);
   const [dragOverCover, setDragOverCover] = useState(false);
   
+  // Для кастомного селекта
+  const [genreOpen, setGenreOpen] = useState(false);
+  const selectRef = useRef(null);
+  
   const audioInputRef = useRef(null);
   const coverInputRef = useRef(null);
   
@@ -124,6 +128,33 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
   ];
   
   const artistName = user?.username || user?.profile?.artist_name || user?.email?.split('@')[0] || 'Artist';
+  
+  // Закрытие кастомного селекта при клике вне + Escape
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setGenreOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setGenreOpen(false);
+      }
+    };
+
+    if (genreOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [genreOpen]);
   
   const handleAudioSelect = useCallback((file) => {
     if (!file) return;
@@ -348,6 +379,7 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
     setUploadProgress(0);
     setUploadStatus('idle');
     setError('');
+    setGenreOpen(false);
     
     if (audioInputRef.current) audioInputRef.current.value = '';
     if (coverInputRef.current) coverInputRef.current.value = '';
@@ -572,20 +604,49 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
               
               <div className="form-row">
                 <div className="form-group">
-                  <label className="upload-label" htmlFor="genre">
+                  <label className="upload-label">
                     GENRE
                   </label>
-                  <select
-                    id="genre"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    disabled={isUploading}
-                    className="genre-select"
-                  >
-                    {genres.map(g => (
-                      <option key={g.value} value={g.value}>{g.label}</option>
-                    ))}
-                  </select>
+                  <div className="custom-select" ref={selectRef}>
+                    {/* Триггер */}
+                    <div
+                      className="custom-select-trigger glass-light"
+                      onClick={() => !isUploading && setGenreOpen(v => !v)}
+                      style={{
+                        opacity: isUploading ? 0.6 : 1,
+                        pointerEvents: isUploading ? 'none' : 'auto'
+                      }}
+                    >
+                      <span className="selected-value">
+                        {genres.find(g => g.value === genre)?.label || 'Select genre'}
+                      </span>
+                      <span className={`custom-arrow ${genreOpen ? 'open' : ''}`}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </span>
+                    </div>
+
+                    {/* ✅ FIX: ТОЛЬКО dropdown, БЕЗ backdrop */}
+                    {genreOpen && (
+                      <div className="custom-select-dropdown glass">
+                        <div className="dropdown-content">
+                          {genres.map(g => (
+                            <div
+                              key={g.value}
+                              className={`custom-option ${genre === g.value ? 'active' : ''}`}
+                              onClick={() => {
+                                setGenre(g.value);
+                                setGenreOpen(false);
+                              }}
+                            >
+                              {g.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="form-group">

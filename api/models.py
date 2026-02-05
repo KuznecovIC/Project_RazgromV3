@@ -1,24 +1,34 @@
-# api/models.py
+# models.py - ТОЛЬКО модели, логика в views.py
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
-import uuid
 import os
-import json
-from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 import logging
+from django.core.files.storage import FileSystemStorage
 
 logger = logging.getLogger(__name__)
 
-# ==================== CUSTOM STORAGE ====================
+# ==================== CORRECT STORAGE ====================
 class OverwriteStorage(FileSystemStorage):
     def get_available_name(self, name, max_length=None):
         if self.exists(name):
-            os.remove(os.path.join(settings.MEDIA_ROOT, name))
+            os.remove(os.path.join(self.location, name))
         return name
 
 # ==================== ПУТИ ДЛЯ ФАЙЛОВ ====================
+def avatar_upload_path(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    
+    if ext not in allowed_extensions:
+        ext = 'jpg'
+    
+    timestamp = int(timezone.now().timestamp())
+    filename = f"user_{instance.id}_{timestamp}.{ext}"
+    return f"avatars/{filename}"
+
 def track_cover_path(instance, filename):
     ext = filename.split('.')[-1]
     timestamp = int(timezone.now().timestamp())
@@ -39,6 +49,17 @@ def playlist_cover_path(instance, filename):
     safe_title = "".join(c for c in instance.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
     filename = f"playlist_cover_{instance.created_by.id}_{timestamp}_{safe_title[:20]}.{ext}"
     return f"playlists/{filename}"
+
+def user_header_path(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    
+    if ext not in allowed_extensions:
+        ext = 'jpg'
+    
+    timestamp = int(timezone.now().timestamp())
+    filename = f"header_{instance.id}_{timestamp}.{ext}"
+    return f"headers/{filename}"
 
 # ==================== CUSTOM USER ====================
 class CustomUserManager(BaseUserManager):
@@ -64,24 +85,59 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=50, unique=True)
     bio = models.TextField(max_length=500, blank=True)
-    avatar = models.URLField(blank=True, default='')
+    
+    avatar = models.ImageField(
+        upload_to=avatar_upload_path,
+        verbose_name='Аватар',
+        blank=True,
+        null=True,
+        storage=OverwriteStorage(),
+        help_text='Аватар пользователя (рекомендуется 200x200px)'
+    )
+    
+    avatar_url = models.URLField(
+        verbose_name='Внешний URL аватара',
+        blank=True,
+        default='',
+        help_text='Внешняя ссылка на аватар (если не загружен файл)'
+    )
+    
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     email_verified = models.BooleanField(default=False)
     
-    # Статистика пользователя
+    header_image = models.ImageField(
+        upload_to=user_header_path,
+        verbose_name='Header Image',
+        blank=True,
+        null=True,
+        storage=OverwriteStorage(),
+        help_text='Header image для профиля (рекомендуется 1500x500px)'
+    )
+    
+    gridscan_color = models.CharField(
+        max_length=7,
+        default='#003196',
+        verbose_name='GridScan Color',
+        help_text='Цвет GridScan (формат #RRGGBB)'
+    )
+    
+    header_updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Header Updated At'
+    )
+    
+    # 🔴🔴🔴 ВСЕГДА АКТУАЛЬНЫЕ СЧЁТЧИКИ
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
     tracks_count = models.IntegerField(default=0)
     reposts_count = models.IntegerField(default=0)
     playlists_count = models.IntegerField(default=0)
     
-    # Настройки
     is_artist = models.BooleanField(default=False)
     is_pro = models.BooleanField(default=False)
     pro_expires_at = models.DateTimeField(null=True, blank=True)
     
-    # Социальные ссылки
     website = models.URLField(blank=True, default='')
     instagram = models.CharField(max_length=100, blank=True, default='')
     twitter = models.CharField(max_length=100, blank=True, default='')
@@ -100,43 +156,84 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
     
+    def get_avatar_url(self):
+        if self.avatar:
+            return self.avatar.url
+        elif self.avatar_url:
+            return self.avatar_url
+        return None
+    
+    # 🔴🔴🔴 КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: ЭТОТ МЕТОД ВЫЗЫВАЕТ ТОЛЬКО VIEW
     def update_stats(self):
-        """Обновление статистики пользователя"""
+        """Обновление статистики пользователя ИЗ БАЗЫ ДАННЫХ"""
         try:
+            from .models import Follow, Track, TrackRepost, Playlist
+            
+            # Количество подписчиков (кто подписан НА меня)
             self.followers_count = Follow.objects.filter(following=self).count()
-        except:
-            self.followers_count = 0
             
-        try:
+            # Количество подписок (на кого подписан Я)
             self.following_count = Follow.objects.filter(follower=self).count()
-        except:
-            self.following_count = 0
             
-        try:
+            # Остальные счетчики
             self.tracks_count = Track.objects.filter(uploaded_by=self).count()
-        except:
-            self.tracks_count = 0
-            
-        try:
             self.reposts_count = TrackRepost.objects.filter(user=self).count()
-        except:
-            self.reposts_count = 0
-            
-        try:
             self.playlists_count = Playlist.objects.filter(created_by=self).count()
-        except:
-            self.playlists_count = 0
             
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении статистики пользователя {self.id}: {e}")
+            # Устанавливаем значения по умолчанию в случае ошибки
+            self.followers_count = 0
+            self.following_count = 0
+            self.tracks_count = 0
+            self.reposts_count = 0
+            self.playlists_count = 0
+        
         self.save(update_fields=[
             'followers_count', 'following_count', 'tracks_count', 
             'reposts_count', 'playlists_count', 'updated_at'
         ])
+    
+    def get_header_image_url(self):
+        if self.header_image:
+            return self.header_image.url
+        return None
+    
+    def get_gridscan_color(self):
+        return self.gridscan_color if self.gridscan_color else '#003196'
+    
+    def update_avatar(self, avatar_file=None, avatar_url=None):
+        if avatar_file:
+            self.avatar = avatar_file
+            if avatar_url:
+                self.avatar_url = avatar_url
+        elif avatar_url:
+            self.avatar_url = avatar_url
+            if self.avatar:
+                self.avatar.delete(save=False)
+                self.avatar = None
         
+        self.updated_at = timezone.now()
+        self.save(update_fields=[
+            'avatar', 'avatar_url', 'updated_at'
+        ])
+        return True
+    
+    def update_header_and_color(self, header_file=None, gridscan_color=None):
+        if header_file:
+            self.header_image = header_file
+        if gridscan_color:
+            self.gridscan_color = gridscan_color
+        
+        self.header_updated_at = timezone.now()
+        self.save(update_fields=[
+            'header_image', 'gridscan_color', 'header_updated_at', 'updated_at'
+        ])
+        return True
+    
     def get_liked_track_ids(self):
-        """Получение всех ID треков, которые лайкнул пользователь"""
         liked_ids = []
         
-        # Проверяем разные системы лайков
         if hasattr(self, 'track_likes'):
             liked_ids = list(self.track_likes.values_list('track_id', flat=True))
         elif hasattr(self, 'usertrackinteraction_set'):
@@ -146,11 +243,68 @@ class CustomUser(AbstractUser):
         return liked_ids
     
     def get_recent_tracks(self, limit=10):
-        """Получение последних треков пользователя"""
+        from .models import Track
         return Track.objects.filter(
             uploaded_by=self,
             status='published'
         ).order_by('-created_at')[:limit]
+
+# ==================== СИСТЕМА ПОДПИСОК - УБРАЛ save/delete ЛОГИКУ ====================
+class Follow(models.Model):
+    follower = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Подписчик'
+    )
+    
+    following = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='followers',
+        verbose_name='На кого подписан'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата подписки'
+    )
+    
+    notifications_enabled = models.BooleanField(
+        default=True,
+        verbose_name='Уведомления включены'
+    )
+    
+    class Meta:
+        unique_together = ['follower', 'following']
+        ordering = ['-created_at']
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+    
+    def __str__(self):
+        return f"{self.follower.username} → {self.following.username}"
+    
+    # 🔴🔴🔴 КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: УБРАЛ save() и delete() переопределения
+    # Логика обновления статистики будет ТОЛЬКО в views.py
+
+# ==================== USER PROFILE EXTENSION ====================
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='user_profile',
+        verbose_name='Пользователь'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Дополнительный профиль'
+        verbose_name_plural = 'Дополнительные профили'
+    
+    def __str__(self):
+        return f"Профиль: {self.user.username}"
 
 # ==================== USER SESSION ====================
 class UserSession(models.Model):
@@ -240,7 +394,6 @@ class Track(models.Model):
         ('other', '🎼 Другое'),
     ]
     
-    # Основная информация
     title = models.CharField(
         max_length=255,
         verbose_name='Название трека',
@@ -260,7 +413,6 @@ class Track(models.Model):
         verbose_name='Загружено пользователем'
     )
     
-    # Медиа файлы
     cover = models.ImageField(
         upload_to=track_cover_path,
         verbose_name='Обложка',
@@ -299,7 +451,6 @@ class Track(models.Model):
         help_text='Длительность трека (например: 3:45)'
     )
     
-    # Техническая информация
     file_size = models.PositiveIntegerField(
         verbose_name='Размер файла (байт)',
         default=0
@@ -315,7 +466,6 @@ class Track(models.Model):
         default=0
     )
     
-    # Waveform данные
     waveform_data = models.JSONField(
         verbose_name='Waveform данные',
         default=list,
@@ -345,7 +495,6 @@ class Track(models.Model):
         verbose_name='Количество точек waveform'
     )
     
-    # Статистика
     play_count = models.PositiveIntegerField(
         default=0,
         verbose_name='Количество прослушиваний'
@@ -376,7 +525,6 @@ class Track(models.Model):
         verbose_name='Количество шарингов'
     )
     
-    # Метаданные
     description = models.TextField(
         verbose_name='Описание',
         blank=True,
@@ -403,7 +551,6 @@ class Track(models.Model):
         help_text='Теги через запятую (альтернатива хештегам)'
     )
     
-    # Флаги
     is_explicit = models.BooleanField(
         default=False,
         verbose_name='Эксплицитный контент',
@@ -431,7 +578,6 @@ class Track(models.Model):
         verbose_name='Премиум контент'
     )
     
-    # Дополнительная информация
     bpm = models.PositiveIntegerField(
         verbose_name='BPM (темп)',
         null=True,
@@ -466,7 +612,6 @@ class Track(models.Model):
         null=True
     )
     
-    # Публикация
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -490,7 +635,6 @@ class Track(models.Model):
         verbose_name='Дата обновления'
     )
     
-    # Модерация
     moderated_by = models.ForeignKey(
         CustomUser,
         on_delete=models.SET_NULL,
@@ -533,8 +677,6 @@ class Track(models.Model):
         return f"{self.title} - {self.artist}"
     
     def save(self, *args, **kwargs):
-        """Упрощенный save без сложной генерации waveform"""
-        # Проверяем, изменился ли статус на published
         if self.pk and self.status == 'published':
             try:
                 old_track = Track.objects.get(pk=self.pk)
@@ -544,15 +686,12 @@ class Track(models.Model):
             except Track.DoesNotExist:
                 pass
         
-        # Сохраняем объект
         super().save(*args, **kwargs)
         
-        # Генерацию waveform выносим в отдельный endpoint
         if self.status == 'published' and not self.waveform_generated:
             logger.info(f"Трек {self.id} опубликован, можно сгенерировать waveform")
     
     def publish(self):
-        """Публикация трека"""
         if self.status == 'draft':
             self.status = 'published'
             self.published_at = timezone.now()
@@ -562,7 +701,6 @@ class Track(models.Model):
         return False
     
     def approve(self):
-        """Одобрение модератором"""
         if self.status == 'pending':
             self.status = 'published'
             self.published_at = timezone.now()
@@ -572,7 +710,6 @@ class Track(models.Model):
         return False
     
     def reject(self, reason=""):
-        """Отклонение модератором"""
         if self.status == 'pending':
             self.status = 'rejected'
             self.moderated_at = timezone.now()
@@ -582,7 +719,6 @@ class Track(models.Model):
         return False
     
     def get_cover_url(self):
-        """Возвращает URL обложки"""
         if self.cover:
             return self.cover.url
         elif self.cover_url:
@@ -590,7 +726,6 @@ class Track(models.Model):
         return None
     
     def get_audio_url(self):
-        """Возвращает URL аудио"""
         if self.audio_file:
             return self.audio_file.url
         elif self.audio_url:
@@ -598,20 +733,16 @@ class Track(models.Model):
         return None
     
     def get_hashtag_list(self):
-        """Возвращает список хештегов"""
         return [tag.name for tag in self.hashtags.all()]
     
     def get_tag_list(self):
-        """Возвращает список тегов"""
         if self.tags:
             return [tag.strip() for tag in self.tags.split(',')]
         return []
     
     def get_duration_seconds(self):
-        """Преобразует строку длительности в секунды"""
         try:
             if not self.duration:
-            # Если длительность не определена, возвращаем 0
                 return 0
             
             if ':' in self.duration:
@@ -622,44 +753,37 @@ class Track(models.Model):
                 elif len(parts) == 3:
                     hours, minutes, seconds = map(int, parts)
                     return hours * 3600 + minutes * 60 + seconds
-        
-        # Если есть сохраненное значение в секундах
+            
             if hasattr(self, 'duration_seconds') and self.duration_seconds:
                 return self.duration_seconds
             
-            return 0  # Возвращаем 0 вместо 180
+            return 0
         except Exception as e:
             logger.error(f"Ошибка преобразования длительности '{self.duration}': {e}")
             return 0
     
     def get_formatted_duration(self):
-        """Возвращает отформатированную длительность"""
         return self.duration
     
     def get_file_size_mb(self):
-        """Возвращает размер файла в МБ"""
         if self.file_size:
             return round(self.file_size / (1024 * 1024), 2)
         return 0
     
     def increment_play_count(self):
-        """Увеличивает счетчик прослушиваний"""
         self.play_count += 1
         self.save(update_fields=['play_count', 'updated_at'])
     
     def increment_like_count(self):
-        """Увеличивает счетчик лайков"""
         self.like_count += 1
         self.save(update_fields=['like_count', 'updated_at'])
     
     def decrement_like_count(self):
-        """Уменьшает счетчик лайков"""
         if self.like_count > 0:
             self.like_count -= 1
             self.save(update_fields=['like_count', 'updated_at'])
     
     def can_be_accessed_by(self, user):
-        """Проверяет, может ли пользователь получить доступ к треку"""
         if self.status != 'published':
             return False
         if self.is_private and user != self.uploaded_by:
@@ -669,57 +793,22 @@ class Track(models.Model):
         return True
     
     def get_waveform(self, num_points=None):
-        """Возвращает waveform данные"""
         if not self.waveform_data:
             return []
         
         if num_points and len(self.waveform_data) != num_points:
-            from .waveform_utils import resample_waveform
-            return resample_waveform(self.waveform_data, num_points)
+            import math
+            old_len = len(self.waveform_data)
+            new_data = []
+            for i in range(num_points):
+                idx = int(i * old_len / num_points)
+                if idx < old_len:
+                    new_data.append(self.waveform_data[idx])
+                else:
+                    new_data.append(0)
+            return new_data
         
         return self.waveform_data
-
-# ==================== СИСТЕМА ПОДПИСОК ====================
-class Follow(models.Model):
-    follower = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='following',
-        verbose_name='Подписчик'
-    )
-    
-    following = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='followers',
-        verbose_name='На кого подписан'
-    )
-    
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата подписки'
-    )
-    
-    # Дополнительные поля
-    notifications_enabled = models.BooleanField(
-        default=True,
-        verbose_name='Уведомления включены'
-    )
-    
-    class Meta:
-        unique_together = ['follower', 'following']
-        ordering = ['-created_at']
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-    
-    def __str__(self):
-        return f"{self.follower.username} → {self.following.username}"
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Обновляем статистику пользователей
-        self.follower.update_stats()
-        self.following.update_stats()
 
 # ==================== СИСТЕМА РЕПОСТОВ ====================
 class TrackRepost(models.Model):
@@ -756,14 +845,6 @@ class TrackRepost(models.Model):
     
     def __str__(self):
         return f"{self.user.username} reposted {self.track.title}"
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Увеличиваем счетчик репостов трека
-        self.track.repost_count += 1
-        self.track.save(update_fields=['repost_count'])
-        # Обновляем статистику пользователя
-        self.user.update_stats()
 
 # ==================== ЗАЩИТА ОТ НАКРУТКИ ПРОСЛУШИВАНИЙ ====================
 class PlayHistory(models.Model):
@@ -821,7 +902,6 @@ class PlayHistory(models.Model):
         return f"{self.user.username} played {self.track.title}"
     
     def save(self, *args, **kwargs):
-        # Проверяем, не было ли уже прослушивания за последние 30 минут
         recent_play = PlayHistory.objects.filter(
             user=self.user,
             track=self.track,
@@ -830,7 +910,6 @@ class PlayHistory(models.Model):
         
         if not recent_play:
             super().save(*args, **kwargs)
-            # Увеличиваем счетчик прослушиваний
             self.track.increment_play_count()
 
 # ==================== ГЛОБАЛЬНАЯ СТАТИСТИКА ====================
@@ -912,16 +991,6 @@ class TrackLike(models.Model):
     
     def __str__(self):
         return f"{self.user.username} liked {self.track.title}"
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Увеличиваем счетчик лайков трека
-        self.track.increment_like_count()
-    
-    def delete(self, *args, **kwargs):
-        # Уменьшаем счетчик лайков перед удалением
-        self.track.decrement_like_count()
-        super().delete(*args, **kwargs)
 
 # ==================== USER TRACK INTERACTION ====================
 class UserTrackInteraction(models.Model):
@@ -1071,10 +1140,6 @@ class CommentLike(models.Model):
     
     def __str__(self):
         return f"{self.user.username} liked comment #{self.comment.id}"
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.comment.update_likes_count()
 
 # ==================== LISTENING HISTORY ====================
 class ListeningHistory(models.Model):
@@ -1110,7 +1175,6 @@ class ListeningHistory(models.Model):
     def __str__(self):
         return f"{self.user.username} listened {self.track.title} at {self.listened_at}"
 
-# ==================== TRACK COMMENT ====================
 # ==================== КОММЕНТАРИИ К ТРЕКАМ ====================
 class TrackComment(models.Model):
     user = models.ForeignKey(
@@ -1141,7 +1205,6 @@ class TrackComment(models.Model):
         verbose_name='Дата обновления'
     )
     
-    # 🔴🔴🔴 КРИТИЧЕСКО ВАЖНО: ManyToManyField для лайков
     likes = models.ManyToManyField(
         CustomUser,
         related_name='liked_track_comments',
@@ -1177,18 +1240,15 @@ class TrackComment(models.Model):
         return f"{self.user.username} on {self.track.title}: {self.text[:50]}"
     
     def save(self, *args, **kwargs):
-        """Автоматически обновляем счетчик лайков при сохранении"""
         if self.pk:
             self.like_count = self.likes.count()
         super().save(*args, **kwargs)
     
     def update_like_count(self):
-        """Обновляет счетчик лайков"""
         self.like_count = self.likes.count()
         self.save(update_fields=['like_count'])
     
     def toggle_like(self, user):
-        """Переключает лайк пользователя"""
         if not user or not user.is_authenticated:
             return False, self.like_count
         
@@ -1203,7 +1263,6 @@ class TrackComment(models.Model):
         return liked, self.like_count
     
     def is_liked_by_user(self, user):
-        """Проверяет, лайкнул ли пользователь этот комментарий"""
         if not user or not user.is_authenticated:
             return False
         return self.likes.filter(id=user.id).exists()
@@ -1392,7 +1451,6 @@ class Notification(models.Model):
         verbose_name='Дата создания'
     )
     
-    # Опциональные связи
     related_user = models.ForeignKey(
         CustomUser,
         on_delete=models.SET_NULL,
@@ -1693,34 +1751,39 @@ class WaveformGenerationTask(models.Model):
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
+@receiver(post_save, sender=CustomUser)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=CustomUser)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'user_profile'):
+        instance.user_profile.save()
+
 @receiver(post_save, sender=Track)
 def track_post_save(sender, instance, created, **kwargs):
-    """После сохранения трека обновляем статистику пользователя"""
     if created:
         instance.uploaded_by.update_stats()
 
 @receiver(post_save, sender=TrackLike)
 def tracklike_post_save(sender, instance, created, **kwargs):
-    """После лайка обновляем счетчик"""
     if created:
         instance.track.like_count = TrackLike.objects.filter(track=instance.track).count()
         instance.track.save(update_fields=['like_count'])
 
 @receiver(post_delete, sender=TrackLike)
 def tracklike_post_delete(sender, instance, **kwargs):
-    """После удаления лайка обновляем счетчик"""
     instance.track.like_count = TrackLike.objects.filter(track=instance.track).count()
     instance.track.save(update_fields=['like_count'])
 
 @receiver(post_save, sender=Comment)
 def comment_post_save(sender, instance, created, **kwargs):
-    """После комментария обновляем счетчик"""
     if created:
         instance.track.comment_count = Comment.objects.filter(track=instance.track).count()
         instance.track.save(update_fields=['comment_count'])
 
 @receiver(post_delete, sender=Comment)
 def comment_post_delete(sender, instance, **kwargs):
-    """После удаления комментария обновляем счетчик"""
     instance.track.comment_count = Comment.objects.filter(track=instance.track).count()
     instance.track.save(update_fields=['comment_count'])

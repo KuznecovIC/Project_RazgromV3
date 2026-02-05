@@ -1,6 +1,7 @@
-// FeedPage.jsx - ИСПРАВЛЕННЫЙ (с единой архитектурой)
+// FeedPage.jsx - ИСПРАВЛЕННЫЙ (кликабельные авторы)
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import Shuffle from './Shuffle';
+import { useNavigate } from 'react-router-dom';
+import Shuffle from '../components/Shuffle';
 import './FeedPage.css';
 
 const IconRepost = () => (
@@ -255,9 +256,34 @@ const FeedTrackCard = ({
   onSeek,
   onWaveformClick,
   duration = 0,
-  onTrackTitleClick
+  onTrackTitleClick,
+  onArtistClick // ← ДОБАВЛЕНО: обработчик клика по автору
 }) => {
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isArtistHovered, setIsArtistHovered] = useState(false);
+  const navigate = useNavigate();
+  
+  // ✅ ФУНКЦИЯ ПЕРЕХОДА В ПРОФИЛЬ (1:1 из GlassMusicPlayer)
+  const handleArtistClick = useCallback((e) => {
+    e.stopPropagation();
+    
+    if (!track?.uploaded_by?.id) {
+      console.error("❌ FeedPage: нет uploaded_by.id", track);
+      return;
+    }
+    
+    navigate(`/profile/${track.uploaded_by.id}`);
+  }, [navigate, track]);
+  
+  // ✅ Если onArtistClick передан, используем его (для обратной совместимости)
+  const handleActualArtistClick = (e) => {
+    e.stopPropagation();
+    if (onArtistClick && track?.uploaded_by?.id) {
+      onArtistClick(e, track);
+    } else {
+      handleArtistClick(e);
+    }
+  };
   
   return (
     <div className={`feed-track-card glass-card ${isPlaying ? 'playing' : ''}`}>
@@ -341,16 +367,22 @@ const FeedTrackCard = ({
             >
               {track.title}
             </h3>
+            {/* ✅ ИСПРАВЛЕННЫЙ АВТОР: КЛИКАБЕЛЬНЫЙ */}
             <p 
-              className="track-artist"
+              className="track-artist clickable-artist"
+              onClick={handleActualArtistClick}
+              onMouseEnter={() => setIsArtistHovered(true)}
+              onMouseLeave={() => setIsArtistHovered(false)}
               style={{
                 fontSize: '0.95rem',
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: isArtistHovered ? '#8456ff' : 'rgba(255, 255, 255, 0.7)',
                 fontFamily: "'Press Start 2P', sans-serif",
-                marginBottom: '10px'
+                marginBottom: '10px',
+                cursor: 'pointer',
+                transition: 'color 0.2s ease'
               }}
             >
-              {track.artist}
+              {track.uploaded_by?.username || track.artist}
             </p>
             <div 
               className="track-duration"
@@ -411,6 +443,7 @@ const FeedPage = ({
   
   // 🔗 Навигация
   onTrackTitleClick,
+  onArtistClick, // ← ДОБАВЛЕНО: обработчик клика по автору
   
   // 📤 Загруженные треки
   uploadedTracks = [],
@@ -445,7 +478,12 @@ const FeedPage = ({
         cover: track.cover || 'http://localhost:8000/static/default_cover.jpg',
         audioUrl: track.audio_url || '',
         duration: track.duration ? formatTime(track.duration) : '0:00',
-        durationSeconds: track.duration || 0
+        durationSeconds: track.duration || 0,
+        // ✅ ДОБАВЛЯЕМ uploaded_by из исходного трека
+        uploaded_by: track.uploaded_by || { 
+          id: track.user_id || 0, 
+          username: track.artist 
+        }
       }
     }));
   }, [tracksById]);
@@ -481,6 +519,13 @@ const FeedPage = ({
     }
     // Если трек уже играет, ничего не делаем - он продолжит с новой позиции
   }, [currentTrack, isPlaying, onPlayPause, onSeek]);
+  
+  console.log('🎯 FeedPage статус:', {
+    feedDataCount: feedData.length,
+    currentTrack,
+    isPlaying,
+    hasArtistClickHandler: !!onArtistClick
+  });
   
   return (
     <div className="feed-page">
@@ -541,6 +586,7 @@ const FeedPage = ({
               onWaveformClick={handleWaveformClick}
               duration={isCurrentTrack ? duration : item.track.durationSeconds}
               onTrackTitleClick={onTrackTitleClick}
+              onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
             />
           );
         })}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Shuffle from './Shuffle';
+import { useNavigate } from 'react-router-dom';
 
+// Иконки (оставить как есть)
 const IconPlay = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M8 5v14l11-7z" fill="currentColor" />
@@ -64,14 +66,13 @@ const IconRepeat = ({ active = false }) => (
 
 const formatDuration = (seconds) => {
   if (!seconds || seconds <= 0 || isNaN(seconds)) return "0:00";
-  
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 };
 
 // ============================================
-// 🎯 КОМПОНЕНТ GlassMusicPlayer (ИСПРАВЛЕННЫЙ)
+// 🎯 GlassMusicPlayer - ПРОСТАЯ И ПРАВИЛЬНАЯ ВЕРСИЯ
 // ============================================
 const GlassMusicPlayer = ({ 
   currentTrack, 
@@ -93,6 +94,7 @@ const GlassMusicPlayer = ({
   showInFooter = true,
   trackInfo = null
 }) => {
+  const navigate = useNavigate();
   const [showVolume, setShowVolume] = useState(false);
   const volumeRef = useRef(null);
   const volumeSliderRef = useRef(null);
@@ -101,14 +103,41 @@ const GlassMusicPlayer = ({
   const [isSeeking, setIsSeeking] = useState(false);
   const [forceTrigger, setForceTrigger] = useState(0);
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isArtistHovered, setIsArtistHovered] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   
-  // Проверяем ширину экрана для компактного режима
+  // 🔥 ВАЖНО: Валидация входных данных
   useEffect(() => {
-    const checkWidth = () => {
-      setIsCompact(window.innerWidth < 768);
-    };
+    if (!trackInfo) {
+      console.warn('⚠️ GlassMusicPlayer: trackInfo не передан');
+      return;
+    }
     
+    // Проверяем, есть ли uploaded_by
+    const hasUploadedBy = !!trackInfo.uploaded_by;
+    const uploadedById = trackInfo.uploaded_by?.id;
+    const hasArtistString = typeof trackInfo.artist === 'string';
+    
+    console.log('🔍 GlassMusicPlayer: Проверка данных трека', {
+      trackId: trackInfo.id,
+      hasUploadedBy,
+      uploadedById,
+      hasArtistString,
+      // Если нет uploaded_by, но есть artist строка - ЭТО ОШИБКА БЭКЕНДА
+      isBackendError: !hasUploadedBy && hasArtistString
+    });
+    
+    // Если нет uploaded_by - это ошибка бэкенда
+    if (!hasUploadedBy && hasArtistString) {
+      console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: Бэкенд не отдает uploaded_by!');
+      console.error('❌ Трек содержит только строку artist:', trackInfo.artist);
+      console.error('❌ Это значит, что API endpoint использует неправильный сериализатор');
+    }
+  }, [trackInfo]);
+
+  // Проверяем ширину экрана
+  useEffect(() => {
+    const checkWidth = () => setIsCompact(window.innerWidth < 768);
     checkWidth();
     window.addEventListener('resize', checkWidth);
     return () => window.removeEventListener('resize', checkWidth);
@@ -121,10 +150,9 @@ const GlassMusicPlayer = ({
 
   // При смене трека обновляем ключ
   useEffect(() => {
-    console.log('🔄 GlassMusicPlayer: Трек изменился, обновляем ключ', currentTrack);
     setPlayerKey(prev => prev + 1);
     setForceTrigger(prev => prev + 1);
-  }, [currentTrack]);
+  }, [currentTrack, trackInfo]);
 
   const handleClickOutside = (event) => {
     if (volumeRef.current && !volumeRef.current.contains(event.target)) {
@@ -149,161 +177,133 @@ const GlassMusicPlayer = ({
     updateVolumeSliderPosition();
   }, [volume, updateVolumeSliderPosition]);
 
-  // 🔴 ТОЛЬКО управление лайками
+  // 🔴 Управление лайками
   const handleLikeClick = () => {
     if (isLoading) return;
-    
     const newLikedState = !localIsLiked;
     setLocalIsLiked(newLikedState);
-    
-    console.log('❤️ GlassMusicPlayer: Лайк трека', currentTrack, newLikedState);
-    
-    if (onToggleLike) {
-      onToggleLike();
-    }
+    if (onToggleLike) onToggleLike();
   };
 
-  // 🔴 ТОЛЬКО передача seek в App.js
+  // 🔴 Передача seek в App.js
   const handleSeek = (e) => {
     if (!onSeek || !duration || duration <= 0) return;
-    
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const seekTime = percent * duration;
-    
-    console.log('🎯 GlassMusicPlayer: Seek to', {
-      percent,
-      seekTime: formatDuration(seekTime),
-      duration: formatDuration(duration)
-    });
-    
-    onSeek(seekTime);
+    onSeek(percent * duration);
   };
 
-  const handleSeekStart = () => {
-    setIsSeeking(true);
-  };
-
-  const handleSeekEnd = () => {
-    setIsSeeking(false);
-  };
+  const handleSeekStart = () => setIsSeeking(true);
+  const handleSeekEnd = () => setIsSeeking(false);
 
   const handleTrackTitleClick = () => {
     if (currentTrack && onTrackClick) {
-      console.log('📍 GlassMusicPlayer: Клик по названию трека', currentTrack);
       onTrackClick(currentTrack);
     }
   };
 
+  // ✅ ПРАВИЛЬНАЯ функция для перехода на профиль артиста
+  const handleArtistClick = (e) => {
+    e.stopPropagation();
+    
+    if (!trackInfo) {
+      console.error('❌ GlassMusicPlayer: Нет информации о треке');
+      return;
+    }
+    
+    // 🔥 ЕДИНСТВЕННЫЙ ПРАВИЛЬНЫЙ СПОСОБ: используем uploaded_by.id
+    const artistId = trackInfo.uploaded_by?.id;
+    
+    if (!artistId) {
+      console.error('❌ GlassMusicPlayer: Нет uploaded_by.id в треке!', {
+        trackInfo,
+        uploaded_by: trackInfo.uploaded_by,
+        // Это ошибка бэкенда - должен быть uploaded_by
+        isBackendError: true
+      });
+      
+      // Показываем пользователю понятную ошибку
+      const artistName = trackInfo.artist || 'Unknown';
+      alert(`Ошибка: невозможно перейти к профилю артиста "${artistName}"\n\nПожалуйста, сообщите об ошибке разработчику.`);
+      return;
+    }
+    
+    // 🔥 ПРАВИЛЬНЫЙ ПЕРЕХОД
+    console.log('✅ GlassMusicPlayer: Переход на профиль', `/profile/${artistId}`);
+    navigate(`/profile/${artistId}`);
+  };
+
   // 🔴 ПРАВИЛЬНАЯ функция play/pause
   const handlePlayPause = () => {
-    console.log('⏯️ GlassMusicPlayer: Play/Pause нажато', {
-      currentTrack,
-      isPlaying,
-      isLoading
-    });
-    
-    if (isLoading) {
-      console.log('⏳ GlassMusicPlayer: Трек загружается, ждем...');
-      return;
-    }
-    
-    if (!currentTrack) {
-      console.warn('⚠️ GlassMusicPlayer: Нет текущего трека');
-      return;
-    }
-    
-    if (onPlayPause) {
-      // 🔴 ВАЖНО: просто вызываем onPlayPause без параметров
-      // App.js сам знает какой трек играть
-      onPlayPause();
-    }
+    if (isLoading || !currentTrack) return;
+    if (onPlayPause) onPlayPause();
   };
 
   // Если showInFooter = false, не рендерим
-  if (!showInFooter) {
-    console.log('👻 GlassMusicPlayer: showInFooter = false, скрываем');
-    return null;
-  }
+  if (!showInFooter) return null;
+  if (!currentTrack) return null;
 
-  if (!currentTrack) {
-    console.log('👻 GlassMusicPlayer: Нет currentTrack, скрываем');
-    return null;
-  }
+  // Используем trackInfo если есть, иначе создаем минимальный объект
+  const track = trackInfo || { 
+    id: currentTrack, 
+    title: 'Loading...', 
+    artist: 'Unknown artist' 
+  };
 
-  const track = trackInfo;
+  // 🔥 ПРАВИЛЬНОЕ ПОЛУЧЕНИЕ ИМЕНИ АРТИСТА
+  const getArtistDisplayName = () => {
+    if (!track.artist) return 'Unknown artist';
+    
+    // ПРИОРИТЕТ 1: username из uploaded_by
+    if (track.uploaded_by?.username) {
+      return track.uploaded_by.username;
+    }
+    
+    // ПРИОРИТЕТ 2: artist как строка (если бэкенд еще не исправлен)
+    if (typeof track.artist === 'string') {
+      return track.artist;
+    }
+    
+    // ПРИОРИТЕТ 3: artist как объект
+    if (typeof track.artist === 'object' && track.artist !== null) {
+      return track.artist.username || track.artist.name || 'Unknown artist';
+    }
+    
+    return 'Unknown artist';
+  };
 
-  console.log('🎵 GlassMusicPlayer render:', {
-    currentTrack,
-    isPlaying,
-    isLoading,
-    hasTrackInfo: !!track,
-    trackTitle: track?.title,
-    duration: formatDuration(duration),
-    currentTime: formatDuration(currentTime)
-  });
+  // 🔥 ПРАВИЛЬНОЕ ПОЛУЧЕНИЕ ID АРТИСТА
+  const getArtistId = () => {
+    // ЕДИНСТВЕННЫЙ ПРАВИЛЬНЫЙ ИСТОЧНИК: uploaded_by.id
+    return track.uploaded_by?.id || null;
+  };
 
-  if (!track) {
-    console.log('🔄 GlassMusicPlayer: Трек загружается...');
+  const artistDisplayName = getArtistDisplayName();
+  const artistId = getArtistId();
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const canSeek = duration > 0 && !isLoading;
+
+  if (!track || !track.title || track.title === 'Loading...') {
     return (
       <div className="glass-player-footer">
         <div className="glass-player-container">
           <div className="glass-player-track">
             <div className="glass-player-info">
               <div className="glass-player-title">
-                <Shuffle
-                  key={`title-loading-${forceTrigger}`}
-                  text="Loading track..."
-                  shuffleDirection="up"
-                  duration={0.3}
-                  animationMode="evenodd"
-                  shuffleTimes={1}
-                  ease="power3.out"
-                  stagger={0.01}
-                  threshold={0}
-                  triggerOnce={false}
-                  triggerOnHover={true}
-                  respectReducedMotion={false}
-                  rootMargin="0px"
-                  tag="div"
-                  colorFrom="white"
-                  colorTo="white"
-                  style={{ 
-                    fontSize: '0.95rem',
-                    fontWeight: '700',
-                    marginBottom: '2px',
-                    lineHeight: '1.2',
-                    fontFamily: "'Press Start 2P', sans-serif"
-                  }}
-                />
+                Loading track...
               </div>
             </div>
           </div>
           
           <div className="glass-player-controls">
             <div className="glass-control-buttons">
-              <button 
-                className="glass-control-btn" 
-                disabled={true}
-              >
+              <button className="glass-control-btn" disabled={true}>
                 <IconPrevious />
               </button>
-              
-              <button 
-                className="glass-control-btn glass-play-pause-btn" 
-                disabled={true}
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  cursor: 'not-allowed'
-                }}
-              >
+              <button className="glass-control-btn glass-play-pause-btn" disabled={true}>
                 <IconPlay />
               </button>
-              
-              <button 
-                className="glass-control-btn" 
-                disabled={true}
-              >
+              <button className="glass-control-btn" disabled={true}>
                 <IconNext />
               </button>
             </div>
@@ -312,9 +312,6 @@ const GlassMusicPlayer = ({
       </div>
     );
   }
-
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const canSeek = duration > 0 && !isLoading;
 
   return (
     <div className="glass-player-footer" key={`player-${playerKey}`}>
@@ -386,31 +383,61 @@ const GlassMusicPlayer = ({
                 />
               )}
             </div>
-            {!isCompact && (
-              <Shuffle
-                key={`artist-${currentTrack}-${forceTrigger}`}
-                text={track.artist}
-                shuffleDirection="down"
-                duration={0.25}
-                animationMode="evenodd"
-                shuffleTimes={1}
-                ease="power3.out"
-                stagger={0.005}
-                threshold={0}
-                triggerOnce={false}
-                triggerOnHover={true}
-                respectReducedMotion={false}
-                rootMargin="0px"
-                tag="div"
-                colorFrom="rgba(255, 255, 255, 0.7)"
-                colorTo="rgba(255, 255, 255, 0.7)"
+            {!isCompact && artistDisplayName && (
+              <div 
+                className="glass-player-artist"
+                onClick={handleArtistClick}
+                onMouseEnter={() => setIsArtistHovered(true)}
+                onMouseLeave={() => setIsArtistHovered(false)}
                 style={{ 
-                  fontSize: '0.8rem',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  fontWeight: '500',
-                  fontFamily: "'Press Start 2P', sans-serif"
+                  cursor: artistId ? 'pointer' : 'not-allowed',
+                  transition: 'color 0.2s ease',
+                  color: isArtistHovered ? '#c084fc' : 'rgba(255, 255, 255, 0.7)',
+                  position: 'relative',
+                  display: 'inline-block',
+                  opacity: artistId ? 1 : 0.5
                 }}
-              />
+                title={artistId ? 
+                  `Перейти в профиль ${artistDisplayName}` : 
+                  `Невозможно перейти (нет ID артиста)`
+                }
+              >
+                <Shuffle
+                  key={`artist-${currentTrack}-${forceTrigger}`}
+                  text={artistDisplayName}
+                  shuffleDirection="down"
+                  duration={0.25}
+                  animationMode="evenodd"
+                  shuffleTimes={1}
+                  ease="power3.out"
+                  stagger={0.005}
+                  threshold={0}
+                  triggerOnce={false}
+                  triggerOnHover={true}
+                  respectReducedMotion={false}
+                  rootMargin="0px"
+                  tag="div"
+                  colorFrom={isArtistHovered ? "#c084fc" : "rgba(255, 255, 255, 0.7)"}
+                  colorTo={isArtistHovered ? "#c084fc" : "rgba(255, 255, 255, 0.7)"}
+                  style={{ 
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    fontFamily: "'Press Start 2P', sans-serif",
+                    display: 'inline-block'
+                  }}
+                />
+                {isArtistHovered && artistId && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-2px',
+                    left: 0,
+                    width: '100%',
+                    height: '1px',
+                    background: 'linear-gradient(90deg, transparent, #c084fc, transparent)',
+                    animation: 'underline-glow 1.5s infinite'
+                  }} />
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -421,18 +448,14 @@ const GlassMusicPlayer = ({
             <button 
               className="glass-control-btn" 
               onClick={onPrevious} 
-              aria-label="Previous track"
-              style={{ opacity: currentTrack ? 1 : 0.5 }}
               disabled={!currentTrack || isLoading}
             >
               <IconPrevious />
             </button>
             
-            {/* 🔴 ВАЖНО: просто handlePlayPause без передачи данных */}
             <button 
               className="glass-control-btn glass-play-pause-btn" 
               onClick={handlePlayPause}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
               disabled={isLoading}
               style={{ 
                 background: isLoading 
@@ -455,8 +478,6 @@ const GlassMusicPlayer = ({
             <button 
               className="glass-control-btn" 
               onClick={onNext} 
-              aria-label="Next track"
-              style={{ opacity: currentTrack ? 1 : 0.5 }}
               disabled={!currentTrack || isLoading}
             >
               <IconNext />
@@ -465,9 +486,7 @@ const GlassMusicPlayer = ({
 
           {!isCompact && (
             <div className="glass-progress-container">
-              <span className="glass-time">
-                {formatDuration(currentTime)}
-              </span>
+              <span className="glass-time">{formatDuration(currentTime)}</span>
               <div 
                 className={`glass-progress-bar ${canSeek ? 'active' : 'inactive'}`}
                 onClick={handleSeek}
@@ -477,7 +496,6 @@ const GlassMusicPlayer = ({
                   cursor: canSeek ? 'pointer' : 'not-allowed',
                   opacity: canSeek ? 1 : 0.5
                 }}
-                title={canSeek ? "Click to seek" : "Loading..."}
               >
                 <div 
                   className="glass-progress-fill" 
@@ -492,9 +510,7 @@ const GlassMusicPlayer = ({
                   </div>
                 )}
               </div>
-              <span className="glass-time">
-                {formatDuration(duration)}
-              </span>
+              <span className="glass-time">{formatDuration(duration)}</span>
             </div>
           )}
         </div>
@@ -505,7 +521,6 @@ const GlassMusicPlayer = ({
             <button 
               className={`glass-control-btn glass-loop-btn ${loopEnabled ? 'loop-active' : ''}`}
               onClick={onToggleLoop}
-              aria-label={loopEnabled ? 'Выключить повтор' : 'Включить повтор'}
               disabled={isLoading}
               style={{
                 color: loopEnabled ? '#8456ff' : 'white',
@@ -513,36 +528,24 @@ const GlassMusicPlayer = ({
               }}
             >
               <IconRepeat active={loopEnabled} />
-              {loopEnabled && (
-                <div className="loop-active-indicator"></div>
-              )}
             </button>
             
             <button 
-              className={`glass-control-btn glass-like-btn ${localIsLiked ? 'liked' : ''} ${isLoading ? 'loading' : ''}`}
+              className={`glass-control-btn glass-like-btn ${localIsLiked ? 'liked' : ''}`}
               onClick={handleLikeClick}
-              aria-label={localIsLiked ? 'Unlike track' : 'Like track'}
               disabled={isLoading}
-              style={{
-                opacity: isLoading ? 0.5 : 1
-              }}
+              style={{ opacity: isLoading ? 0.5 : 1 }}
             >
               <IconHeart filled={localIsLiked} />
             </button>
             
-            <div 
-              className="glass-volume-control"
-              ref={volumeRef}
-            >
+            <div className="glass-volume-control" ref={volumeRef}>
               <button 
                 className="glass-volume-btn" 
                 onClick={() => setShowVolume(!showVolume)}
                 onMouseEnter={() => setShowVolume(true)}
-                aria-label="Volume"
                 disabled={isLoading}
-                style={{
-                  opacity: isLoading ? 0.5 : 1
-                }}
+                style={{ opacity: isLoading ? 0.5 : 1 }}
               >
                 <IconVolume />
               </button>
@@ -559,17 +562,9 @@ const GlassMusicPlayer = ({
                     max="1"
                     step="0.01"
                     value={volume}
-                    onChange={(e) => {
-                      const newVolume = parseFloat(e.target.value);
-                      if (onVolumeChange) {
-                        onVolumeChange(newVolume);
-                      }
-                    }}
+                    onChange={(e) => onVolumeChange && onVolumeChange(parseFloat(e.target.value))}
                     className="glass-volume-slider-vertical"
-                    aria-label="Volume slider"
-                    style={{
-                      '--volume-percent': `${volume * 100}%`
-                    }}
+                    style={{ '--volume-percent': `${volume * 100}%` }}
                     disabled={isLoading}
                   />
                 </div>

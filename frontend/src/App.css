@@ -2075,3 +2075,28 @@ button:disabled:hover {
     right: 0 !important;
   }
 }
+
+/* Стили для кликабельного автора в CompactTrackCard */
+.compact-track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.compact-track-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.compact-track-card:hover .compact-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Стили для кликабельного автора в GlassMusicPlayer (уже должны быть в GlassMusicPlayer.css) */
+.glass-player-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.glass-player-artist.clickable-artist:hover {
+  color: #8456ff !important;
+}

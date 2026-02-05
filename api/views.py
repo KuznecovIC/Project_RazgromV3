@@ -1,3 +1,4 @@
+# api/views.py
 import os
 import json
 import logging
@@ -9,9 +10,14 @@ import requests
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
-from .audio_utils import determine_duration_from_file, format_duration
-
-# Django imports
+from PIL import Image
+import numpy as np
+from sklearn.cluster import KMeans
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
@@ -31,22 +37,35 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.views.decorators.clickjacking import xframe_options_exempt
 
-# DRF и JWT imports
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+import logging
+from django.db import transaction
+import re
 
-import re 
+# 🔥 ВАЖНО: ИМПОРТ СЕРИАЛИЗАТОРОВ
+from .serializers import (
+    TrackSerializer, CompactTrackSerializer, PlayerTrackSerializer,
+    UserProfileSerializer, UserProfileFullSerializer, HeaderImageUploadSerializer,
+    GridScanColorUpdateSerializer, UserMeSerializer, AvatarUploadSerializer,
+    AvatarResponseSerializer, UserMinimalSerializer, PublicUserSerializer,
+    CompactUserSerializer, UploadedTracksSerializer, TrackCreateSerializer
+)
 
-# Настройка логгера
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
-# ==================== ИМПОРТЫ МОДЕЛЕЙ ====================
-
-# Инициализируем флаги
+# ==================== МОДЕЛИ ====================
 HAS_USER_SESSION = False
 HAS_TRACK = False
 HAS_USER_TRACK_INTERACTION = False
@@ -66,73 +85,62 @@ HAS_COMMENT = False
 HAS_COMMENT_LIKE = False
 
 try:
-    # Основные модели пользователей
     from .models import CustomUser
     
-    # Если модель Track существует, импортируем ее
     try:
         from .models import Track
         HAS_TRACK = True
     except ImportError:
         pass
     
-    # Если модель TrackLike существует, импортируем ее
     try:
         from .models import TrackLike
         HAS_TRACK_LIKE = True
     except ImportError:
         pass
     
-    # Если модель UserTrackInteraction существует, импортируем ее
     try:
         from .models import UserTrackInteraction
         HAS_USER_TRACK_INTERACTION = True
     except ImportError:
         pass
     
-    # Если модель PasswordResetToken существует, импортируем ее
     try:
         from .models import PasswordResetToken
         HAS_PASSWORD_RESET_TOKEN = True
     except ImportError:
         pass
     
-    # Если модель Follow существует, импортируем ее
     try:
         from .models import Follow
         HAS_FOLLOW = True
     except ImportError:
         pass
     
-    # Если модель TrackRepost существует, импортируем ее
     try:
         from .models import TrackRepost
         HAS_TRACK_REPOST = True
     except ImportError:
         pass
     
-    # Если модель Hashtag существует, импортируем ее
     try:
         from .models import Hashtag
         HAS_HASHTAG = True
     except ImportError:
         pass
     
-    # Если модель PlayHistory существует, импортируем ее
     try:
         from .models import PlayHistory
         HAS_PLAY_HISTORY = True
     except ImportError:
         pass
     
-    # Если модель Comment существует, импортируем ее
     try:
         from .models import Comment
         HAS_COMMENT = True
     except ImportError:
         pass
     
-    # Если модель TrackComment существует, импортируем ее
     try:
         from .models import TrackComment
         HAS_TRACK_COMMENT = True
@@ -143,8 +151,7 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-# ==================== EMAIL SETTINGS FOR MAILHOG ====================
-
+# ==================== НАСТРОЙКИ EMAIL ====================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
@@ -152,12 +159,8 @@ EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'noreply@musicplatform.dev'
 
-# ==================== TURNSTILE HELPER ====================
-
+# ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 def verify_turnstile_token(token, remote_ip=None):
-    """
-    Проверка токена Cloudflare Turnstile
-    """
     if os.getenv('DEBUG', 'True') == 'True' or settings.DEBUG:
         return True
     
@@ -170,11 +173,7 @@ def verify_turnstile_token(token, remote_ip=None):
         return False
     
     try:
-        data = {
-            'secret': secret_key,
-            'response': token
-        }
-        
+        data = {'secret': secret_key, 'response': token}
         if remote_ip:
             data['remoteip'] = remote_ip
         
@@ -183,64 +182,19 @@ def verify_turnstile_token(token, remote_ip=None):
             data=data,
             timeout=10
         )
-        
         result = response.json()
-        
         return result.get('success', False)
-        
     except requests.exceptions.RequestException:
         return False
     except Exception:
         return False
 
-
-@require_POST
-def verify_turnstile_endpoint(request):
-    """
-    Endpoint для проверки Turnstile токена с фронтенда
-    """
-    try:
-        data = json.loads(request.body)
-        token = data.get('token')
-        remote_ip = request.META.get('REMOTE_ADDR')
-        
-        is_valid = verify_turnstile_token(token, remote_ip)
-        
-        if is_valid:
-            return JsonResponse({
-                'success': True,
-                'message': 'Капча пройдена успешно',
-                'timestamp': timezone.now().isoformat()
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': 'Не удалось проверить капчу',
-                'message': 'Пожалуйста, обновите страницу и попробуйте снова'
-            }, status=400)
-            
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'error': 'Некорректный JSON в запросе'
-        }, status=400)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-# ==================== PASSWORD RESET HELPERS ====================
-
 def generate_reset_token():
-    """Генерация уникального токена для сброса пароля"""
     return secrets.token_urlsafe(32)
 
 def send_password_reset_code_email(email, code):
-    """Отправка кода подтверждения для сброса пароля через MailHog"""
     try:
         subject = f'Код сброса пароля: {code} - Music Platform'
-        
         message = f"""
         Ваш код подтверждения: {code}
         
@@ -262,17 +216,446 @@ def send_password_reset_code_email(email, code):
             recipient_list=[email],
             fail_silently=False,
         )
-        
         return True
-        
     except Exception:
         return False
 
-# ==================== AUTHENTICATION VIEWS ====================
+def get_time_ago_str(timestamp):
+    now = timezone.now()
+    diff = now - timestamp
+    
+    seconds = diff.total_seconds()
+    minutes = seconds // 60
+    hours = minutes // 60
+    days = hours // 24
+    
+    if seconds < 60:
+        return 'Just now'
+    elif minutes < 60:
+        return f'{int(minutes)} minute{"s" if minutes > 1 else ""} ago'
+    elif hours < 24:
+        return f'{int(hours)} hour{"s" if hours > 1 else ""} ago'
+    elif days < 7:
+        return f'{int(days)} day{"s" if days > 1 else ""} ago'
+    elif days < 30:
+        weeks = days // 7
+        return f'{int(weeks)} week{"s" if weeks > 1 else ""} ago'
+    else:
+        return timestamp.strftime('%b %d, %Y')
+
+def create_demo_track(track_id):
+    if HAS_TRACK:
+        tracks_data = {
+            1: {
+                'title': "hard drive (slowed & muffled)",
+                'artist': "griffinilla",
+                'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
+                'audio_url': "/tracks/track1.mp3",
+                'duration': "3:20"
+            },
+            2: {
+                'title': "Deutschland",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track2.mp3",
+                'duration': "5:22"
+            },
+            3: {
+                'title': "Sonne",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track3.mp3",
+                'duration': "4:05"
+            }
+        }
+        
+        if track_id in tracks_data:
+            track_data = tracks_data[track_id]
+            user = CustomUser.objects.first() if CustomUser.objects.exists() else None
+            
+            if user:
+                track = Track.objects.create(
+                    id=track_id,
+                    uploaded_by=user,
+                    **track_data
+                )
+                return track
+    
+    return None
+
+def generate_demo_waveform(track_id):
+    import numpy as np
+    
+    np.random.seed(track_id)
+    
+    num_bars = 120
+    base_frequency = 0.15 + (track_id * 0.02)
+    
+    base_wave = [40 + 40 * np.sin(i * base_frequency) for i in range(num_bars)]
+    
+    if track_id == 1:
+        noise = [5 * np.random.random() for _ in range(num_bars)]
+    elif track_id == 2:
+        noise = [15 * np.random.random() for _ in range(num_bars)]
+    else:
+        noise = [10 * np.random.random() for _ in range(num_bars)]
+    
+    waveform = [base_wave[i] + noise[i] for i in range(num_bars)]
+    
+    waveform = [max(10, min(100, int(val))) for val in waveform]
+    
+    return waveform
+
+def ensure_waveform_for_track(track):
+    try:
+        if track.waveform_generated and track.waveform_data:
+            return track.waveform_data
+        
+        waveform_data = generate_demo_waveform(track.id)
+        
+        track.waveform_data = waveform_data
+        track.waveform_generated = True
+        track.save(update_fields=['waveform_data', 'waveform_generated'])
+        
+        return waveform_data
+        
+    except Exception:
+        return generate_demo_waveform(track.id)
+
+# ==================== ФУНКЦИИ ДЛЯ HEADER IMAGE ====================
+def extract_dominant_color(image_file):
+    """Извлекает доминирующий цвет из header image"""
+    try:
+        image_file.seek(0)
+        
+        img = Image.open(image_file)
+        img.thumbnail((100, 100))
+        
+        if img.mode not in ['RGB', 'RGBA']:
+            img = img.convert('RGB')
+        elif img.mode == 'RGBA':
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[3] if img.mode == 'RGBA' else None)
+            img = background
+        
+        colors = img.getcolors(maxcolors=10000)
+        if colors:
+            colors.sort(key=lambda x: x[0], reverse=True)
+            dominant_color = colors[0][1]
+        else:
+            img_array = np.array(img)
+            pixels = img_array.reshape(-1, 3)
+            
+            kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+            kmeans.fit(pixels)
+            
+            labels = kmeans.labels_
+            unique_labels, counts = np.unique(labels, return_counts=True)
+            dominant_idx = unique_labels[np.argmax(counts)]
+            dominant_color = kmeans.cluster_centers_[dominant_idx].astype(int)
+        
+        hex_color = '#{:02x}{:02x}{:02x}'.format(
+            int(dominant_color[0]),
+            int(dominant_color[1]),
+            int(dominant_color[2])
+        )
+        
+        return hex_color.lower()
+        
+    except Exception as e:
+        logger.error(f"Error extracting dominant color: {e}")
+        return '#7c3aed'
+
+def hsl_to_hex(h, s, l):
+    """Конвертация HSL в HEX"""
+    c = (1 - abs(2 * l - 1)) * s
+    x = c * (1 - abs((h / 60) % 2 - 1))
+    m = l - c / 2
+    
+    if 0 <= h < 60:
+        r, g, b = c, x, 0
+    elif 60 <= h < 120:
+        r, g, b = x, c, 0
+    elif 120 <= h < 180:
+        r, g, b = 0, c, x
+    elif 180 <= h < 240:
+        r, g, b = 0, x, c
+    elif 240 <= h < 300:
+        r, g, b = x, 0, c
+    else:
+        r, g, b = c, 0, x
+    
+    r = int((r + m) * 255)
+    g = int((g + m) * 255)
+    b = int((b + m) * 255)
+    
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+def get_color_scheme(hex_color):
+    """Генерация цветовой схемы на основе доминирующего цвета"""
+    try:
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) != 6:
+            return get_default_color_scheme()
+        
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        r_norm = r / 255.0
+        g_norm = g / 255.0
+        b_norm = b / 255.0
+        
+        c_max = max(r_norm, g_norm, b_norm)
+        c_min = min(r_norm, g_norm, b_norm)
+        delta = c_max - c_min
+        
+        if delta == 0:
+            h = 0
+        elif c_max == r_norm:
+            h = 60 * (((g_norm - b_norm) / delta) % 6)
+        elif c_max == g_norm:
+            h = 60 * (((b_norm - r_norm) / delta) + 2)
+        else:
+            h = 60 * (((r_norm - g_norm) / delta) + 4)
+        
+        l = (c_max + c_min) / 2
+        
+        s = 0 if delta == 0 else delta / (1 - abs(2 * l - 1))
+        
+        color_scheme = {
+            'primary': f'#{hex_color}',
+            'light': hsl_to_hex(h, s, min(l + 0.2, 1)),
+            'lighter': hsl_to_hex(h, s, min(l + 0.3, 1)),
+            'dark': hsl_to_hex(h, s, max(l - 0.2, 0)),
+            'darker': hsl_to_hex(h, s, max(l - 0.3, 0)),
+            'complementary': hsl_to_hex((h + 180) % 360, s, l),
+            'analogous_1': hsl_to_hex((h + 30) % 360, s, l),
+            'analogous_2': hsl_to_hex((h - 30) % 360, s, l),
+            'triadic_1': hsl_to_hex((h + 120) % 360, s, l),
+            'triadic_2': hsl_to_hex((h + 240) % 360, s, l),
+            'monochromatic_1': hsl_to_hex(h, max(s - 0.3, 0.1), l),
+            'monochromatic_2': hsl_to_hex(h, min(s + 0.3, 1), l),
+        }
+        
+        color_scheme.update({
+            'bg_primary': color_scheme['primary'],
+            'bg_light': color_scheme['light'],
+            'text_on_primary': '#ffffff' if l < 0.6 else '#000000',
+            'text_on_light': '#000000',
+            'border': color_scheme['dark'],
+            'hover': color_scheme['light'],
+            'active': color_scheme['darker'],
+            'gradient_start': color_scheme['primary'],
+            'gradient_end': color_scheme['complementary'],
+        })
+        
+        return color_scheme
+        
+    except:
+        return get_default_color_scheme()
+
+def get_default_color_scheme():
+    """Возвращает цветовую схему по умолчанию"""
+    return {
+        'primary': '#7c3aed',
+        'light': '#a78bfa',
+        'lighter': '#c4b5fd',
+        'dark': '#5b21b6',
+        'darker': '#4c1d95',
+        'complementary': '#3aed7c',
+        'analogous_1': '#ed7c3a',
+        'analogous_2': '#7c3aed',
+        'triadic_1': '#3aed7c',
+        'triadic_2': '#ed3a7c',
+        'monochromatic_1': '#a78bfa',
+        'monochromatic_2': '#5b21b6',
+        'bg_primary': '#7c3aed',
+        'bg_light': '#a78bfa',
+        'text_on_primary': '#ffffff',
+        'text_on_light': '#000000',
+        'border': '#5b21b6',
+        'hover': '#a78bfa',
+        'active': '#4c1d95',
+        'gradient_start': '#7c3aed',
+        'gradient_end': '#3aed7c',
+    }
+
+# ==================== AVATAR UPLOAD FUNCTION ====================
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    """Загрузка аватара пользователя - оптимизированная версия"""
+    try:
+        user = request.user
+        logger.info(f"Загрузка аватара для пользователя {user.username}")
+        
+        # Проверяем наличие файла
+        if 'avatar' not in request.FILES:
+            return Response({
+                'success': False,
+                'error': 'Файл аватара не найден'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        avatar_file = request.FILES['avatar']
+        
+        # Проверяем размер файла (макс 10MB)
+        max_size = 10 * 1024 * 1024  # 10MB
+        if avatar_file.size > max_size:
+            return Response({
+                'success': False,
+                'error': f'Файл слишком большой. Максимальный размер: {max_size // (1024*1024)}MB'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Проверяем тип файла
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if avatar_file.content_type not in allowed_types:
+            return Response({
+                'success': False,
+                'error': f'Неподдерживаемый формат изображения. Разрешены: {", ".join(allowed_types)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Удаляем старый аватар если существует
+        if user.avatar:
+            try:
+                user.avatar.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Не удалось удалить старый аватар: {e}")
+        
+        # Сохраняем новый аватар
+        user.avatar = avatar_file
+        user.updated_at = timezone.now()
+        user.save(update_fields=['avatar', 'updated_at'])
+        
+        # Получаем абсолютный URL
+        avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
+        
+        logger.info(f"Аватар успешно загружен для {user.username}: {avatar_url}")
+        
+        return Response({
+            'success': True,
+            'message': 'Аватар успешно загружен',
+            'avatar_url': avatar_url,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'avatar_url': avatar_url
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка загрузки аватара: {e}", exc_info=True)
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера',
+            'details': str(e) if settings.DEBUG else None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_avatar(request):
+    """Удаление аватара пользователя"""
+    try:
+        user = request.user
+        
+        if not user.avatar:
+            return Response({
+                'success': False,
+                'error': 'У вас нет аватара для удаления'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Удаляем файл аватара
+        user.avatar.delete(save=False)
+        user.avatar = None
+        user.save(update_fields=['avatar', 'updated_at'])
+        
+        logger.info(f"Аватар удален для пользователя {user.username} (ID: {user.id})")
+        
+        return Response({
+            'success': True,
+            'message': 'Аватар успешно удален',
+            'user_id': user.id,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'avatar_url': None
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка удаления аватара: {e}")
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера при удалении аватара'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_avatar(request):
+    """Получение информации об аватаре текущего пользователя"""
+    try:
+        user = request.user
+        
+        avatar_url = None
+        if user.avatar:
+            avatar_url = request.build_absolute_uri(user.avatar.url)
+        
+        return Response({
+            'success': True,
+            'avatar': {
+                'url': avatar_url,
+                'has_avatar': bool(user.avatar),
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None
+            },
+            'user': {
+                'id': user.id,
+                'username': user.username
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения аватара: {e}")
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ==================== API ENDPOINTS ====================
 
 @require_POST
+def verify_turnstile_endpoint(request):
+    try:
+        data = json.loads(request.body)
+        token = data.get('token')
+        remote_ip = request.META.get('REMOTE_ADDR')
+        is_valid = verify_turnstile_token(token, remote_ip)
+        
+        if is_valid:
+            return JsonResponse({
+                'success': True,
+                'message': 'Капча пройдена успешно',
+                'timestamp': timezone.now().isoformat()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Не удалось проверить капчу',
+                'message': 'Пожалуйста, обновите страницу и попробуйте снова'
+            }, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Некорректный JSON в запросе'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+        
+@csrf_exempt
+@require_POST
 def register_user(request):
-    """Регистрация нового пользователя"""
     try:
         data = json.loads(request.body)
         email = data.get('email', '').strip().lower()
@@ -281,7 +664,6 @@ def register_user(request):
         confirm_password = data.get('confirm_password', '')
         captcha_token = data.get('captcha_token', '')
         
-        # Валидация
         if not all([email, username, password, confirm_password]):
             return JsonResponse({
                 'success': False,
@@ -294,7 +676,6 @@ def register_user(request):
                 'error': 'Пароли не совпадают'
             }, status=400)
         
-        # Проверка сложности пароля
         if len(password) < 8:
             return JsonResponse({
                 'success': False,
@@ -331,7 +712,6 @@ def register_user(request):
                 'error': 'Введите корректный email'
             }, status=400)
         
-        # Проверка Turnstile капчи (только в продакшене)
         if os.getenv('DEBUG', 'True') != 'True' and not settings.DEBUG:
             if not captcha_token:
                 return JsonResponse({
@@ -345,7 +725,6 @@ def register_user(request):
                     'error': 'Проверка безопасности не пройдена'
                 }, status=400)
         
-        # Проверка существования пользователя
         if CustomUser.objects.filter(email=email).exists():
             return JsonResponse({
                 'success': False,
@@ -358,7 +737,6 @@ def register_user(request):
                 'error': 'Пользователь с таким именем уже существует'
             }, status=400)
         
-        # Создание пользователя
         user = CustomUser.objects.create_user(
             email=email,
             username=username,
@@ -367,7 +745,6 @@ def register_user(request):
         
         logger.info(f"Пользователь зарегистрирован: {username} ({email})")
         
-        # Отправляем welcome email через MailHog
         try:
             subject = 'Добро пожаловать в Music Platform!'
             message = f"""
@@ -387,7 +764,7 @@ def register_user(request):
             
             ---
             Music Platform
-            С любовью к музыке ❤️
+            С любовью к музыке
             """
             
             send_mail(
@@ -429,9 +806,8 @@ def register_user(request):
 
 @api_view(['POST'])
 def login_user(request):
-    """Аутентификация пользователя с JWT"""
     try:
-        data = request.data  # ✅ ДОЛЖНО БЫТЬ request.data, а не json.loads!
+        data = request.data
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
         remember_me = data.get('remember_me', False)
@@ -442,7 +818,6 @@ def login_user(request):
                 'error': 'Email и пароль обязательны'
             }, status=400)
         
-        # Аутентификация пользователя
         user = authenticate(request, username=email, password=password)
         
         if user is None:
@@ -457,11 +832,9 @@ def login_user(request):
                 'error': 'Аккаунт деактивирован'
             }, status=403)
         
-        # Генерация JWT токенов
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         
-        # Настройки lifetime в зависимости от remember_me
         if remember_me:
             refresh.access_token.set_exp(lifetime=timedelta(days=7))
             refresh.set_exp(lifetime=timedelta(days=30))
@@ -475,8 +848,11 @@ def login_user(request):
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'avatar': user.avatar,
-                'bio': user.bio
+                'avatar': user.avatar.url if user.avatar else None,
+                'bio': user.bio,
+                'header_image_url': user.get_header_image_url(),
+                'gridscan_color': user.gridscan_color,
+                'header_updated_at': user.header_updated_at.isoformat() if user.header_updated_at else None
             },
             'tokens': {
                 'access': access_token,
@@ -496,15 +872,11 @@ def login_user(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_user(request):
-    """Выход пользователя с JWT"""
     try:
-        # В случае JWT обычно токен добавляется в blacklist
-        # Здесь просто возвращаем успех
         return Response({
             'success': True,
             'message': 'Выход выполнен успешно'
         })
-        
     except Exception as e:
         logger.error(f"Ошибка при выходе: {e}")
         return Response({
@@ -515,11 +887,9 @@ def logout_user(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_profile(request):
-    """Получение профиля пользователя с JWT аутентификацией"""
     try:
         user = request.user
         
-        # Получаем статистику пользователя
         liked_tracks_count = 0
         playlists_count = 0
         
@@ -532,7 +902,7 @@ def get_user_profile(request):
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'avatar': user.avatar,
+                'avatar': user.avatar.url if user.avatar else None,
                 'bio': user.bio,
                 'created_at': user.created_at.isoformat(),
                 'email_verified': user.email_verified,
@@ -540,10 +910,12 @@ def get_user_profile(request):
                     'liked_tracks': liked_tracks_count,
                     'playlists': playlists_count,
                     'tracks_uploaded': 0
-                }
+                },
+                'header_image_url': user.get_header_image_url(),
+                'gridscan_color': user.gridscan_color,
+                'header_updated_at': user.header_updated_at.isoformat() if user.header_updated_at else None
             }
         })
-        
     except Exception as e:
         logger.error(f"Ошибка при получении профиля: {e}")
         return Response({
@@ -551,11 +923,8 @@ def get_user_profile(request):
             'error': str(e)
         }, status=500)
 
-# ==================== PASSWORD RESET VIEWS ====================
-
 @require_POST
 def password_reset_request(request):
-    """Запрос на сброс пароля - отправка кода на email"""
     try:
         data = json.loads(request.body)
         email = data.get('email', '').strip().lower()
@@ -566,7 +935,6 @@ def password_reset_request(request):
                 'error': 'Email обязателен'
             }, status=400)
         
-        # Проверяем существование пользователя
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
@@ -575,15 +943,11 @@ def password_reset_request(request):
                 'message': 'Если email существует, код отправлен'
             })
         
-        # Генерируем 6-значный код
         import random
         code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         
         if HAS_PASSWORD_RESET_TOKEN:
-            # Удаляем старые токены
             PasswordResetToken.objects.filter(user=user).delete()
-            
-            # Сохраняем код в базе данных
             expires_at = timezone.now() + timedelta(minutes=5)
             reset_token = PasswordResetToken.objects.create(
                 user=user,
@@ -592,7 +956,6 @@ def password_reset_request(request):
                 expires_at=expires_at
             )
         
-        # Отправляем email
         email_sent = send_password_reset_code_email(email, code)
         
         if email_sent:
@@ -616,7 +979,6 @@ def password_reset_request(request):
 
 @require_POST
 def password_reset_verify(request):
-    """Проверка кода подтверждения"""
     try:
         data = json.loads(request.body)
         email = data.get('email', '').strip().lower()
@@ -628,7 +990,6 @@ def password_reset_verify(request):
                 'error': 'Email и код обязательны'
             }, status=400)
         
-        # Находим пользователя
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
@@ -675,7 +1036,6 @@ def password_reset_verify(request):
 
 @require_POST
 def password_reset_confirm(request):
-    """Подтверждение сброса пароля"""
     try:
         data = json.loads(request.body)
         email = data.get('email', '').strip().lower()
@@ -683,7 +1043,6 @@ def password_reset_confirm(request):
         password = data.get('password', '')
         confirm_password = data.get('confirm_password', '')
         
-        # Валидация
         if not all([email, password, confirm_password]):
             return JsonResponse({
                 'success': False,
@@ -696,7 +1055,6 @@ def password_reset_confirm(request):
                 'error': 'Пароли не совпадают'
             }, status=400)
         
-        # Проверка сложности пароля
         if len(password) < 8:
             return JsonResponse({
                 'success': False,
@@ -721,7 +1079,6 @@ def password_reset_confirm(request):
                 'error': 'Пароль должен содержать хотя бы один специальный символ (@$!%*?&)'
             }, status=400)
         
-        # Находим пользователя
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
@@ -730,7 +1087,6 @@ def password_reset_confirm(request):
                 'error': 'Пользователь не найден'
             }, status=404)
         
-        # Проверяем код подтверждения (если модель существует)
         if HAS_PASSWORD_RESET_TOKEN and code:
             try:
                 reset_token = PasswordResetToken.objects.get(
@@ -745,11 +1101,9 @@ def password_reset_confirm(request):
                     'error': 'Неверный код подтверждения или код истек'
                 }, status=400)
         
-        # Обновляем пароль
         user.set_password(password)
         user.save()
         
-        # Отправляем email об успешном сбросе пароля
         try:
             subject = 'Пароль успешно изменен - Music Platform'
             message = f"""
@@ -793,11 +1147,8 @@ def password_reset_confirm(request):
             'error': str(e)
         }, status=500)
 
-# ==================== BASIC SYSTEM VIEWS ====================
-
 @require_GET
 def health_check(request):
-    """Проверка доступности бэкенда"""
     return JsonResponse({
         'status': 'online',
         'message': 'Music Platform API is running',
@@ -813,20 +1164,16 @@ def health_check(request):
         }
     })
 
-# ==================== TRACK ENDPOINTS ====================
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def toggle_like(request):
-    """Обработка лайков/дизлайков треков с JWT аутентификацией"""
     try:
         user = request.user
         
-        data = request.data  # ✅ Используем request.data
+        data = request.data
         track_id = data.get('track_id')
         liked = data.get('liked')
         
-        # Валидация
         if track_id is None or liked is None:
             return Response({
                 'success': False,
@@ -844,11 +1191,9 @@ def toggle_like(request):
         liked_bool = bool(liked) if isinstance(liked, bool) else str(liked).lower() in ['true', '1', 'yes', 'y']
         
         if HAS_TRACK:
-            # Получаем или создаем трек
             try:
                 track = Track.objects.get(id=track_id_int)
             except Track.DoesNotExist:
-                # Создаем демо-трек если не найден
                 tracks_data = {
                     1: {
                         'title': 'hard drive (slowed & muffled)',
@@ -890,7 +1235,6 @@ def toggle_like(request):
                         'error': f'Трек с ID {track_id_int} не найден'
                     }, status=404)
             
-            # Обрабатываем лайк
             if HAS_TRACK_LIKE:
                 if liked_bool:
                     like_obj, created = TrackLike.objects.get_or_create(
@@ -928,9 +1272,6 @@ def toggle_like(request):
                 
                 like_count = track.like_count
             
-            action = 'лайкнут' if liked_bool else 'дизлайкнут'
-            
-            # Проверяем, лайкнул ли пользователь
             user_has_liked = False
             if HAS_TRACK_LIKE:
                 user_has_liked = TrackLike.objects.filter(user=user, track=track).exists()
@@ -943,7 +1284,7 @@ def toggle_like(request):
             
             return Response({
                 'success': True,
-                'message': f'Трек {track_id_int} успешно {action}',
+                'message': f'Трек {track_id_int} успешно обработан',
                 'track_id': track_id_int,
                 'liked': liked_bool,
                 'like_count': like_count,
@@ -952,7 +1293,6 @@ def toggle_like(request):
                 'timestamp': timezone.now().isoformat()
             })
         else:
-            # Если модель Track не существует
             return Response({
                 'success': True,
                 'message': 'Лайк обработан (разработка)',
@@ -969,11 +1309,10 @@ def toggle_like(request):
             'message': 'Внутренняя ошибка сервера'
         }, status=500)
 
+# 🔥 ИСПРАВЛЕННЫЙ get_track_info - теперь использует PlayerTrackSerializer
 @require_GET
 def get_track_info(request, track_id):
-    """Получение информации о треке"""
     try:
-        # Для JWT аутентификации используем отдельный механизм
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -987,104 +1326,35 @@ def get_track_info(request, track_id):
         
         user_liked = False
         
-        # Пробуем найти трек в БД
         if HAS_TRACK:
             try:
                 track = Track.objects.get(id=track_id)
                 
-                # Проверяем лайк пользователя
                 if user:
                     try:
                         user_liked = TrackLike.objects.filter(user=user, track=track).exists()
                     except:
                         user_liked = False
                 
-                # Получаем URL обложки
-                cover_url = ''
-                if track.cover:
-                    if hasattr(track.cover, 'url'):
-                        cover_url = request.build_absolute_uri(track.cover.url)
-                    else:
-                        cover_url = str(track.cover)
-                        if cover_url.startswith('/media/'):
-                            cover_url = request.build_absolute_uri(cover_url)
-                        elif not cover_url.startswith('http'):
-                            cover_url = request.build_absolute_uri('/media/' + cover_url)
-                elif track.cover_url:
-                    cover_url = track.cover_url
-                    if cover_url.startswith('/media/'):
-                        cover_url = request.build_absolute_uri(cover_url)
+                # 🔥 ИСПРАВЛЕНО: Используем PlayerTrackSerializer
+                serializer = PlayerTrackSerializer(
+                    track,
+                    context={'request': request}
+                )
                 
-                if not cover_url or cover_url == '':
-                    cover_url = request.build_absolute_uri('/static/default_cover.jpg')
+                # Добавляем user_liked к данным
+                track_data = serializer.data
+                track_data['user_liked'] = user_liked
+                track_data['success'] = True
                 
-                # Получаем URL аудио
-                audio_url = ''
-                if track.audio_file:
-                    if hasattr(track.audio_file, 'url'):
-                        audio_url = request.build_absolute_uri(track.audio_file.url)
-                    else:
-                        audio_url = str(track.audio_file)
-                        if audio_url.startswith('/media/'):
-                            audio_url = request.build_absolute_uri(audio_url)
-                        elif not audio_url.startswith('http'):
-                            audio_url = request.build_absolute_uri('/media/audio/' + audio_url)
-                elif track.audio_url:
-                    audio_url = track.audio_url
-                    if audio_url.startswith('/media/'):
-                        audio_url = request.build_absolute_uri(audio_url)
-                
-                # Для загруженных треков без аудио, попробуем найти по имени файла
-                if not audio_url or audio_url == '':
-                    import os
-                    from django.conf import settings
-                    
-                    possible_files = [
-                        f"track_{track_id}.mp3",
-                        f"{track_id}.mp3",
-                        f"audio_{track_id}.mp3"
-                    ]
-                    
-                    for filename in possible_files:
-                        file_path = os.path.join(settings.MEDIA_ROOT, 'audio', filename)
-                        if os.path.exists(file_path):
-                            audio_url = request.build_absolute_uri(f'/media/audio/{filename}')
-                            break
-                
-                track_info = {
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist or (track.uploaded_by.username if track.uploaded_by else 'Unknown Artist'),
-                    'cover': cover_url,
-                    'audio_url': audio_url,
-                    'duration': track.duration or '3:00',
-                    'like_count': track.like_count or 0,
-                    'play_count': track.play_count or 0,
-                    'repost_count': track.repost_count or 0,
-                    'description': track.description or f'Трек {track.title}',
-                    'genre': track.genre or 'other',
-                    'uploaded_by': {
-                        'id': track.uploaded_by.id if track.uploaded_by else 0,
-                        'username': track.uploaded_by.username if track.uploaded_by else 'Unknown'
-                    },
-                    'user_liked': user_liked,
-                    'hashtags': [],
-                    'source': 'database',
-                    'debug': {
-                        'cover_exists': bool(track.cover),
-                        'audio_exists': bool(track.audio_file),
-                        'track_id': track_id
-                    }
-                }
-                
-                logger.info(f"✅ Трек {track_id} из БД: {track.title}, аудио: {audio_url}")
-                return JsonResponse(track_info)
+                logger.info(f"Трек {track_id} из БД: {track.title}")
+                return JsonResponse(track_data)
                 
             except Track.DoesNotExist:
                 logger.warning(f"Трек {track_id} не найден в БД")
                 pass
         
-        # Демо-данные для треков 1-6
+        # Fallback для демо треков
         demo_data = {
             1: {
                 'id': 1,
@@ -1096,9 +1366,10 @@ def get_track_info(request, track_id):
                 'like_count': 56,
                 'description': "Замедленная версия трека griffinilla",
                 'genre': 'electronic',
-                'uploaded_by': {'id': 1, 'username': 'griffinilla'},
+                'uploaded_by': {'id': 1, 'username': 'griffinilla', 'avatar_url': None},
                 'hashtags': ["#slowed", "#lofi"],
-                'source': 'demo'
+                'source': 'demo',
+                'user_liked': False
             },
             2: {
                 'id': 2,
@@ -1110,9 +1381,10 @@ def get_track_info(request, track_id):
                 'like_count': 34,
                 'description': "Хит Rammstein",
                 'genre': 'metal',
-                'uploaded_by': {'id': 2, 'username': 'Rammstein'},
+                'uploaded_by': {'id': 2, 'username': 'Rammstein', 'avatar_url': None},
                 'hashtags': ["#industrial", "#metal"],
-                'source': 'demo'
+                'source': 'demo',
+                'user_liked': False
             },
             3: {
                 'id': 3,
@@ -1124,51 +1396,10 @@ def get_track_info(request, track_id):
                 'like_count': 23,
                 'description': "Классика Rammstein",
                 'genre': 'metal',
-                'uploaded_by': {'id': 2, 'username': 'Rammstein'},
+                'uploaded_by': {'id': 2, 'username': 'Rammstein', 'avatar_url': None},
                 'hashtags': ["#industrial", "#rock"],
-                'source': 'demo'
-            },
-            4: {
-                'id': 4,
-                'title': "Electronic Dreams",
-                'artist': "Synthwave Collective",
-                'cover': request.build_absolute_uri('/static/demo_covers/4.jpg'),
-                'audio_url': request.build_absolute_uri('/static/tracks/track4.mp3'),
-                'duration': "4:15",
-                'like_count': 45,
-                'description': "Синтвейв композиция",
-                'genre': 'electronic',
-                'uploaded_by': {'id': 3, 'username': 'Synthwave'},
-                'hashtags': ["#synthwave", "#electronic"],
-                'source': 'demo'
-            },
-            5: {
-                'id': 5,
-                'title': "Neon Lights",
-                'artist': "Cyberpunk DJ",
-                'cover': request.build_absolute_uri('/static/demo_covers/5.jpg'),
-                'audio_url': request.build_absolute_uri('/static/tracks/track5.mp3'),
-                'duration': "3:45",
-                'like_count': 67,
-                'description': "Киберпанк саунд",
-                'genre': 'electronic',
-                'uploaded_by': {'id': 4, 'username': 'Cyberpunk DJ'},
-                'hashtags': ["#cyberpunk", "#neon"],
-                'source': 'demo'
-            },
-            6: {
-                'id': 6,
-                'title': "Midnight Drive",
-                'artist': "Retro Future",
-                'cover': request.build_absolute_uri('/static/demo_covers/6.jpg'),
-                'audio_url': request.build_absolute_uri('/static/tracks/track6.mp3'),
-                'duration': "4:30",
-                'like_count': 89,
-                'description': "Ретро футуризм",
-                'genre': 'electronic',
-                'uploaded_by': {'id': 5, 'username': 'Retro Future'},
-                'hashtags': ["#retro", "#future"],
-                'source': 'demo'
+                'source': 'demo',
+                'user_liked': False
             }
         }
         
@@ -1176,284 +1407,28 @@ def get_track_info(request, track_id):
         
         if track_id_int in demo_data:
             track = demo_data[track_id_int]
-            track['user_liked'] = False
             return JsonResponse(track)
         else:
-            # Для треков > 6 (загруженных пользователями)
-            import os
-            from django.conf import settings
-            
-            audio_found = False
-            audio_url = ''
-            cover_url = ''
-            
-            audio_paths = [
-                os.path.join(settings.MEDIA_ROOT, 'audio', f'track_{track_id}.mp3'),
-                os.path.join(settings.MEDIA_ROOT, 'audio', f'{track_id}.mp3'),
-                os.path.join(settings.MEDIA_ROOT, 'audio', f'audio_{track_id}.mp3'),
-            ]
-            
-            for audio_path in audio_paths:
-                if os.path.exists(audio_path):
-                    filename = os.path.basename(audio_path)
-                    audio_url = request.build_absolute_uri(f'/media/audio/{filename}')
-                    audio_found = True
-                    break
-            
-            cover_paths = [
-                os.path.join(settings.MEDIA_ROOT, 'covers', f'cover_{track_id}.jpg'),
-                os.path.join(settings.MEDIA_ROOT, 'covers', f'cover_{track_id}.png'),
-                os.path.join(settings.MEDIA_ROOT, 'covers', f'{track_id}.jpg'),
-                os.path.join(settings.MEDIA_ROOT, 'covers', f'{track_id}.png'),
-            ]
-            
-            for cover_path in cover_paths:
-                if os.path.exists(cover_path):
-                    filename = os.path.basename(cover_path)
-                    cover_url = request.build_absolute_uri(f'/media/covers/{filename}')
-                    break
-            
-            if not cover_url:
-                cover_url = request.build_absolute_uri('/static/default_cover.jpg')
-            
-            if audio_found:
-                response_data = {
-                    'id': track_id_int,
-                    'title': f'Трек {track_id}',
-                    'artist': 'Неизвестный артист',
-                    'cover': cover_url,
-                    'audio_url': audio_url,
-                    'duration': '3:00',
-                    'like_count': 0,
-                    'play_count': 0,
-                    'repost_count': 0,
-                    'description': f'Загруженный трек #{track_id}',
-                    'genre': 'other',
-                    'uploaded_by': {'id': 0, 'username': 'User'},
-                    'user_liked': False,
-                    'hashtags': [],
-                    'source': 'media_file',
-                    'debug': {
-                        'audio_found': True,
-                        'audio_url': audio_url
-                    }
-                }
-                return JsonResponse(response_data)
-            else:
-                return JsonResponse({
-                    'error': 'Трек не найден',
-                    'message': f'Трек с ID {track_id} не существует',
-                    'track_id': track_id,
-                    'source': 'not_found'
-                }, status=404)
+            return JsonResponse({
+                'error': 'Трек не найден',
+                'message': f'Трек с ID {track_id} не существует',
+                'track_id': track_id,
+                'source': 'not_found'
+            }, status=404)
         
     except Exception as e:
-        logger.error(f"❌ Ошибка в get_track_info: {e}")
+        logger.error(f"Ошибка в get_track_info: {e}")
         return JsonResponse({
             'error': str(e),
             'message': 'Ошибка при получении информации о треке'
         }, status=500)
 
-# ==================== FOLLOW SYSTEM ====================
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def follow_user(request):
-    """Подписаться на пользователя"""
-    try:
-        user = request.user
-        data = request.data  # ✅ Используем request.data
-        target_user_id = data.get('user_id')
-        
-        if not target_user_id:
-            return Response({
-                'success': False,
-                'error': 'user_id обязателен'
-            }, status=400)
-        
-        # Нельзя подписаться на себя
-        if user.id == target_user_id:
-            return Response({
-                'success': False,
-                'error': 'Нельзя подписаться на себя'
-            }, status=400)
-        
-        try:
-            target_user = CustomUser.objects.get(id=target_user_id)
-        except CustomUser.DoesNotExist:
-            return Response({
-                'success': False,
-                'error': 'Пользователь не найден'
-            }, status=404)
-        
-        if HAS_FOLLOW:
-            # Проверяем, не подписаны ли уже
-            if Follow.objects.filter(follower=user, following=target_user).exists():
-                return Response({
-                    'success': False,
-                    'error': 'Вы уже подписаны на этого пользователя'
-                }, status=400)
-            
-            # Создаем подписку
-            follow = Follow.objects.create(follower=user, following=target_user)
-            
-            return Response({
-                'success': True,
-                'message': f'Вы подписались на {target_user.username}',
-                'follow_id': follow.id,
-                'stats': {
-                    'followers': target_user.followers_count if hasattr(target_user, 'followers_count') else 0,
-                    'following': user.following_count if hasattr(user, 'following_count') else 0
-                }
-            })
-        else:
-            # Если модель Follow не существует
-            return Response({
-                'success': True,
-                'message': f'Подписка оформлена (разработка)',
-                'note': 'Модель Follow не доступна'
-            })
-        
-    except Exception as e:
-        logger.error(f"Ошибка при подписке: {e}")
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def unfollow_user(request):
-    """Отписаться от пользователя"""
-    try:
-        user = request.user
-        data = request.data  # ✅ Используем request.data
-        target_user_id = data.get('user_id')
-        
-        if HAS_FOLLOW:
-            try:
-                follow = Follow.objects.get(follower=user, following_id=target_user_id)
-                follow.delete()
-                
-                # Обновляем статистику
-                target_user = CustomUser.objects.get(id=target_user_id)
-                
-                return Response({
-                    'success': True,
-                    'message': 'Вы отписались от пользователя',
-                    'stats': {
-                        'followers': target_user.followers_count if hasattr(target_user, 'followers_count') else 0,
-                        'following': user.following_count if hasattr(user, 'following_count') else 0
-                    }
-                })
-                
-            except Follow.DoesNotExist:
-                return Response({
-                    'success': False,
-                    'error': 'Вы не подписаны на этого пользователя'
-                }, status=404)
-        else:
-            # Если модель Follow не существует
-            return Response({
-                'success': True,
-                'message': 'Отписка выполнена (разработка)'
-            })
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_followers(request, user_id):
-    """Получение списка подписчиков пользователя"""
-    try:
-        user = CustomUser.objects.get(id=user_id)
-        
-        followers = []
-        if HAS_FOLLOW:
-            follower_relations = Follow.objects.filter(following=user).select_related('follower')
-            for follow in follower_relations:
-                followers.append({
-                    'id': follow.follower.id,
-                    'username': follow.follower.username,
-                    'avatar': follow.follower.avatar,
-                    'bio': follow.follower.bio,
-                    'followed_at': follow.created_at.isoformat()
-                })
-        
-        return Response({
-            'success': True,
-            'followers': followers,
-            'count': len(followers),
-            'user': {
-                'id': user.id,
-                'username': user.username
-            }
-        })
-        
-    except CustomUser.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Пользователь не найден'
-        }, status=404)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_following(request, user_id):
-    """Получение списка подписок пользователя"""
-    try:
-        user = CustomUser.objects.get(id=user_id)
-        
-        following = []
-        if HAS_FOLLOW:
-            following_relations = Follow.objects.filter(follower=user).select_related('following')
-            for follow in following_relations:
-                following.append({
-                    'id': follow.following.id,
-                    'username': follow.following.username,
-                    'avatar': follow.following.avatar,
-                    'bio': follow.following.bio,
-                    'followed_at': follow.created_at.isoformat()
-                })
-        
-        return Response({
-            'success': True,
-            'following': following,
-            'count': len(following),
-            'user': {
-                'id': user.id,
-                'username': user.username
-            }
-        })
-        
-    except CustomUser.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Пользователь не найден'
-        }, status=404)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-
-# ==================== REPOST SYSTEM ====================
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def repost_track(request):
-    """Сделать репост трека"""
     try:
         user = request.user
-        data = request.data  # ✅ Используем request.data
+        data = request.data
         track_id = data.get('track_id')
         comment = data.get('comment', '')
         
@@ -1466,14 +1441,12 @@ def repost_track(request):
         if HAS_TRACK and HAS_TRACK_REPOST:
             track = Track.objects.get(id=track_id, status='published')
             
-            # Проверяем, не репостил ли уже
             if TrackRepost.objects.filter(user=user, track=track).exists():
                 return Response({
                     'success': False,
                     'error': 'Вы уже репостили этот трек'
                 }, status=400)
             
-            # Создаем репост
             repost = TrackRepost.objects.create(
                 user=user,
                 track=track,
@@ -1487,7 +1460,6 @@ def repost_track(request):
                 'repost_count': track.repost_count if hasattr(track, 'repost_count') else 0
             })
         else:
-            # Если модели не существуют
             return Response({
                 'success': True,
                 'message': 'Репост выполнен (разработка)',
@@ -1507,11 +1479,8 @@ def repost_track(request):
             'error': str(e)
         }, status=500)
 
-# ==================== PLAY COUNT SYSTEM ====================
-
 @require_POST
 def record_play(request):
-    """Запись прослушивания трека с защитой от накрутки"""
     try:
         data = json.loads(request.body)
         track_id = data.get('track_id')
@@ -1522,7 +1491,6 @@ def record_play(request):
                 'error': 'track_id обязателен'
             }, status=400)
         
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -1543,11 +1511,9 @@ def record_play(request):
                     'error': 'Трек не найден'
                 }, status=404)
             
-            # Проверка защиты от накрутки
             counted = False
             
             if user and HAS_PLAY_HISTORY:
-                # Проверяем, не слушал ли пользователь этот трек сегодня
                 today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
                 has_played_today = PlayHistory.objects.filter(
                     user=user,
@@ -1556,16 +1522,12 @@ def record_play(request):
                 ).exists()
                 
                 if not has_played_today:
-                    # Увеличиваем счетчик
                     track.play_count = (track.play_count if hasattr(track, 'play_count') else 0) + 1
                     track.save()
                     
-                    # Создаем запись в истории
                     PlayHistory.objects.create(user=user, track=track)
-                    
                     counted = True
             else:
-                # Если нет пользователя или модели PlayHistory, все равно увеличиваем счетчик
                 track.play_count = (track.play_count if hasattr(track, 'play_count') else 0) + 1
                 track.save()
                 counted = True
@@ -1577,7 +1539,6 @@ def record_play(request):
                 'message': 'Прослушивание записано'
             })
         else:
-            # Если модель Track не существует
             return JsonResponse({
                 'success': True,
                 'play_count': 0,
@@ -1592,20 +1553,16 @@ def record_play(request):
             'error': str(e)
         }, status=500)
 
-# ==================== UPLOAD TRACK SYSTEM ====================
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_track(request):
-    """Загрузка нового трека"""
     if request.method != 'POST':
         return Response({'error': 'Метод не разрешен'}, status=405)
     
     try:
         user = request.user
-        logger.info(f"📤 Загрузка трека пользователем {user.username}")
+        logger.info(f"Загрузка трека пользователем {user.username}")
         
-        # Получаем данные формы
         title = request.POST.get('title', '').strip()
         artist = request.POST.get('artist', user.username)
         description = request.POST.get('description', '')
@@ -1619,28 +1576,23 @@ def upload_track(request):
         if not title:
             return Response({'error': 'Название трека обязательно'}, status=400)
         
-        # Проверяем аудио файл
         if 'audio_file' not in request.FILES:
             return Response({'error': 'Аудио файл обязателен'}, status=400)
         
         audio_file = request.FILES['audio_file']
         
-        # Проверяем размер файла (макс 50MB)
         if audio_file.size > 50 * 1024 * 1024:
             return Response({'error': 'Файл слишком большой (макс 50MB)'}, status=400)
         
-        # Проверяем расширение
         allowed_extensions = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']
         file_ext = os.path.splitext(audio_file.name)[1].lower()
         
         if file_ext not in allowed_extensions:
             return Response({'error': f'Неподдерживаемый формат. Разрешены: {", ".join(allowed_extensions)}'}, status=400)
         
-        # Обрабатываем обложку
         cover_file = request.FILES.get('cover')
         cover_url = request.POST.get('cover_url', '')
         
-        # Создаем трек (сначала без длительности)
         track = Track(
             title=title,
             artist=artist or user.username,
@@ -1655,43 +1607,37 @@ def upload_track(request):
             file_size=audio_file.size
         )
         
-        # Добавляем обложку
         if cover_file:
             track.cover = cover_file
         elif cover_url:
             track.cover_url = cover_url
         
-        # Сохраняем трек ПЕРЕД определением длительности
         track.save()
         
-        # Определяем длительность аудио ПОСЛЕ сохранения трека
         try:
             audio_path = track.audio_file.path
-            logger.info(f"🔍 Определение длительности для файла: {audio_path}")
+            logger.info(f"Определение длительности для файла: {audio_path}")
             
             duration_sec = 0
             
-            # Способ 1: Пробуем через pydub
             try:
                 from pydub import AudioSegment
                 audio = AudioSegment.from_file(audio_path)
                 duration_sec = len(audio) / 1000.0
-                logger.info(f"✅ Длительность определена через pydub: {duration_sec:.2f} секунд")
+                logger.info(f"Длительность определена через pydub: {duration_sec:.2f} секунд")
                 
             except Exception as pydub_error:
-                logger.warning(f"⚠️ pydub не удался: {pydub_error}")
+                logger.warning(f"pydub не удался: {pydub_error}")
                 
-                # Способ 2: Пробуем через librosa
                 try:
                     import librosa
                     y, sr = librosa.load(audio_path, sr=None, duration=None)
                     duration_sec = librosa.get_duration(y=y, sr=sr)
-                    logger.info(f"✅ Длительность определена через librosa: {duration_sec:.2f} секунд")
+                    logger.info(f"Длительность определена через librosa: {duration_sec:.2f} секунд")
                     
                 except Exception as librosa_error:
-                    logger.warning(f"⚠️ librosa не удался: {librosa_error}")
+                    logger.warning(f"librosa не удался: {librosa_error}")
                     
-                    # Способ 3: Для WAV файлов через wave
                     if file_ext == '.wav':
                         try:
                             import wave
@@ -1699,11 +1645,10 @@ def upload_track(request):
                                 frames = wav_file.getnframes()
                                 rate = wav_file.getframerate()
                                 duration_sec = frames / float(rate)
-                                logger.info(f"✅ Длительность определена через wave: {duration_sec:.2f} секунд")
+                                logger.info(f"Длительность определена через wave: {duration_sec:.2f} секунд")
                         except Exception as wave_error:
-                            logger.warning(f"⚠️ wave не удался: {wave_error}")
+                            logger.warning(f"wave не удался: {wave_error}")
                     
-                    # Способ 4: Пробуем ffprobe если установлен
                     try:
                         import subprocess
                         cmd = ['ffprobe', '-v', 'error', '-show_entries', 
@@ -1712,26 +1657,22 @@ def upload_track(request):
                         result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
                         if result.returncode == 0:
                             duration_sec = float(result.stdout.strip())
-                            logger.info(f"✅ Длительность определена через ffprobe: {duration_sec:.2f} секунд")
+                            logger.info(f"Длительность определена через ffprobe: {duration_sec:.2f} секунд")
                         else:
-                            logger.warning(f"⚠️ ffprobe вернул ошибку: {result.stderr}")
+                            logger.warning(f"ffprobe вернул ошибку: {result.stderr}")
                     except Exception as ffprobe_error:
-                        logger.warning(f"⚠️ ffprobe не удался: {ffprobe_error}")
+                        logger.warning(f"ffprobe не удался: {ffprobe_error}")
             
-            # Форматируем длительность в MM:SS
             if duration_sec and duration_sec > 0:
                 minutes = int(duration_sec // 60)
                 seconds = int(duration_sec % 60)
                 track.duration = f"{minutes}:{seconds:02d}"
                 
-                # Сохраняем в секундах для удобства
                 if hasattr(track, 'duration_seconds'):
                     track.duration_seconds = int(duration_sec)
                 
-                # Определяем технические характеристики
                 track.bitrate = int(audio_file.size * 8 / duration_sec / 1000) if duration_sec > 0 else 0
                 
-                # Пробуем определить sample rate
                 try:
                     import librosa
                     y, sr = librosa.load(audio_path, sr=None, duration=1)
@@ -1739,23 +1680,32 @@ def upload_track(request):
                 except:
                     track.sample_rate = 44100
                 
-                logger.info(f"✅ Длительность определена: {track.duration} ({duration_sec:.2f} секунд)")
+                logger.info(f"Длительность определена: {track.duration} ({duration_sec:.2f} секунд)")
             else:
-                logger.warning(f"⚠️ Длительность не определена или равна 0: {duration_sec}")
+                logger.warning(f"Длительность не определена или равна 0: {duration_sec}")
                 track.duration = "0:00"
                 track.bitrate = 0
                 track.sample_rate = 0
                 
         except Exception as e:
-            logger.error(f"❌ Ошибка определения длительности: {e}")
+            logger.error(f"Ошибка определения длительности: {e}")
             track.duration = "0:00"
             track.bitrate = 0
             track.sample_rate = 0
         
-        # Сохраняем обновленный трек с длительностью
         track.save(update_fields=['duration', 'duration_seconds', 'bitrate', 'sample_rate'])
         
-        # Обрабатываем хештеги если есть
+        # ГЕНЕРАЦИЯ WAVEFORM ПРИ ЗАГРУЗКЕ
+        try:
+            from .waveform_utils import generate_waveform_for_track
+            if track.audio_file or track.audio_url:
+                generate_waveform_for_track(track)
+                logger.info(f"Waveform сгенерирован для трека {track.id} при загрузке")
+        except ImportError as e:
+            logger.warning(f"Не удалось импортировать waveform_utils: {e}")
+        except Exception as e:
+            logger.error(f"Ошибка генерации waveform при загрузке: {e}")
+        
         if hashtags and HAS_HASHTAG:
             tags_list = [tag.strip().replace('#', '') for tag in hashtags.split() if tag.strip()]
             for tag_name in tags_list:
@@ -1766,53 +1716,24 @@ def upload_track(request):
                     )
                     track.hashtags.add(tag)
         
-        # Логируем успех
-        logger.info(f"✅ Трек создан: ID {track.id}, статус: {track.status}, длительность: {track.duration}")
+        logger.info(f"Трек создан: ID {track.id}, статус: {track.status}, длительность: {track.duration}")
         
-        # Получаем абсолютные URL
-        cover_url_full = ''
-        if track.cover:
-            cover_url_full = request.build_absolute_uri(track.cover.url)
-        elif track.cover_url:
-            cover_url_full = track.cover_url
+        # 🔥 ИСПРАВЛЕНО: Используем TrackSerializer для ответа
+        serializer = TrackSerializer(
+            track,
+            context={'request': request}
+        )
         
-        audio_url_full = ''
-        if track.audio_file:
-            audio_url_full = request.build_absolute_uri(track.audio_file.url)
-        elif track.audio_url:
-            audio_url_full = track.audio_url
-        
-        # Формируем ответ
         response_data = {
             'success': True,
             'message': 'Трек успешно загружен',
-            'track': {
-                'id': track.id,
-                'title': track.title,
-                'artist': track.artist,
-                'cover': cover_url_full,
-                'cover_url': cover_url_full,
-                'audio_url': audio_url_full,
-                'duration': track.duration if track.duration else '0:00',
-                'duration_formatted': track.duration if track.duration else '0:00',
-                'duration_seconds': track.duration_seconds if hasattr(track, 'duration_seconds') else 0,
-                'status': track.status,
-                'created_at': track.created_at.isoformat(),
-                'waveform_generated': track.waveform_generated if hasattr(track, 'waveform_generated') else False,
-                'waveform_ready': track.waveform_generated if hasattr(track, 'waveform_generated') else False,
-                'uploaded_by': {
-                    'id': user.id,
-                    'username': user.username
-                },
-                'hashtags': [tag.name for tag in track.hashtags.all()] if hasattr(track, 'hashtags') else [],
-                'note': 'Waveform будет сгенерирован автоматически для опубликованных треков'
-            }
+            'track': serializer.data
         }
         
         return Response(response_data)
         
     except Exception as e:
-        logger.error(f"❌ Ошибка загрузки трека: {e}")
+        logger.error(f"Ошибка загрузки трека: {e}")
         import traceback
         traceback.print_exc()
         return Response({'error': f'Ошибка загрузки: {str(e)}'}, status=500)
@@ -1820,15 +1741,12 @@ def upload_track(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def publish_track(request, track_id):
-    """Публикация трека после загрузки"""
     try:
         if HAS_TRACK:
             track = Track.objects.get(id=track_id, uploaded_by=request.user)
             
-            # Упрощенные условия публикации
             conditions = []
             
-            # 1. Есть ли аудио?
             if not track.audio_file and not track.audio_url:
                 conditions.append('Добавьте аудио файл или ссылку на аудио')
             
@@ -1839,58 +1757,53 @@ def publish_track(request, track_id):
                     'conditions': conditions
                 }, status=400)
             
-            # Все условия выполнены - публикуем
             track.status = 'published'
             track.published_at = timezone.now()
             track.save()
             
-            # Если есть обложка из внешнего URL, сохраним ее локально
             if track.cover_url and not track.cover:
                 try:
-                    # Скачиваем и сохраняем обложку
                     response = requests.get(track.cover_url, timeout=10)
                     if response.status_code == 200:
-                        from django.core.files.base import ContentFile
-                        
-                        # Генерируем имя файла
                         ext = track.cover_url.split('.')[-1].split('?')[0]
                         if len(ext) > 4:
                             ext = 'jpg'
                         
                         filename = f"cover_{track.id}_{int(timezone.now().timestamp())}.{ext}"
-                        
-                        # Сохраняем
                         track.cover.save(filename, ContentFile(response.content))
                         track.save()
                         logger.info(f"Обложка скачана и сохранена для трека {track.id}")
                 except Exception as e:
                     logger.warning(f"Не удалось скачать обложку: {e}")
-                    # Игнорируем ошибку - оставляем cover_url
             
-            # Создаем демо-вейвформу сразу
+            # ГЕНЕРАЦИЯ WAVEFORM ПРИ ПУБЛИКАЦИИ
             if not track.waveform_generated:
                 try:
+                    from .waveform_utils import generate_waveform_for_track
+                    generate_waveform_for_track(track)
+                    logger.info(f"Waveform сгенерирован для трека {track.id} при публикации")
+                except ImportError as e:
+                    logger.warning(f"Не удалось импортировать waveform_utils: {e}")
+                    # Резервный вариант - демо waveform
                     from .waveform_utils import generate_demo_waveform
-                    waveform = generate_demo_waveform(track.id, 120, track.title)
+                    waveform = generate_demo_waveform(track.id)
                     track.waveform_data = waveform
                     track.waveform_generated = True
                     track.save(update_fields=['waveform_data', 'waveform_generated'])
-                    logger.info(f"Waveform сгенерирован для трека {track.id}")
+                    logger.info(f"Демо waveform создан для трека {track.id}")
                 except Exception as e:
-                    logger.error(f"Ошибка генерации waveform: {e}")
+                    logger.error(f"Ошибка генерации waveform при публикации: {e}")
+            
+            # 🔥 ИСПРАВЛЕНО: Используем TrackSerializer для ответа
+            serializer = TrackSerializer(
+                track,
+                context={'request': request}
+            )
             
             return Response({
                 'success': True,
                 'message': 'Трек успешно опубликован!',
-                'track': {
-                    'id': track.id,
-                    'title': track.title,
-                    'status': track.status,
-                    'published_at': track.published_at.isoformat() if track.published_at else None,
-                    'cover': track.get_cover_url(),
-                    'audio_url': track.get_audio_url(),
-                    'waveform_ready': track.waveform_generated
-                }
+                'track': serializer.data
             })
         else:
             return Response({
@@ -1910,11 +1823,8 @@ def publish_track(request, track_id):
             'error': str(e)
         }, status=500)
 
-# ==================== HASHTAG SYSTEM ====================
-
 @require_GET
 def get_trending_hashtags(request):
-    """Получение популярных хештегов"""
     try:
         limit = int(request.GET.get('limit', 20))
         
@@ -1930,7 +1840,6 @@ def get_trending_hashtags(request):
                     'tracks_count': tag.tracks.count()
                 })
         else:
-            # Демо-данные если модель не существует
             hashtags = [
                 {'name': 'electronic', 'slug': 'electronic', 'usage_count': 125, 'tracks_count': 45},
                 {'name': 'rock', 'slug': 'rock', 'usage_count': 98, 'tracks_count': 32},
@@ -1953,7 +1862,6 @@ def get_trending_hashtags(request):
 
 @require_GET
 def search_by_hashtag(request, hashtag):
-    """Поиск треков по хештегу"""
     try:
         tracks = []
         
@@ -1973,39 +1881,35 @@ def search_by_hashtag(request, hashtag):
                 status='published'
             ).select_related('uploaded_by').order_by('-published_at')
             
-            for track in tracks_qs:
-                tracks.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover.url if track.cover else '',
-                    'duration': track.duration,
-                    'play_count': track.play_count if hasattr(track, 'play_count') else 0,
-                    'like_count': track.like_count if hasattr(track, 'like_count') else 0,
-                    'uploaded_by': {
-                        'id': track.uploaded_by.id,
-                        'username': track.uploaded_by.username
-                    },
-                    'hashtags': [tag.name for tag in track.hashtags.all()],
-                    'published_at': track.published_at.isoformat() if track.published_at else None
-                })
+            # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+            serializer = CompactTrackSerializer(
+                tracks_qs,
+                many=True,
+                context={'request': request}
+            )
             
             tag_info = {
                 'name': tag.name,
                 'slug': tag.slug,
                 'usage_count': tag.usage_count
             }
+            
+            return JsonResponse({
+                'success': True,
+                'hashtag': tag_info,
+                'tracks': serializer.data,
+                'count': len(serializer.data)
+            })
         else:
-            # Демо-данные
             tag_info = {
                 'name': hashtag,
                 'slug': hashtag.lower(),
                 'usage_count': 50
             }
             
-            # Создаем демо-треки
+            demo_tracks = []
             for i in range(1, 6):
-                tracks.append({
+                demo_tracks.append({
                     'id': i,
                     'title': f"Demo Track {i} - {hashtag}",
                     'artist': "Demo Artist",
@@ -2016,18 +1920,19 @@ def search_by_hashtag(request, hashtag):
                     'like_count': i * 10,
                     'uploaded_by': {
                         'id': 1,
-                        'username': 'demo_uploader'
+                        'username': 'demo_uploader',
+                        'avatar_url': None
                     },
                     'hashtags': [hashtag],
                     'published_at': timezone.now().isoformat()
                 })
-        
-        return JsonResponse({
-            'success': True,
-            'hashtag': tag_info,
-            'tracks': tracks,
-            'count': len(tracks)
-        })
+            
+            return JsonResponse({
+                'success': True,
+                'hashtag': tag_info,
+                'tracks': demo_tracks,
+                'count': len(demo_tracks)
+            })
         
     except Exception as e:
         return JsonResponse({
@@ -2035,13 +1940,9 @@ def search_by_hashtag(request, hashtag):
             'error': str(e)
         }, status=500)
 
-# ==================== COMMENT SYSTEM ====================
-
 @require_GET
 def get_track_comments(request, track_id):
-    """Получение комментариев к треку"""
     try:
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -2055,7 +1956,6 @@ def get_track_comments(request, track_id):
         
         comments = []
         
-        # Проверяем, какая модель комментариев существует
         if HAS_TRACK_COMMENT:
             try:
                 track = Track.objects.get(id=track_id)
@@ -2076,7 +1976,6 @@ def get_track_comments(request, track_id):
             for comment in comments_qs:
                 is_mine = user and user.id == comment.user.id
                 
-                # Проверяем лайк
                 user_liked = False
                 if user and hasattr(comment, 'likes'):
                     try:
@@ -2089,7 +1988,7 @@ def get_track_comments(request, track_id):
                     'user': {
                         'id': comment.user.id,
                         'username': comment.user.username,
-                        'avatar': comment.user.avatar or ''
+                        'avatar': comment.user.avatar.url if comment.user.avatar else None
                     },
                     'text': comment.text,
                     'timestamp': get_time_ago_str(comment.created_at),
@@ -2099,7 +1998,6 @@ def get_track_comments(request, track_id):
                     'created_at': comment.created_at.isoformat()
                 })
         else:
-            # Используем модель Comment
             try:
                 track = Track.objects.get(id=track_id)
             except Track.DoesNotExist:
@@ -2118,11 +2016,10 @@ def get_track_comments(request, track_id):
             for comment in comments_qs:
                 is_mine = user and user.id == comment.user.id
                 
-                # Проверяем лайк
                 user_liked = False
                 if user:
                     try:
-                        user_liked = False  # Заглушка для демо
+                        user_liked = False
                     except:
                         user_liked = False
                 
@@ -2131,7 +2028,7 @@ def get_track_comments(request, track_id):
                     'user': {
                         'id': comment.user.id,
                         'username': comment.user.username,
-                        'avatar': comment.user.avatar or ''
+                        'avatar': comment.user.avatar.url if comment.user.avatar else None
                     },
                     'text': comment.text,
                     'timestamp': get_time_ago_str(comment.created_at),
@@ -2141,17 +2038,16 @@ def get_track_comments(request, track_id):
                     'created_at': comment.created_at.isoformat()
                 })
         
-        # Если нет комментариев, создаем демо
         if not comments:
             demo_users = [
-                {'id': 1, 'username': 'musiclover42', 'avatar': ''},
-                {'id': 2, 'username': 'synthwavefan', 'avatar': ''},
-                {'id': 3, 'username': 'djproducer', 'avatar': ''}
+                {'id': 1, 'username': 'musiclover42', 'avatar': None},
+                {'id': 2, 'username': 'synthwavefan', 'avatar': None},
+                {'id': 3, 'username': 'djproducer', 'avatar': None}
             ]
             
             demo_texts = [
                 'This track is amazing! The production quality is incredible.',
-                'The bassline in this is fire! 🔥',
+                'The bassline in this is fire!',
                 'Great work! Would love to collaborate sometime.'
             ]
             
@@ -2184,9 +2080,8 @@ def get_track_comments(request, track_id):
 @csrf_exempt
 @api_view(['POST'])
 def add_track_comment(request, track_id):
-    """Добавление комментария к треку"""
     try:
-        data = request.data  # ✅ Используем request.data
+        data = request.data
         text = data.get('text', '').strip()
         
         if not text:
@@ -2203,7 +2098,6 @@ def add_track_comment(request, track_id):
             except Track.DoesNotExist:
                 track = create_demo_track(track_id)
             
-            # Создаем комментарий
             comment = TrackComment.objects.create(
                 user=user,
                 track=track,
@@ -2214,7 +2108,7 @@ def add_track_comment(request, track_id):
                 'id': comment.id,
                 'user': {
                     'username': user.username,
-                    'avatar': user.avatar
+                    'avatar': user.avatar.url if user.avatar else None
                 },
                 'text': text,
                 'timestamp': get_time_ago_str(comment.created_at),
@@ -2229,12 +2123,11 @@ def add_track_comment(request, track_id):
                 'comment': new_comment
             })
         else:
-            # Если модели не существуют
             new_comment = {
                 'id': int(timezone.now().timestamp()),
                 'user': {
                     'username': user.username,
-                    'avatar': user.avatar
+                    'avatar': user.avatar.url if user.avatar else None
                 },
                 'text': text,
                 'timestamp': 'Just now',
@@ -2255,80 +2148,9 @@ def add_track_comment(request, track_id):
             'error': str(e)
         }, status=500)
 
-# ==================== HELPER FUNCTIONS ====================
-
-def get_time_ago_str(timestamp):
-    """Форматирует время в формат '5 minutes ago', '1 hour ago' и т.д."""
-    now = timezone.now()
-    diff = now - timestamp
-    
-    seconds = diff.total_seconds()
-    minutes = seconds // 60
-    hours = minutes // 60
-    days = hours // 24
-    
-    if seconds < 60:
-        return 'Just now'
-    elif minutes < 60:
-        return f'{int(minutes)} minute{"s" if minutes > 1 else ""} ago'
-    elif hours < 24:
-        return f'{int(hours)} hour{"s" if hours > 1 else ""} ago'
-    elif days < 7:
-        return f'{int(days)} day{"s" if days > 1 else ""} ago'
-    elif days < 30:
-        weeks = days // 7
-        return f'{int(weeks)} week{"s" if weeks > 1 else ""} ago'
-    else:
-        return timestamp.strftime('%b %d, %Y')
-
-def create_demo_track(track_id):
-    """Создает демо-трек"""
-    if HAS_TRACK:
-        tracks_data = {
-            1: {
-                'title': "hard drive (slowed & muffled)",
-                'artist': "griffinilla",
-                'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
-                'audio_url': "/tracks/track1.mp3",
-                'duration': "3:20"
-            },
-            2: {
-                'title': "Deutschland",
-                'artist': "Rammstein",
-                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                'audio_url': "/tracks/track2.mp3",
-                'duration': "5:22"
-            },
-            3: {
-                'title': "Sonne",
-                'artist': "Rammstein",
-                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                'audio_url': "/tracks/track3.mp3",
-                'duration': "4:05"
-            }
-        }
-        
-        if track_id in tracks_data:
-            track_data = tracks_data[track_id]
-            user = CustomUser.objects.first() if CustomUser.objects.exists() else None
-            
-            if user:
-                track = Track.objects.create(
-                    id=track_id,
-                    uploaded_by=user,
-                    **track_data
-                )
-                return track
-    
-    return None
-
-# ==================== DEBUG VIEWS ====================
-
 @require_POST
 def debug_like(request):
-    """Endpoint для отладки лайков"""
     try:
-        # Логируем весь запрос
         body_bytes = request.body
         
         if body_bytes:
@@ -2377,87 +2199,83 @@ def debug_like(request):
             'message': 'Произошла ошибка в debug endpoint'
         }, status=500)
 
+# 🔥 ИСПРАВЛЕННЫЙ get_tracks - теперь использует CompactTrackSerializer
 @require_GET
 def get_tracks(request):
-    """Получение списка треков"""
     try:
-        tracks_list = []
-        
         if HAS_TRACK:
-            # Получаем опубликованные треки
             published_tracks = Track.objects.filter(status='published').order_by('-created_at')[:20]
             
-            for track in published_tracks:
-                tracks_list.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover.url if track.cover else track.cover_url,
-                    'audio_url': track.audio_file.url if track.audio_file else track.audio_url,
-                    'duration': track.duration,
-                    'play_count': track.play_count,
-                    'like_count': track.like_count,
-                    'repost_count': track.repost_count,
-                    'uploaded_by': {
-                        'id': track.uploaded_by.id,
-                        'username': track.uploaded_by.username
-                    }
-                })
+            # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+            serializer = CompactTrackSerializer(
+                published_tracks,
+                many=True,
+                context={'request': request}
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'tracks': serializer.data,
+                'count': len(serializer.data),
+                'fetched_at': timezone.now().isoformat()
+            })
         
-        # Если нет треков в БД, используем демо-данные
-        if not tracks_list:
-            tracks_list = [
-                {
+        # Fallback для демо
+        demo_tracks = [
+            {
+                'id': 1,
+                'title': "hard drive (slowed & muffled)",
+                'artist': "griffinilla",
+                'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
+                'audio_url': "/tracks/track1.mp3",
+                'duration': "3:20",
+                'play_count': 1234,
+                'like_count': 56,
+                'repost_count': 12,
+                'uploaded_by': {
                     'id': 1,
-                    'title': "hard drive (slowed & muffled)",
-                    'artist': "griffinilla",
-                    'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
-                    'audio_url': "/tracks/track1.mp3",
-                    'duration': "3:20",
-                    'play_count': 1234,
-                    'like_count': 56,
-                    'repost_count': 12,
-                    'uploaded_by': {
-                        'id': 1,
-                        'username': 'demo_user'
-                    }
-                },
-                {
-                    'id': 2,
-                    'title': "Deutschland",
-                    'artist': "Rammstein",
-                    'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                    'audio_url': "/tracks/track2.mp3",
-                    'duration': "5:22",
-                    'play_count': 876,
-                    'like_count': 34,
-                    'repost_count': 8,
-                    'uploaded_by': {
-                        'id': 1,
-                        'username': 'demo_user'
-                    }
-                },
-                {
-                    'id': 3,
-                    'title': "Sonne",
-                    'artist': "Rammstein",
-                    'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                    'audio_url': "/tracks/track3.mp3",
-                    'duration': "4:05",
-                    'play_count': 654,
-                    'like_count': 23,
-                    'repost_count': 5,
-                    'uploaded_by': {
-                        'id': 1,
-                        'username': 'demo_user'
-                    }
+                    'username': 'demo_user',
+                    'avatar_url': None
                 }
-            ]
+            },
+            {
+                'id': 2,
+                'title': "Deutschland",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track2.mp3",
+                'duration': "5:22",
+                'play_count': 876,
+                'like_count': 34,
+                'repost_count': 8,
+                'uploaded_by': {
+                    'id': 1,
+                    'username': 'demo_user',
+                    'avatar_url': None
+                }
+            },
+            {
+                'id': 3,
+                'title': "Sonne",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track3.mp3",
+                'duration': "4:05",
+                'play_count': 654,
+                'like_count': 23,
+                'repost_count': 5,
+                'uploaded_by': {
+                    'id': 1,
+                    'username': 'demo_user',
+                    'avatar_url': None
+                }
+            }
+        ]
         
         return JsonResponse({
             'success': True,
-            'tracks': tracks_list,
-            'count': len(tracks_list),
+            'tracks': demo_tracks,
+            'count': len(demo_tracks),
             'fetched_at': timezone.now().isoformat()
         })
         
@@ -2468,12 +2286,9 @@ def get_tracks(request):
             'message': 'Ошибка при получении списка треков'
         }, status=500)
 
-# ==================== COMMENT LIKE SYSTEM ====================
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def like_comment(request, comment_id):
-    """Лайк/дизлайк комментария - РАБОЧАЯ ВЕРСИЯ ДЛЯ TrackComment"""
     try:
         user = request.user
         
@@ -2483,7 +2298,6 @@ def like_comment(request, comment_id):
                 'error': 'Требуется авторизация'
             }, status=401)
         
-        # Находим комментарий
         try:
             comment = TrackComment.objects.get(id=comment_id)
         except TrackComment.DoesNotExist:
@@ -2492,35 +2306,26 @@ def like_comment(request, comment_id):
                 'error': 'Комментарий не найден'
             }, status=404)
         
-        # Проверяем, не удален ли комментарий
         if comment.is_deleted:
             return Response({
                 'success': False,
                 'error': 'Комментарий удален'
             }, status=410)
         
-        # Получаем параметр liked из запроса
         liked_param = request.data.get('liked', None)
         
-        # Проверяем текущее состояние
         is_currently_liked = comment.likes.filter(id=user.id).exists()
         
-        # Определяем новое состояние
         if liked_param is not None:
-            # Явное указание действия
             if liked_param and not is_currently_liked:
-                # Добавляем лайк
                 comment.likes.add(user)
                 liked = True
             elif not liked_param and is_currently_liked:
-                # Убираем лайк
                 comment.likes.remove(user)
                 liked = False
             else:
-                # Состояние не изменилось
                 liked = is_currently_liked
         else:
-            # Переключаем (toggle)
             if is_currently_liked:
                 comment.likes.remove(user)
                 liked = False
@@ -2528,7 +2333,6 @@ def like_comment(request, comment_id):
                 comment.likes.add(user)
                 liked = True
         
-        # Обновляем счетчик
         comment.update_like_count()
         
         return Response({
@@ -2544,7 +2348,7 @@ def like_comment(request, comment_id):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"❌ Ошибка в like_comment: {str(e)}")
+        print(f"Ошибка в like_comment: {str(e)}")
         print(f"Детали: {error_details}")
         
         return Response({
@@ -2557,18 +2361,16 @@ def like_comment(request, comment_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete_comment(request, comment_id):
-    """Удаление комментария"""
     try:
         user = request.user
         
         comment = None
         deleted = False
         
-        # Пробуем найти комментарий в разных моделях
         try:
             if HAS_TRACK_COMMENT:
                 comment = TrackComment.objects.get(id=comment_id, user=user)
-                comment.soft_delete()  # Используем soft delete если метод существует
+                comment.soft_delete()
                 deleted = True
                 method = 'TrackComment soft delete'
                 
@@ -2592,7 +2394,6 @@ def delete_comment(request, comment_id):
                 'message': 'Вы не можете удалить этот комментарий'
             }, status=404)
         except AttributeError:
-            # Если метод soft_delete не существует, просто пометим как удаленный
             if comment and hasattr(comment, 'is_deleted'):
                 comment.is_deleted = True
                 comment.save()
@@ -2616,7 +2417,6 @@ def delete_comment(request, comment_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def check_track_like(request, track_id):
-    """Проверка, лайкнул ли пользователь трек с JWT аутентификацией"""
     try:
         user = request.user
         
@@ -2671,7 +2471,6 @@ def check_track_like(request, track_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_user_liked_tracks(request):
-    """Получение всех ID треков, которые лайкнул пользователь"""
     try:
         user = request.user
         
@@ -2703,9 +2502,7 @@ def get_user_liked_tracks(request):
 
 @require_GET
 def sync_track_likes(request, track_id):
-    """Синхронизация лайков для конкретного трека"""
     try:
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -2717,7 +2514,6 @@ def sync_track_likes(request, track_id):
             except (InvalidToken, TokenError):
                 user = None
         
-        # Получаем трек
         if not HAS_TRACK:
             return JsonResponse({
                 'success': True,
@@ -2738,7 +2534,6 @@ def sync_track_likes(request, track_id):
                 'message': 'Трек не найден'
             })
         
-        # Проверяем лайк пользователя
         user_has_liked = False
         if user:
             if HAS_TRACK_LIKE:
@@ -2750,7 +2545,6 @@ def sync_track_likes(request, track_id):
                 except UserTrackInteraction.DoesNotExist:
                     user_has_liked = False
         
-        # Обновляем счетчик лайков из базы данных
         if HAS_TRACK_LIKE:
             like_count = TrackLike.objects.filter(track=track).count()
             track.like_count = like_count
@@ -2773,111 +2567,111 @@ def sync_track_likes(request, track_id):
             'error': str(e)
         }, status=500)
 
+# 🔥 ИСПРАВЛЕННЫЙ get_liked_tracks - теперь использует CompactTrackSerializer
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_liked_tracks(request):
-    """Получение списка лайкнутых треков"""
     try:
         user = request.user
         
         liked_tracks = []
         
-        # 1. Проверяем через TrackLike (основная система)
         if HAS_TRACK_LIKE:
             likes = TrackLike.objects.filter(user=user).select_related('track')
+            tracks = [like.track for like in likes]
             
-            for like in likes:
-                track = like.track
-                liked_tracks.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover_url or (track.cover.url if track.cover else ''),
-                    'audio_url': track.audio_url or (track.audio_file.url if track.audio_file else ''),
-                    'duration': track.duration,
-                    'play_count': track.play_count,
-                    'like_count': track.like_count,
-                    'liked_at': like.liked_at.isoformat()
-                })
+            # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+            serializer = CompactTrackSerializer(
+                tracks,
+                many=True,
+                context={'request': request}
+            )
+            
+            # Добавляем liked_at время
+            tracks_data = serializer.data
+            for i, track_data in enumerate(tracks_data):
+                track_data['liked_at'] = likes[i].liked_at.isoformat()
+            
+            return Response({
+                'success': True,
+                'tracks': tracks_data,
+                'count': len(tracks_data),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email
+                },
+                'fetched_at': timezone.now().isoformat()
+            })
         
-        # 2. Проверяем через UserTrackInteraction (старая система)
         elif HAS_USER_TRACK_INTERACTION:
             interactions = UserTrackInteraction.objects.filter(user=user, liked=True).select_related('track')
+            tracks = [interaction.track for interaction in interactions]
             
-            for interaction in interactions:
-                track = interaction.track
-                liked_tracks.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover_url or (track.cover.url if track.cover else ''),
-                    'audio_url': track.audio_url or (track.audio_file.url if track.audio_file else ''),
-                    'duration': track.duration,
-                    'play_count': track.play_count,
-                    'like_count': track.like_count,
-                    'liked_at': interaction.liked_at.isoformat()
-                })
-        
-        # 3. Если нет треков в базе, создаем демо-треки
-        if not liked_tracks:
-            # Создаем демо-треки если их нет
-            tracks_data = {
-                1: {
-                    'title': "hard drive (slowed & muffled)",
-                    'artist': "griffinilla",
-                    'cover_url': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
-                    'audio_url': "/tracks/track1.mp3",
-                    'duration': "3:20",
-                    'play_count': 1234,
-                    'like_count': 56
+            # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+            serializer = CompactTrackSerializer(
+                tracks,
+                many=True,
+                context={'request': request}
+            )
+            
+            # Добавляем liked_at время
+            tracks_data = serializer.data
+            for i, track_data in enumerate(tracks_data):
+                track_data['liked_at'] = interactions[i].liked_at.isoformat()
+            
+            return Response({
+                'success': True,
+                'tracks': tracks_data,
+                'count': len(tracks_data),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email
                 },
-                2: {
-                    'title': "Deutschland",
-                    'artist': "Rammstein",
-                    'cover_url': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                    'audio_url': "/tracks/track2.mp3",
-                    'duration': "5:22",
-                    'play_count': 876,
-                    'like_count': 34
+                'fetched_at': timezone.now().isoformat()
+            })
+        
+        # Fallback для демо
+        demo_tracks = [
+            {
+                'id': 1,
+                'title': "hard drive (slowed & muffled)",
+                'artist': "griffinilla",
+                'cover_url': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
+                'audio_url': "/tracks/track1.mp3",
+                'duration': "3:20",
+                'play_count': 1234,
+                'like_count': 56,
+                'liked_at': timezone.now().isoformat(),
+                'uploaded_by': {
+                    'id': 1,
+                    'username': 'griffinilla',
+                    'avatar_url': None
+                }
+            },
+            {
+                'id': 2,
+                'title': "Deutschland",
+                'artist': "Rammstein",
+                'cover_url': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track2.mp3",
+                'duration': "5:22",
+                'play_count': 876,
+                'like_count': 34,
+                'liked_at': timezone.now().isoformat(),
+                'uploaded_by': {
+                    'id': 2,
+                    'username': 'Rammstein',
+                    'avatar_url': None
                 }
             }
-            
-            for track_id, track_data in tracks_data.items():
-                # Создаем трек если его нет
-                if HAS_TRACK:
-                    try:
-                        track = Track.objects.get(id=track_id)
-                    except Track.DoesNotExist:
-                        # Создаем демо-трек
-                        upload_user = CustomUser.objects.first() if CustomUser.objects.exists() else user
-                        track = Track.objects.create(
-                            id=track_id,
-                            uploaded_by=upload_user,
-                            **track_data
-                        )
-                        
-                        # Создаем лайк для пользователя
-                        if HAS_TRACK_LIKE:
-                            TrackLike.objects.create(user=user, track=track)
-                        elif HAS_USER_TRACK_INTERACTION:
-                            UserTrackInteraction.objects.create(user=user, track=track, liked=True)
-                        
-                        liked_tracks.append({
-                            'id': track.id,
-                            'title': track.title,
-                            'artist': track.artist,
-                            'cover': track.cover_url,
-                            'audio_url': track.audio_url,
-                            'duration': track.duration,
-                            'play_count': track.play_count,
-                            'like_count': track.like_count,
-                            'liked_at': timezone.now().isoformat()
-                        })
+        ]
         
         return Response({
             'success': True,
-            'tracks': liked_tracks,
-            'count': len(liked_tracks),
+            'tracks': demo_tracks,
+            'count': len(demo_tracks),
             'user': {
                 'id': user.id,
                 'username': user.username,
@@ -2896,7 +2690,6 @@ def get_liked_tracks(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_user_liked_track_ids(request):
-    """Получение всех ID треков, которые лайкнул пользователь"""
     try:
         user = request.user
         
@@ -2925,46 +2718,10 @@ def get_user_liked_track_ids(request):
             'error': str(e)
         }, status=500)
 
-def generate_demo_waveform(track_id):
-    """
-    Генерация демо-вейвформы для трека
-    """
-    import numpy as np
-    
-    # Создаем предсказуемую, но уникальную вейвформу для каждого трека
-    np.random.seed(track_id)
-    
-    num_bars = 120
-    base_frequency = 0.15 + (track_id * 0.02)
-    
-    # Создаем базовую синусоиду
-    base_wave = [40 + 40 * np.sin(i * base_frequency) for i in range(num_bars)]
-    
-    # Добавляем характерные особенности в зависимости от ID трека
-    if track_id == 1:
-        # Для первого трека - более плавная волна
-        noise = [5 * np.random.random() for _ in range(num_bars)]
-    elif track_id == 2:
-        # Для второго - более резкие перепады
-        noise = [15 * np.random.random() for _ in range(num_bars)]
-    else:
-        # Для остальных - средняя сложность
-        noise = [10 * np.random.random() for _ in range(num_bars)]
-    
-    # Смешиваем
-    waveform = [base_wave[i] + noise[i] for i in range(num_bars)]
-    
-    # Нормализуем
-    waveform = [max(10, min(100, int(val))) for val in waveform]
-    
-    return waveform
-
 @require_GET
 def get_track_waveform(request, track_id):
-    """Получение вейвформы с автогенерацией при необходимости"""
     try:
         if not HAS_TRACK:
-            # Если модель не доступна, возвращаем демо-вейвформу
             demo_waveform = generate_demo_waveform(track_id)
             return JsonResponse({
                 'success': True,
@@ -2974,14 +2731,11 @@ def get_track_waveform(request, track_id):
                 'message': 'Demo waveform (Track model not available)'
             })
         
-        # Пытаемся получить трек из базы
         try:
             track = Track.objects.get(id=track_id)
         except Track.DoesNotExist:
-            # Если трека нет в базе, создаем его автоматически
             track = create_demo_track(track_id)
         
-        # Гарантируем что у трека есть вейвформа
         waveform_data = ensure_waveform_for_track(track)
         
         return JsonResponse({
@@ -2997,7 +2751,6 @@ def get_track_waveform(request, track_id):
         })
         
     except Exception as e:
-        # Все равно возвращаем демо-вейвформу
         demo_waveform = generate_demo_waveform(track_id)
         return JsonResponse({
             'success': True,
@@ -3008,35 +2761,9 @@ def get_track_waveform(request, track_id):
             'message': 'Using demo waveform due to error'
         })
 
-def ensure_waveform_for_track(track):
-    """
-    Гарантирует что у трека есть вейвформа.
-    Если нет - генерирует её.
-    """
-    try:
-        # Если вейвформа уже сгенерирована, возвращаем ее
-        if track.waveform_generated and track.waveform_data:
-            return track.waveform_data
-        
-        # Используем демо-вейвформу пока
-        waveform_data = generate_demo_waveform(track.id)
-        
-        # Сохраняем в модель
-        track.waveform_data = waveform_data
-        track.waveform_generated = True
-        track.save(update_fields=['waveform_data', 'waveform_generated'])
-        
-        return waveform_data
-        
-    except Exception:
-        # Возвращаем демо-вейвформу в случае ошибки
-        return generate_demo_waveform(track.id)
-
 @require_GET
 def get_uploaded_tracks(request):
-    """Получение загруженных треков пользователя"""
     try:
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -3060,28 +2787,17 @@ def get_uploaded_tracks(request):
                 status='published'
             ).order_by('-created_at')
             
-            tracks_list = []
-            for track in tracks:
-                tracks_list.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover_url or (track.cover.url if track.cover else ''),
-                    'audio_url': track.audio_url or (track.audio_file.url if track.audio_file else ''),
-                    'duration': track.duration,
-                    'play_count': track.play_count,
-                    'like_count': track.like_count,
-                    'created_at': track.created_at.isoformat(),
-                    'uploaded_by': {
-                        'id': user.id,
-                        'username': user.username
-                    }
-                })
+            # 🔥 ИСПРАВЛЕНО: Используем UploadedTracksSerializer
+            serializer = UploadedTracksSerializer(
+                tracks,
+                many=True,
+                context={'request': request}
+            )
             
             return JsonResponse({
                 'success': True,
-                'tracks': tracks_list,
-                'count': len(tracks_list)
+                'tracks': serializer.data,
+                'count': len(serializer.data)
             })
         else:
             return JsonResponse({
@@ -3096,136 +2812,40 @@ def get_uploaded_tracks(request):
             'error': str(e)
         }, status=500)
 
+# 🔥 ИСПРАВЛЕННЫЙ get_uploaded_tracks_jwt - теперь использует UploadedTracksSerializer
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_uploaded_tracks_jwt(request):
-    """Получение загруженных треков пользователя с JWT аутентификацией"""
     try:
         user = request.user
         
-        logger.info(f"✅ JWT аутентификация успешна для пользователя: {user.username} (ID: {user.id})")
+        logger.info(f"JWT аутентификация успешна для пользователя: {user.username} (ID: {user.id})")
         
         if HAS_TRACK:
             try:
-                # Получаем треки пользователя
                 tracks = Track.objects.filter(
                     uploaded_by=user,
                     status='published'
                 ).order_by('-created_at')
                 
-                logger.info(f"📊 Найдено {tracks.count()} треков пользователя {user.username}")
+                logger.info(f"Найдено {tracks.count()} треков пользователя {user.username}")
                 
-                tracks_list = []
-                for track in tracks:
-                    # Получаем URL обложки
-                    cover_url = ''
-                    if track.cover:
-                        if hasattr(track.cover, 'url'):
-                            cover_url = request.build_absolute_uri(track.cover.url)
-                        else:
-                            cover_url = str(track.cover)
-                            if cover_url.startswith('/media/'):
-                                cover_url = request.build_absolute_uri(cover_url)
-                            elif not cover_url.startswith(('http://', 'https://')):
-                                cover_url = request.build_absolute_uri(f'/media/{cover_url}')
-                    elif track.cover_url:
-                        cover_url = track.cover_url
-                        if cover_url.startswith('/media/'):
-                            cover_url = request.build_absolute_uri(cover_url)
-                    
-                    # Получаем URL аудио
-                    audio_url = ''
-                    if track.audio_file:
-                        if hasattr(track.audio_file, 'url'):
-                            audio_url = request.build_absolute_uri(track.audio_file.url)
-                        else:
-                            audio_url = str(track.audio_file)
-                            if audio_url.startswith('/media/'):
-                                audio_url = request.build_absolute_uri(audio_url)
-                            elif not audio_url.startswith(('http://', 'https://')):
-                                audio_url = request.build_absolute_uri(f'/media/audio/{audio_url}')
-                    elif track.audio_url:
-                        audio_url = track.audio_url
-                        if audio_url.startswith('/media/'):
-                            audio_url = request.build_absolute_uri(audio_url)
-                    
-                    # Форматируем данные трека
-                    track_data = {
-                        'id': track.id,
-                        'title': track.title or f'Трек #{track.id}',
-                        'artist': track.artist or user.username,
-                        'cover': cover_url,
-                        'cover_url': cover_url,
-                        'audio_url': audio_url,
-                        'duration': track.duration or '3:00',
-                        'duration_formatted': track.duration or '3:00',
-                        'duration_seconds': track.duration_seconds if hasattr(track, 'duration_seconds') else 180,
-                        'play_count': track.play_count if hasattr(track, 'play_count') else 0,
-                        'like_count': track.like_count if hasattr(track, 'like_count') else 0,
-                        'repost_count': track.repost_count if hasattr(track, 'repost_count') else 0,
-                        'created_at': track.created_at.isoformat() if track.created_at else timezone.now().isoformat(),
-                        'published_at': track.published_at.isoformat() if track.published_at else None,
-                        'status': track.status or 'published',
-                        'genre': track.genre or 'other',
-                        'description': track.description or '',
-                        'is_private': track.is_private if hasattr(track, 'is_private') else False,
-                        'is_explicit': track.is_explicit if hasattr(track, 'is_explicit') else False,
-                        'uploaded_by': {
-                            'id': user.id,
-                            'username': user.username,
-                            'avatar': user.avatar or ''
-                        },
-                        'waveform_generated': track.waveform_generated if hasattr(track, 'waveform_generated') else False,
-                        'waveform_ready': track.waveform_generated if hasattr(track, 'waveform_generated') else False,
-                        'hashtags': [tag.name for tag in track.hashtags.all()] if hasattr(track, 'hashtags') else [],
-                        'tags': track.tags or ''
-                    }
-                    
-                    tracks_list.append(track_data)
-                
-                # Если треков нет, создаем демо-треки для пользователя
-                if not tracks_list:
-                    logger.info(f"📝 У пользователя {user.username} нет загруженных треков")
-                    
-                    # Создаем демо-треки
-                    demo_tracks = [
-                        {
-                            'id': user.id * 100 + 1,
-                            'title': f"Мой первый трек",
-                            'artist': user.username,
-                            'cover': request.build_absolute_uri('/static/default_cover.jpg'),
-                            'cover_url': request.build_absolute_uri('/static/default_cover.jpg'),
-                            'audio_url': request.build_absolute_uri('/static/tracks/track1.mp3'),
-                            'duration': '3:20',
-                            'duration_seconds': 200,
-                            'play_count': 42,
-                            'like_count': 5,
-                            'repost_count': 1,
-                            'created_at': timezone.now().isoformat(),
-                            'status': 'published',
-                            'genre': 'electronic',
-                            'description': f'Мой первый загруженный трек на платформе!',
-                            'uploaded_by': {
-                                'id': user.id,
-                                'username': user.username,
-                                'avatar': user.avatar or ''
-                            },
-                            'waveform_ready': True,
-                            'hashtags': ['#myfirsttrack', '#demo']
-                        }
-                    ]
-                    
-                    tracks_list = demo_tracks
+                # 🔥 ИСПРАВЛЕНО: Используем UploadedTracksSerializer
+                serializer = UploadedTracksSerializer(
+                    tracks,
+                    many=True,
+                    context={'request': request}
+                )
                 
                 return Response({
                     'success': True,
-                    'tracks': tracks_list,
-                    'count': len(tracks_list),
+                    'tracks': serializer.data,
+                    'count': len(serializer.data),
                     'user': {
                         'id': user.id,
                         'username': user.username,
                         'email': user.email,
-                        'total_uploaded': tracks.count() if HAS_TRACK else len(tracks_list)
+                        'total_uploaded': tracks.count() if HAS_TRACK else len(serializer.data)
                     },
                     'fetched_at': timezone.now().isoformat(),
                     'debug': {
@@ -3238,14 +2858,14 @@ def get_uploaded_tracks_jwt(request):
                 })
                 
             except Exception as e:
-                logger.error(f"❌ Ошибка при получении треков пользователя {user.username}: {e}")
+                logger.error(f"Ошибка при получении треков пользователя {user.username}: {e}")
                 return Response({
                     'success': False,
                     'error': f'Ошибка при получении треков: {str(e)}',
                     'user_id': user.id
                 }, status=500)
         else:
-            logger.warning("⚠️ Модель Track не доступна")
+            logger.warning("Модель Track не доступна")
             return Response({
                 'success': True,
                 'tracks': [],
@@ -3258,18 +2878,17 @@ def get_uploaded_tracks_jwt(request):
             })
         
     except Exception as e:
-        logger.error(f"❌ Общая ошибка в get_uploaded_tracks: {e}")
+        logger.error(f"Общая ошибка в get_uploaded_tracks: {e}")
         return Response({
             'success': False,
             'error': f'Внутренняя ошибка сервера: {str(e)}',
             'message': 'Пожалуйста, попробуйте позже'
         }, status=500)
 
+# 🔥 ИСПРАВЛЕННЫЙ recently_played_tracks - теперь использует CompactTrackSerializer
 @require_GET
 def recently_played_tracks(request):
-    """Получение списка недавно прослушанных треков"""
     try:
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -3284,68 +2903,89 @@ def recently_played_tracks(request):
         tracks = []
         
         if HAS_PLAY_HISTORY and user:
-            # Получаем историю прослушивания
             play_history = PlayHistory.objects.filter(
                 user=user
             ).select_related('track').order_by('-played_at')[:10]
             
-            for history in play_history:
-                track = history.track
-                tracks.append({
-                    'id': track.id,
-                    'title': track.title,
-                    'artist': track.artist,
-                    'cover': track.cover_url or (track.cover.url if track.cover else ''),
-                    'audio_url': track.audio_url or (track.audio_file.url if track.audio_file else ''),
-                    'duration': track.duration,
-                    'play_count': track.play_count,
-                    'like_count': track.like_count,
-                    'last_played': history.played_at.isoformat(),
-                    'play_history_id': history.id
-                })
+            tracks = [history.track for history in play_history]
+            
+            # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+            serializer = CompactTrackSerializer(
+                tracks,
+                many=True,
+                context={'request': request}
+            )
+            
+            # Добавляем last_played время
+            tracks_data = serializer.data
+            for i, track_data in enumerate(tracks_data):
+                track_data['last_played'] = play_history[i].played_at.isoformat()
+                track_data['play_history_id'] = play_history[i].id
+            
+            return JsonResponse({
+                'success': True,
+                'tracks': tracks_data,
+                'count': len(tracks_data),
+                'user': user.username if user else None,
+                'fetched_at': timezone.now().isoformat()
+            })
         
-        # Если нет истории или пользователь не авторизован, используем демо-данные
-        if not tracks:
-            tracks = [
-                {
+        # Fallback для демо
+        demo_tracks = [
+            {
+                'id': 1,
+                'title': "hard drive (slowed & muffled)",
+                'artist': "griffinilla",
+                'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGF8gEyh_MA8=&amp;rs=AOn4CLDjiyHGoELcWa2t37NenbmBQ-JlSw",
+                'audio_url': "/tracks/track1.mp3",
+                'duration': "3:20",
+                'last_played': timezone.now().isoformat(),
+                'play_count': 15,
+                'like_count': 56,
+                'uploaded_by': {
                     'id': 1,
-                    'title': "hard drive (slowed & muffled)",
-                    'artist': "griffinilla",
-                    'cover': "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGF8gEyh_MA8=&amp;rs=AOn4CLDjiyHGoELcWa2t37NenbmBQ-JlSw",
-                    'audio_url': "/tracks/track1.mp3",
-                    'duration': "3:20",
-                    'last_played': timezone.now().isoformat(),
-                    'play_count': 15,
-                    'like_count': 56
-                },
-                {
-                    'id': 2,
-                    'title': "Deutschland",
-                    'artist': "Rammstein",
-                    'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                    'audio_url': "/tracks/track2.mp3",
-                    'duration': "5:22",
-                    'last_played': timezone.now().isoformat(),
-                    'play_count': 8,
-                    'like_count': 34
-                },
-                {
-                    'id': 3,
-                    'title': "Sonne",
-                    'artist': "Rammstein",
-                    'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-                    'audio_url': "/tracks/track3.mp3",
-                    'duration': "4:05",
-                    'last_played': timezone.now().isoformat(),
-                    'play_count': 12,
-                    'like_count': 23
+                    'username': 'griffinilla',
+                    'avatar_url': None
                 }
-            ]
+            },
+            {
+                'id': 2,
+                'title': "Deutschland",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track2.mp3",
+                'duration': "5:22",
+                'last_played': timezone.now().isoformat(),
+                'play_count': 8,
+                'like_count': 34,
+                'uploaded_by': {
+                    'id': 2,
+                    'username': 'Rammstein',
+                    'avatar_url': None
+                }
+            },
+            {
+                'id': 3,
+                'title': "Sonne",
+                'artist': "Rammstein",
+                'cover': "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+                'audio_url': "/tracks/track3.mp3",
+                'duration': "4:05",
+                'last_played': timezone.now().isoformat(),
+                'play_count': 12,
+                'like_count': 23,
+                'uploaded_by': {
+                    'id': 2,
+                    'username': 'Rammstein',
+                    'avatar_url': None
+                }
+            }
+        ]
         
         return JsonResponse({
             'success': True,
-            'tracks': tracks,
-            'count': len(tracks),
+            'tracks': demo_tracks,
+            'count': len(demo_tracks),
             'user': user.username if user else None,
             'fetched_at': timezone.now().isoformat()
         })
@@ -3358,13 +2998,9 @@ def recently_played_tracks(request):
             'message': 'Ошибка при получении недавно прослушанных треков'
         }, status=500)
 
-# ==================== DEBUG VIEWS ====================
-
 @require_GET
 def debug_all_likes(request):
-    """Отладочная информация о всех лайках"""
     try:
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -3409,7 +3045,6 @@ def debug_all_likes(request):
                 'tracks_with_likes': Track.objects.filter(like_count__gt=0).count()
             }
         
-        # Получаем данные из запроса
         liked_tracks_param = request.GET.get('liked_tracks', '{}')
         try:
             debug_info['client_liked_tracks'] = json.loads(liked_tracks_param)
@@ -3430,11 +3065,9 @@ def debug_all_likes(request):
 
 @require_GET
 def debug_track_data(request):
-    """Отладочная информация о данных треков"""
     try:
         track_id = request.GET.get('track_id')
         
-        # Получаем пользователя из JWT
         user = None
         auth_header = request.headers.get('Authorization', '')
         
@@ -3502,14 +3135,11 @@ def debug_track_data(request):
 
 @require_GET
 def get_waveform(request, track_id):
-    """Получение waveform данных для трека"""
     try:
-        # Пробуем найти трек в БД
         if HAS_TRACK:
             try:
                 track = Track.objects.get(id=track_id)
                 
-                # Генерируем waveform если его нет
                 if not track.waveform_generated or not track.waveform_data:
                     from .waveform_utils import generate_waveform_for_track
                     from django.utils import timezone
@@ -3521,7 +3151,6 @@ def get_waveform(request, track_id):
                         track.waveform_generated_at = timezone.now()
                         track.save(update_fields=['waveform_data', 'waveform_generated', 'waveform_generated_at'])
                 
-                # Получаем waveform
                 waveform_data = track.get_waveform()
                 
                 if waveform_data:
@@ -3538,7 +3167,6 @@ def get_waveform(request, track_id):
                 logger.warning(f"Трек {track_id} не найден в БД для waveform")
                 pass
         
-        # Демо-данные для треков 1-3
         from .waveform_utils import generate_demo_waveform
         
         demo_tracks = [1, 2, 3]
@@ -3554,7 +3182,6 @@ def get_waveform(request, track_id):
                 'note': 'Демо-данные для тестовых треков'
             })
         
-        # Для других треков генерируем на основе ID
         waveform = generate_demo_waveform(int(track_id) if str(track_id).isdigit() else 0)
         
         return JsonResponse({
@@ -3567,9 +3194,8 @@ def get_waveform(request, track_id):
         })
         
     except Exception as e:
-        logger.error(f"❌ Ошибка в get_waveform: {e}")
+        logger.error(f"Ошибка в get_waveform: {e}")
         
-        # Fallback: простой waveform
         import random
         import math
         
@@ -3594,19 +3220,17 @@ def get_waveform(request, track_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_track_duration(request, track_id):
-    """Обновление длительности трека"""
     try:
         user = request.user
         
         if HAS_TRACK:
             track = Track.objects.get(id=track_id, uploaded_by=user)
             
-            # Определяем длительность из файла
             if track.audio_file:
                 try:
+                    from .audio_utils import determine_duration_from_file
                     duration_sec = determine_duration_from_file(track.audio_file.path)
                     
-                    # Обновляем трек
                     minutes = int(duration_sec // 60)
                     seconds = int(duration_sec % 60)
                     track.duration = f"{minutes}:{seconds:02d}"
@@ -3641,4 +3265,927 @@ def update_track_duration(request, track_id):
         return Response({
             'success': False,
             'error': str(e)
+        }, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_track_waveform(request, track_id):
+    try:
+        user = request.user
+        
+        if not HAS_TRACK:
+            return Response({
+                'success': False,
+                'error': 'Модель Track не доступна'
+            }, status=500)
+        
+        track = Track.objects.get(id=track_id)
+        
+        # Проверяем права доступа
+        if track.uploaded_by != user and not user.is_staff:
+            return Response({
+                'success': False,
+                'error': 'У вас нет прав для генерации waveform этого трека'
+            }, status=403)
+        
+        try:
+            from .waveform_utils import generate_waveform_for_track
+            
+            waveform = generate_waveform_for_track(track)
+            
+            if waveform:
+                track.waveform_data = waveform
+                track.waveform_generated = True
+                track.waveform_generated_at = timezone.now()
+                track.save(update_fields=['waveform_data', 'waveform_generated', 'waveform_generated_at'])
+                
+                return Response({
+                    'success': True,
+                    'message': 'Waveform успешно сгенерирован',
+                    'track_id': track_id,
+                    'waveform_generated': True,
+                    'waveform_length': len(waveform) if waveform else 0
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'Не удалось сгенерировать waveform'
+                }, status=500)
+                
+        except ImportError as e:
+            logger.error(f"Не удалось импортировать waveform_utils: {e}")
+            return Response({
+                'success': False,
+                'error': f'Модуль waveform_utils не найден: {str(e)}'
+            }, status=500)
+        except Exception as e:
+            logger.error(f"Ошибка генерации waveform для трека {track_id}: {e}")
+            return Response({
+                'success': False,
+                'error': f'Ошибка генерации waveform: {str(e)}'
+            }, status=500)
+        
+    except Track.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Трек не найден'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Ошибка в generate_track_waveform: {e}")
+        return Response({
+            'success': False,
+            'error': f'Внутренняя ошибка сервера: {str(e)}'
+        }, status=500)
+
+# ==================== HEADER IMAGE ENDPOINTS ====================
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def upload_header(request):
+    """
+    Единый эндпоинт для обновления header image и/или gridscan_color
+    """
+    try:
+        user = request.user
+        
+        serializer = HeaderImageUploadSerializer(
+            data=request.data, 
+            context={'request': request}
+        )
+        
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = serializer.validated_data
+        header_file = validated_data.get('header_image')
+        gridscan_color = validated_data.get('gridscan_color')
+        
+        update_fields = []
+        
+        # Обработка header image
+        if header_file:
+            user.header_image = header_file
+            user.header_updated_at = timezone.now()
+            update_fields.extend(['header_image', 'header_updated_at'])
+            logger.info(f"Header image uploaded for user {user.id}")
+        
+        # Обработка gridscan_color
+        if gridscan_color:
+            user.gridscan_color = gridscan_color
+            user.header_updated_at = timezone.now()
+            update_fields.extend(['gridscan_color', 'header_updated_at'])
+            logger.info(f"GridScan color updated for user {user.id}: {gridscan_color}")
+        
+        # Сохраняем изменения
+        if update_fields:
+            update_fields.append('updated_at')
+            user.save(update_fields=update_fields)
+        
+        response_serializer = UserMeSerializer(
+            user,
+            context={'request': request}
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Данные успешно обновлены',
+            'user': response_serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка загрузки header/gridscan: {e}")
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_gridscan_color(request):
+    user = request.user
+    color = request.data.get("color")
+
+    if not color:
+        return Response({"error": "No color provided"}, status=400)
+
+    user.gridscan_color = color
+    user.save()
+
+    return Response({
+        "success": True,
+        "gridscan_color": user.gridscan_color
+    })
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_header_image(request):
+    user = request.user
+
+    if user.header_image:
+        user.header_image.delete(save=False)
+        user.header_image = None
+
+    user.gridscan_color = "#000000"
+
+    user.save(update_fields=[
+        "header_image",
+        "gridscan_color"
+    ])
+
+    return Response({
+        "success": True,
+        "header_image": None,
+        "gridscan_color": user.gridscan_color
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    serializer = UserMeSerializer(request.user)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_header_info(request):
+    """
+    Получение информации о header и GridScan текущего пользователя
+    """
+    try:
+        user = request.user
+        
+        serializer = UserMeSerializer(
+            user,
+            context={'request': request}
+        )
+        
+        return Response({
+            'success': True,
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения header info: {e}")
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_me(request):
+    """
+    Получение профиля текущего пользователя
+    URL: /api/users/me/
+    """
+    try:
+        serializer = UserMeSerializer(
+            request.user,
+            context={'request': request}
+        )
+        
+        return Response({
+            'success': True,
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения профиля текущего пользователя: {e}")
+        return Response({
+            'success': False,
+            'error': 'Внутренняя ошибка сервера'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ==================== НОВЫЕ ФУНКЦИИ ДЛЯ ПУБЛИЧНОГО ПРОФИЛЯ ====================
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_public_profile(request, user_id):
+    """
+    Получение публичного профиля пользователя по ID
+    URL: /api/users/<id>/
+    """
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        serializer = PublicUserSerializer(
+            user,
+            context={'request': request}
+        )
+        
+        data = serializer.data
+        
+        # Добавляем информацию о подписке
+        if request.user and request.user.is_authenticated:
+            try:
+                from .models import Follow
+                data['is_following'] = Follow.objects.filter(
+                    follower=request.user,
+                    following=user
+                ).exists()
+            except:
+                data['is_following'] = False
+            
+            data['is_current_user'] = request.user.id == user.id
+        else:
+            data['is_following'] = False
+            data['is_current_user'] = False
+        
+        return Response({
+            'success': True,
+            'user': data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения публичного профиля: {e}")
+        return Response({
+            'success': False,
+            'error': 'Пользователь не найден'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_by_username(request, username):
+    """
+    Получение профиля пользователя по username
+    URL: /api/users/by-username/<username>/
+    """
+    try:
+        user = get_object_or_404(CustomUser, username=username)
+        
+        return Response({
+            'success': True,
+            'redirect': True,
+            'user_id': user.id,
+            'username': user.username,
+            'url': f'/api/users/{user.id}/'
+        }, status=status.HTTP_302_FOUND)
+        
+    except CustomUser.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Пользователь не найден'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_tracks(request, user_id):
+    """
+    Получение треков пользователя
+    URL: /api/users/<id>/tracks/
+    """
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        if not HAS_TRACK:
+            return Response({
+                'success': True,
+                'tracks': [],
+                'message': 'Модель Track не доступна'
+            })
+        
+        tracks = Track.objects.filter(
+            uploaded_by=user,
+            status='published'
+        ).order_by('-created_at')
+        
+        # 🔥 ИСПРАВЛЕНО: Используем CompactTrackSerializer
+        serializer = CompactTrackSerializer(
+            tracks,
+            many=True,
+            context={'request': request}
+        )
+        
+        return Response({
+            'success': True,
+            'tracks': serializer.data,
+            'count': len(serializer.data),
+            'user': {
+                'id': user.id,
+                'username': user.username
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения треков пользователя {user_id}: {e}")
+        return Response({
+            'success': False,
+            'error': 'Не удалось получить треки пользователя'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_stats(request, user_id):
+    """
+    Получение статистики пользователя
+    URL: /api/users/<id>/stats/
+    """
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        stats = {
+            'followers': 0,
+            'following': 0,
+            'tracks': 0,
+            'playlists': 0,
+            'total_listens': 0,
+            'total_likes': 0,
+            'total_reposts': 0
+        }
+        
+        if HAS_FOLLOW:
+            stats['followers'] = Follow.objects.filter(following=user).count()
+            stats['following'] = Follow.objects.filter(follower=user).count()
+        
+        if HAS_TRACK:
+            tracks = Track.objects.filter(uploaded_by=user, status='published')
+            stats['tracks'] = tracks.count()
+            stats['total_listens'] = sum(track.play_count for track in tracks)
+            stats['total_likes'] = sum(track.like_count for track in tracks)
+            stats['total_reposts'] = sum(track.repost_count for track in tracks)
+        
+        return Response({
+            'success': True,
+            'user_id': user_id,
+            'username': user.username,
+            'stats': stats
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения статистики пользователя {user_id}: {e}")
+        return Response({
+            'success': False,
+            'error': 'Не удалось получить статистику'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ==================== 🔴🔴🔴 КРИТИЧЕСКИЕ ИЗМЕНЕНИЯ: FOLLOW/UNFOLLOW API ====================
+
+# views.py - ФУНКЦИИ СИСТЕМЫ ПОДПИСОК (ИСПРАВЛЕННЫЕ)
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from .models import CustomUser, Follow
+import logging
+
+logger = logging.getLogger(__name__)
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def follow_unfollow_user(request, user_id):
+    """
+    Единый эндпоинт для подписки/отписки
+    POST /api/users/<user_id>/follow/ - подписаться
+    DELETE /api/users/<user_id>/follow/ - отписаться
+    
+    ✅ ИСПРАВЛЕНО: follower=request.user, following=target_user
+    """
+    try:
+        target_user = get_object_or_404(CustomUser, id=user_id)
+        
+        # Нельзя подписаться на себя
+        if target_user == request.user:
+            return Response({
+                'success': False,
+                'error': 'Нельзя подписаться на себя'
+            }, status=400)
+        
+        if request.method == 'POST':
+            # Проверяем, не подписаны ли уже
+            already_following = Follow.objects.filter(
+                follower=request.user,      # ✅ Я - подписчик
+                following=target_user       # ✅ Он - тот, на кого подписываюсь
+            ).exists()
+            
+            if already_following:
+                return Response({
+                    'success': False,
+                    'error': 'Вы уже подписаны на этого пользователя'
+                }, status=400)
+            
+            # ✅ СОЗДАЕМ ПОДПИСКУ С ПРАВИЛЬНЫМ ПОРЯДКОМ
+            follow = Follow.objects.create(
+                follower=request.user,      # ✅ Я - тот, кто нажал кнопку Follow
+                following=target_user       # ✅ Он - на кого нажали
+            )
+            
+            # Обновляем статистику ВРУЧНУЮ
+            request.user.update_stats()
+            target_user.update_stats()
+            
+            return Response({
+                'success': True,
+                'message': f'Вы подписались на {target_user.username}',
+                'action': 'followed',
+                'follow_id': follow.id,
+                'user_stats': {
+                    'current_user': {
+                        'following_count': request.user.following_count
+                    },
+                    'target_user': {
+                        'followers_count': target_user.followers_count
+                    }
+                }
+            })
+            
+        elif request.method == 'DELETE':
+            # ✅ ИЩЕМ ПОДПИСКУ С ПРАВИЛЬНЫМ ПОРЯДКОМ
+            follow_exists = Follow.objects.filter(
+                follower=request.user,      # ✅ Ищем где Я - подписчик
+                following=target_user       # ✅ Он - на кого я подписан
+            ).exists()
+            
+            if not follow_exists:
+                return Response({
+                    'success': True,
+                    'message': 'Вы не были подписаны на этого пользователя',
+                    'action': 'not_followed',
+                    'deleted_count': 0
+                })
+            
+            # ✅ УДАЛЯЕМ ПОДПИСКУ С ПРАВИЛЬНЫМ ПОРЯДКОМ
+            deleted_count, _ = Follow.objects.filter(
+                follower=request.user,      # ✅ Я - подписчик
+                following=target_user       # ✅ Он - на кого я подписан
+            ).delete()
+            
+            # Обновляем статистику ВРУЧНУЮ
+            request.user.update_stats()
+            target_user.update_stats()
+            
+            return Response({
+                'success': True,
+                'message': f'Вы отписались от {target_user.username}',
+                'action': 'unfollowed',
+                'deleted_count': deleted_count,
+                'user_stats': {
+                    'current_user': {
+                        'following_count': request.user.following_count
+                    },
+                    'target_user': {
+                        'followers_count': target_user.followers_count
+                    }
+                }
+            })
+                
+    except Exception as e:
+        logger.error(f"Ошибка в follow_unfollow_user: {e}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'message': 'Внутренняя ошибка сервера'
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_followers(request, user_id):
+    """Получение подписчиков пользователя"""
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        # ✅ Правильно: кто подписан НА этого пользователя (following=user)
+        followers_relations = Follow.objects.filter(
+            following=user  # ✅ Этот пользователь - цель подписки
+        ).select_related('follower').order_by('-created_at')
+        
+        # Пагинация
+        page = request.GET.get('page', 1)
+        per_page = min(int(request.GET.get('per_page', 20)), 50)
+        
+        from django.core.paginator import Paginator
+        paginator = Paginator(followers_relations, per_page)
+        
+        try:
+            followers_page = paginator.page(page)
+        except:
+            followers_page = paginator.page(1)
+        
+        followers = []
+        for follow in followers_page:
+            follower_data = {
+                'id': follow.follower.id,
+                'username': follow.follower.username,
+                'bio': follow.follower.bio,
+                'is_artist': follow.follower.is_artist,
+                'is_pro': follow.follower.is_pro,
+                'followed_at': follow.created_at.isoformat(),
+                'notifications_enabled': follow.notifications_enabled
+            }
+            
+            # Добавляем URL аватара
+            avatar_url = follow.follower.get_avatar_url()
+            if avatar_url:
+                follower_data['avatar_url'] = request.build_absolute_uri(avatar_url) if avatar_url.startswith('/') else avatar_url
+            else:
+                follower_data['avatar_url'] = None
+            
+            # Проверяем взаимную подписку (если запрос от аутентифицированного пользователя)
+            if request.user and request.user.is_authenticated:
+                # Подписан ли этот пользователь на меня (request.user)?
+                # ✅ Правильно: follower=follow.follower, following=request.user
+                follower_data['is_following_back'] = Follow.objects.filter(
+                    follower=follow.follower,      # ✅ Он - подписчик
+                    following=request.user         # ✅ Я - цель
+                ).exists()
+                
+                # Я подписан на этого пользователя?
+                # ✅ Правильно: follower=request.user, following=follow.follower
+                follower_data['i_am_following'] = Follow.objects.filter(
+                    follower=request.user,         # ✅ Я - подписчик
+                    following=follow.follower      # ✅ Он - цель
+                ).exists()
+            else:
+                follower_data['is_following_back'] = False
+                follower_data['i_am_following'] = False
+            
+            followers.append(follower_data)
+        
+        return Response({
+            'success': True,
+            'followers': followers,
+            'pagination': {
+                'current_page': followers_page.number,
+                'total_pages': paginator.num_pages,
+                'total_count': paginator.count,
+                'has_next': followers_page.has_next(),
+                'has_previous': followers_page.has_previous(),
+                'per_page': per_page
+            },
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'followers_count': user.followers_count
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в get_user_followers: {e}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'followers': [],
+            'count': 0
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_following(request, user_id):
+    """Получение подписок пользователя"""
+    try:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        # ✅ Правильно: на кого подписан этот пользователь (follower=user)
+        following_relations = Follow.objects.filter(
+            follower=user  # ✅ Этот пользователь - подписчик
+        ).select_related('following').order_by('-created_at')
+        
+        # Пагинация
+        page = request.GET.get('page', 1)
+        per_page = min(int(request.GET.get('per_page', 20)), 50)
+        
+        from django.core.paginator import Paginator
+        paginator = Paginator(following_relations, per_page)
+        
+        try:
+            following_page = paginator.page(page)
+        except:
+            following_page = paginator.page(1)
+        
+        following = []
+        for follow in following_page:
+            following_data = {
+                'id': follow.following.id,
+                'username': follow.following.username,
+                'bio': follow.following.bio,
+                'is_artist': follow.following.is_artist,
+                'is_pro': follow.following.is_pro,
+                'followed_at': follow.created_at.isoformat(),
+                'notifications_enabled': follow.notifications_enabled
+            }
+            
+            # Добавляем URL аватара
+            avatar_url = follow.following.get_avatar_url()
+            if avatar_url:
+                following_data['avatar_url'] = request.build_absolute_uri(avatar_url) if avatar_url.startswith('/') else avatar_url
+            else:
+                following_data['avatar_url'] = None
+            
+            # Проверяем, подписан ли этот пользователь на меня (если запрос от аутентифицированного пользователя)
+            if request.user and request.user.is_authenticated:
+                # Этот пользователь подписан на меня?
+                # ✅ Правильно: follower=follow.following, following=request.user
+                following_data['follows_you'] = Follow.objects.filter(
+                    follower=follow.following,     # ✅ Он - подписчик
+                    following=request.user         # ✅ Я - цель
+                ).exists()
+                
+                # Я подписан на этого пользователя? (должно быть true, но проверяем)
+                # ✅ Правильно: follower=request.user, following=follow.following
+                following_data['i_am_following'] = Follow.objects.filter(
+                    follower=request.user,         # ✅ Я - подписчик
+                    following=follow.following     # ✅ Он - цель
+                ).exists()
+            else:
+                following_data['follows_you'] = False
+                following_data['i_am_following'] = False
+            
+            following.append(following_data)
+        
+        return Response({
+            'success': True,
+            'following': following,
+            'pagination': {
+                'current_page': following_page.number,
+                'total_pages': paginator.num_pages,
+                'total_count': paginator.count,
+                'has_next': following_page.has_next(),
+                'has_previous': following_page.has_previous(),
+                'per_page': per_page
+            },
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'following_count': user.following_count
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в get_user_following: {e}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'following': [],
+            'count': 0
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_follow_status(request, user_id):
+    """Проверяет, подписан ли текущий пользователь на другого пользователя"""
+    try:
+        target_user = get_object_or_404(CustomUser, id=user_id)
+        
+        # ✅ Правильно: проверяем подписан ли Я на него
+        is_following = Follow.objects.filter(
+            follower=request.user,      # ✅ Я - подписчик
+            following=target_user       # ✅ Он - цель
+        ).exists()
+        
+        # ✅ Правильно: проверяем подписан ли ОН на меня
+        follows_you = Follow.objects.filter(
+            follower=target_user,       # ✅ Он - подписчик
+            following=request.user      # ✅ Я - цель
+        ).exists()
+        
+        return Response({
+            'success': True,
+            'is_following': is_following,
+            'follows_you': follows_you,
+            'mutual_follow': is_following and follows_you,
+            'user': {
+                'id': target_user.id,
+                'username': target_user.username,
+                'followers_count': target_user.followers_count,
+                'following_count': target_user.following_count
+            },
+            'current_user': {
+                'id': request.user.id,
+                'username': request.user.username
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в check_follow_status: {e}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'is_following': False,
+            'follows_you': False
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_follow_stats(request, user_id):
+    """
+    Статистика подписок для конкретного пользователя
+    Используется для отладки и проверки
+    """
+    try:
+        target_user = get_object_or_404(CustomUser, id=user_id)
+        
+        # ✅ Сколько подписчиков у target_user (кто подписан НА него)
+        followers_count = Follow.objects.filter(following=target_user).count()
+        
+        # ✅ На сколько подписан target_user (на кого подписан ОН)
+        following_count = Follow.objects.filter(follower=target_user).count()
+        
+        # ✅ Подписан ли текущий пользователь на target_user
+        is_following = Follow.objects.filter(
+            follower=request.user,      # ✅ Я - подписчик
+            following=target_user       # ✅ Он - цель
+        ).exists()
+        
+        # ✅ Подписан ли target_user на меня
+        follows_me = Follow.objects.filter(
+            follower=target_user,       # ✅ Он - подписчик
+            following=request.user      # ✅ Я - цель
+        ).exists()
+        
+        return Response({
+            "success": True,
+            "user_id": target_user.id,
+            "username": target_user.username,
+            "stats": {
+                "followers": followers_count,
+                "following": following_count,
+                "is_following": is_following,
+                "follows_me": follows_me,
+                "mutual": is_following and follows_me
+            },
+            "database_counts": {
+                "actual_followers": followers_count,
+                "actual_following": following_count,
+                "cached_followers": target_user.followers_count,
+                "cached_following": target_user.following_count
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в user_follow_stats: {e}")
+        return Response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_follow_suggestions(request):
+    """Получение рекомендаций для подписки"""
+    try:
+        if not request.user.is_authenticated:
+            # Для неаутентифицированных пользователей - популярные пользователи
+            suggestions = CustomUser.objects.filter(
+                is_active=True
+            ).order_by('-followers_count')[:10]
+        else:
+            # Для аутентифицированных - рекомендации на основе подписок друзей
+            # Получаем пользователей, на которых подписаны мои подписки
+            my_following = Follow.objects.filter(
+                follower=request.user      # ✅ Я - подписчик
+            ).values_list('following', flat=True)
+            
+            # Получаем пользователей, на которых подписаны мои подписки, но не я
+            from django.db.models import Count
+            
+            suggestions = CustomUser.objects.exclude(
+                id=request.user.id
+            ).exclude(
+                id__in=my_following
+            ).filter(
+                is_active=True,
+                followers__follower__in=my_following  # ✅ followers (following=user)
+            ).annotate(
+                mutual_followers=Count('followers')
+            ).order_by('-mutual_followers', '-followers_count')[:20]
+        
+        # Если мало рекомендаций, добавляем популярных пользователей
+        if suggestions.count() < 10:
+            popular_users = CustomUser.objects.exclude(
+                id__in=[u.id for u in suggestions] if suggestions.exists() else []
+            ).exclude(
+                id=request.user.id if request.user.is_authenticated else None
+            ).filter(
+                is_active=True
+            ).order_by('-followers_count')[:10]
+            
+            suggestions = list(suggestions) + list(popular_users)
+        
+        suggestions_data = []
+        for user in suggestions[:20]:
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'bio': user.bio[:100] if user.bio else '',
+                'is_artist': user.is_artist,
+                'is_pro': user.is_pro,
+                'followers_count': user.followers_count,
+                'tracks_count': user.tracks_count
+            }
+            
+            # Добавляем URL аватара
+            avatar_url = user.get_avatar_url()
+            if avatar_url:
+                user_data['avatar_url'] = request.build_absolute_uri(avatar_url) if avatar_url.startswith('/') else avatar_url
+            else:
+                user_data['avatar_url'] = None
+            
+            # Для аутентифицированных пользователей проверяем, подписан ли я
+            if request.user.is_authenticated:
+                # ✅ Правильно: проверяем подписан ли Я на него
+                user_data['is_following'] = Follow.objects.filter(
+                    follower=request.user,   # ✅ Я - подписчик
+                    following=user           # ✅ Он - цель
+                ).exists()
+            else:
+                user_data['is_following'] = False
+            
+            suggestions_data.append(user_data)
+        
+        return Response({
+            'success': True,
+            'suggestions': suggestions_data,
+            'count': len(suggestions_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в get_follow_suggestions: {e}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'suggestions': [],
+            'count': 0
+        }, status=500)
+
+
+# 🛠️ ФУНКЦИЯ ДЛЯ ОЧИСТКИ И ПЕРЕСОЗДАНИЯ ПОДПИСОК (ДЛЯ ТЕСТИРОВАНИЯ)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def debug_fix_follows(request):
+    """
+    Отладочная функция для очистки и пересоздания подписок
+    Используй только в разработке!
+    """
+    if not settings.DEBUG:
+        return Response({"error": "Доступно только в режиме разработки"}, status=403)
+    
+    try:
+        from .models import Follow
+        
+        # Удаляем все подписки
+        count, _ = Follow.objects.all().delete()
+        
+        # Пересчитываем статистику всех пользователей
+        for user in CustomUser.objects.all():
+            user.update_stats()
+        
+        return Response({
+            "success": True,
+            "message": f"Удалено {count} подписок",
+            "user_count": CustomUser.objects.count(),
+            "stats_updated": True
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка в debug_fix_follows: {e}")
+        return Response({
+            "success": False,
+            "error": str(e)
         }, status=500)

@@ -275,8 +275,9 @@ const GridScan = ({
   modelsPath = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights',
   sensitivity = 0.55,
   lineThickness = 1,
-  linesColor = '#392e4e',
-  scanColor = '#FF9FFC',
+  // 🔥 ИСПРАВЛЕНО: НОРМАЛЬНЫЕ ДЕФОЛТНЫЕ ЦВЕТА
+  linesColor = '#392e4e', // Нормальный дефолтный цвет вместо null
+  scanColor = '#7c3aed',  // Нормальный дефолтный цвет вместо null
   scanOpacity = 0.4,
   gridScale = 0.1,
   lineStyle = 'solid',
@@ -325,6 +326,52 @@ const GridScan = ({
 
   const MAX_SCANS = 8;
   const scanStartsRef = useRef([]);
+
+  // 🔥 DEBUG: Логируем полученные цвета
+  useEffect(() => {
+    console.log('🎨 GridScan получил цвета:', { 
+      linesColor: linesColor, 
+      scanColor: scanColor,
+      isValidLinesColor: isValidColor(linesColor),
+      isValidScanColor: isValidColor(scanColor)
+    });
+  }, [linesColor, scanColor]);
+
+  // 🔥 ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ЦВЕТА
+  const isValidColor = (color) => {
+    if (!color) return false;
+    if (color === 'null' || color === 'undefined' || color.trim() === '') return false;
+    if (!color.startsWith('#')) {
+      // Пробуем создать THREE.Color для проверки
+      try {
+        new THREE.Color(color);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    // Для hex цветов проверяем длину
+    if (color.length !== 4 && color.length !== 7) return false;
+    return true;
+  };
+
+  // 🔥 БЕЗОПАСНОЕ ПРЕОБРАЗОВАНИЕ ЦВЕТА
+  const safeColor = (color, fallback = '#392e4e') => {
+    return isValidColor(color) ? color : fallback;
+  };
+
+  // 🔥 БЕЗОПАСНОЕ ПРЕОБРАЗОВАНИЕ В SRGB
+  const safeSrgbColor = (color, fallback = '#392e4e') => {
+    const safeHex = safeColor(color, fallback);
+    try {
+      const c = new THREE.Color(safeHex);
+      return c.convertSRGBToLinear();
+    } catch (e) {
+      console.error('❌ Ошибка преобразования цвета:', e);
+      const fallbackColor = new THREE.Color(fallback);
+      return fallbackColor.convertSRGBToLinear();
+    }
+  };
 
   const pushScan = t => {
     const arr = scanStartsRef.current.slice();
@@ -417,11 +464,24 @@ const GridScan = ({
     };
   }, [uiFaceActive, snapBackDelay, scanOnClick, enableGyro]);
 
+  // 🔥 ОСНОВНОЙ useEffect ДЛЯ СОЗДАНИЯ THREE.js СЦЕНЫ
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      console.error('❌ GridScan: container не найден');
+      return;
+    }
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    console.log('🔄 GridScan инициализируется с цветами:', { 
+      linesColor: linesColor, 
+      scanColor: scanColor 
+    });
+
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
     rendererRef.current = renderer;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -430,6 +490,10 @@ const GridScan = ({
     renderer.autoClear = false;
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
+
+    // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ВСЕГДА используем безопасные цвета
+    const safeLinesColor = safeColor(linesColor, '#392e4e');
+    const safeScanColor = safeColor(scanColor, '#7c3aed');
 
     const uniforms = {
       iResolution: {
@@ -440,8 +504,9 @@ const GridScan = ({
       uTilt: { value: 0 },
       uYaw: { value: 0 },
       uLineThickness: { value: lineThickness },
-      uLinesColor: { value: srgbColor(linesColor) },
-      uScanColor: { value: srgbColor(scanColor) },
+      // 🔥 ВСЕГДА ПЕРЕДАЕМ ВАЛИДНЫЙ ЦВЕТ
+      uLinesColor: { value: safeSrgbColor(safeLinesColor, '#392e4e') },
+      uScanColor: { value: safeSrgbColor(safeScanColor, '#7c3aed') },
       uGridScale: { value: gridScale },
       uLineStyle: { value: lineStyle === 'dashed' ? 1 : lineStyle === 'dotted' ? 2 : 0 },
       uLineJitter: { value: Math.max(0, Math.min(1, lineJitter || 0)) },
@@ -457,6 +522,13 @@ const GridScan = ({
       uScanStarts: { value: new Array(MAX_SCANS).fill(0) },
       uScanCount: { value: 0 }
     };
+
+    console.log('✅ GridScan создан с цветами:', {
+      linesColor: safeLinesColor,
+      scanColor: safeScanColor,
+      linesColorUniform: uniforms.uLinesColor.value,
+      scanColorUniform: uniforms.uScanColor.value
+    });
 
     const material = new THREE.ShaderMaterial({
       uniforms,
@@ -566,57 +638,66 @@ const GridScan = ({
         composerRef.current = null;
       }
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, [
     sensitivity,
-    lineThickness,
-    linesColor,
-    scanColor,
-    scanOpacity,
+    // 🔥 Убираем прямую зависимость от linesColor и scanColor
+    // Вместо этого используем safeColor внутри эффекта
     gridScale,
     lineStyle,
-    lineJitter,
     scanDirection,
-    enablePost,
-    noiseIntensity,
-    bloomIntensity,
-    scanGlow,
-    scanSoftness,
-    scanPhaseTaper,
-    scanDuration,
-    scanDelay,
-    bloomThreshold,
-    bloomSmoothing,
-    chromaticAberration,
-    smoothTime,
-    maxSpeed,
-    skewScale,
-    yBoost,
-    tiltScale,
-    yawScale
+    enablePost
   ]);
 
+  // 🔥 ВАЖНЫЙ useEffect: обновляем uniform'ы когда меняются пропсы
   useEffect(() => {
     const m = materialRef.current;
-    if (m) {
-      const u = m.uniforms;
-      u.uLineThickness.value = lineThickness;
-      u.uLinesColor.value.copy(srgbColor(linesColor));
-      u.uScanColor.value.copy(srgbColor(scanColor));
-      u.uGridScale.value = gridScale;
-      u.uLineStyle.value = lineStyle === 'dashed' ? 1 : lineStyle === 'dotted' ? 2 : 0;
-      u.uLineJitter.value = Math.max(0, Math.min(1, lineJitter || 0));
-      u.uBloomOpacity.value = Math.max(0, bloomIntensity);
-      u.uNoise.value = Math.max(0, noiseIntensity);
-      u.uScanGlow.value = scanGlow;
-      u.uScanOpacity.value = Math.max(0, Math.min(1, scanOpacity));
-      u.uScanDirection.value = scanDirection === 'backward' ? 1 : scanDirection === 'pingpong' ? 2 : 0;
-      u.uScanSoftness.value = scanSoftness;
-      u.uPhaseTaper.value = scanPhaseTaper;
-      u.uScanDuration.value = Math.max(0.05, scanDuration);
-      u.uScanDelay.value = Math.max(0.0, scanDelay);
+    if (!m) {
+      console.warn('⚠️ GridScan: material не найден при обновлении uniform\'ов');
+      return;
     }
+
+    const u = m.uniforms;
+    
+    console.log('🔄 GridScan обновляет цвета:', { 
+      linesColor, 
+      scanColor,
+      hasMaterial: !!m,
+      hasUniforms: !!u
+    });
+    
+    // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ОБНОВЛЯЕМ ЦВЕТА С ЗАЩИТОЙ
+    const safeLines = safeColor(linesColor, '#392e4e');
+    const safeScan = safeColor(scanColor, '#7c3aed');
+    
+    console.log('🎨 Безопасные цвета:', { safeLines, safeScan });
+    
+    // Обновляем цвета только если они валидны
+    try {
+      u.uLinesColor.value.copy(safeSrgbColor(safeLines, '#392e4e'));
+      u.uScanColor.value.copy(safeSrgbColor(safeScan, '#7c3aed'));
+    } catch (e) {
+      console.error('❌ Ошибка обновления цветов в uniform\'ах:', e);
+    }
+    
+    // Остальные uniform'ы
+    u.uLineThickness.value = lineThickness;
+    u.uGridScale.value = gridScale;
+    u.uLineStyle.value = lineStyle === 'dashed' ? 1 : lineStyle === 'dotted' ? 2 : 0;
+    u.uLineJitter.value = Math.max(0, Math.min(1, lineJitter || 0));
+    u.uBloomOpacity.value = Math.max(0, bloomIntensity);
+    u.uNoise.value = Math.max(0, noiseIntensity);
+    u.uScanGlow.value = scanGlow;
+    u.uScanOpacity.value = Math.max(0, Math.min(1, scanOpacity));
+    u.uScanDirection.value = scanDirection === 'backward' ? 1 : scanDirection === 'pingpong' ? 2 : 0;
+    u.uScanSoftness.value = scanSoftness;
+    u.uPhaseTaper.value = scanPhaseTaper;
+    u.uScanDuration.value = Math.max(0.05, scanDuration);
+    u.uScanDelay.value = Math.max(0.0, scanDelay);
+    
     if (bloomRef.current) {
       bloomRef.current.blendMode.opacity.value = Math.max(0, bloomIntensity);
       bloomRef.current.luminanceMaterial.threshold = bloomThreshold;
@@ -626,9 +707,10 @@ const GridScan = ({
       chromaRef.current.offset.set(chromaticAberration, chromaticAberration);
     }
   }, [
+    // 🔥 Основные зависимости
     lineThickness,
-    linesColor,
-    scanColor,
+    linesColor,       // Следим за изменением цвета линий
+    scanColor,        // Следим за изменением цвета скана
     gridScale,
     lineStyle,
     lineJitter,
@@ -894,4 +976,3 @@ function dist2(a, b) {
 }
 
 export default GridScan;
-
