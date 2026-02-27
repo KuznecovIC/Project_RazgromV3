@@ -1,0 +1,179 @@
+/* frontend/src/components/AdminMenu.css */
+
+.admin-menu-page{
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  .admin-terminal-bg{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  
+  .admin-menu-overlay{
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  
+  .admin-menu-card{
+    width: min(1020px, 92vw);  /* ✅ Увеличено с 820px до 1020px */
+    border-radius: 26px;        /* ✅ Чуть больше скругление */
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.42);
+    box-shadow: 0 22px 70px rgba(0,0,0,0.62);  /* ✅ Более глубокая тень */
+    backdrop-filter: blur(12px);  /* ✅ Чуть сильнее размытие */
+    -webkit-backdrop-filter: blur(12px);
+    padding: 30px;  /* ✅ Увеличены отступы внутри */
+  
+    /* ✅ Смещение вверх на 40px */
+    transform: translateY(-40px);
+  }
+  
+  .admin-menu-header{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;  /* ✅ Чуть больше отступ снизу */
+  }
+  
+  .admin-menu-title{
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 20px;  /* ✅ Увеличен с 18px до 20px */
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(132,86,255,0.5);  /* ✅ Легкое фиолетовое свечение */
+  }
+  
+  .admin-menu-subtitle{
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 11px;  /* ✅ Увеличен с 10px до 11px */
+    opacity: 0.75;
+    color: #ffffff;
+  }
+  
+  .admin-menu-grid{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;  /* ✅ Увеличен с 14px до 18px */
+    margin-bottom: 8px;
+  }
+  
+  .admin-menu-btn{
+    cursor: pointer;
+    text-align: left;
+    padding: 20px 18px;  /* ✅ Увеличены внутренние отступы */
+    border-radius: 20px;  /* ✅ Увеличен с 18px до 20px */
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(20, 20, 30, 0.5);
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 13px;  /* ✅ Увеличен с 12px до 13px */
+    line-height: 1.45;  /* ✅ Чуть больше межстрочный интервал */
+    transition: all 0.15s ease;  /* ✅ Чуть быстрее анимация */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  .admin-menu-btn:hover{
+    transform: translateY(-2px);  /* ✅ Увеличено смещение при наведении */
+    border-color: rgba(132,86,255,0.7);
+    background: rgba(132,86,255,0.15);
+    box-shadow: 0 8px 20px rgba(132,86,255,0.25);  /* ✅ Добавлена тень при наведении */
+  }
+  
+  .admin-menu-hint{
+    display: block;
+    margin-top: 12px;  /* ✅ Увеличен с 10px до 12px */
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 9px;
+    opacity: 0.7;
+    line-height: 1.4;
+  }
+  
+  .admin-menu-footer{
+    margin-top: 28px;  /* ✅ Увеличен с 18px до 28px */
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .admin-menu-back{
+    cursor: pointer;
+    border-radius: 16px;  /* ✅ Увеличен с 14px до 16px */
+    padding: 14px 18px;  /* ✅ Увеличены отступы */
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 11px;  /* ✅ Увеличен с 10px до 11px */
+    transition: all 0.15s ease;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  .admin-menu-back:hover{
+    border-color: rgba(132,86,255,0.7);
+    background: rgba(132,86,255,0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(132,86,255,0.2);
+  }
+  
+  /* ✅ Адаптация для планшетов */
+  @media (max-width: 1024px){
+    .admin-menu-card{
+      transform: translateY(-30px);  /* ✅ Меньше смещение на меньших экранах */
+    }
+  }
+  
+  /* ✅ Адаптация для мобильных */
+  @media (max-width: 720px){
+    .admin-menu-grid{ 
+      grid-template-columns: 1fr; 
+      gap: 14px;
+    }
+    
+    .admin-menu-title{ 
+      font-size: 16px;  /* ✅ Уменьшен для мобильных */
+    }
+    
+    .admin-menu-subtitle{
+      font-size: 9px;
+    }
+    
+    .admin-menu-card{
+      padding: 20px;
+      transform: translateY(-20px);  /* ✅ Еще меньше смещение на мобильных */
+    }
+    
+    .admin-menu-btn{
+      padding: 16px 14px;
+      font-size: 11px;
+    }
+    
+    .admin-menu-back{
+      padding: 12px 16px;
+      font-size: 10px;
+    }
+  }
+  
+  /* ✅ Адаптация для очень маленьких экранов */
+  @media (max-width: 480px){
+    .admin-menu-card{
+      transform: translateY(-10px);
+      padding: 16px;
+    }
+    
+    .admin-menu-header{
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+  }

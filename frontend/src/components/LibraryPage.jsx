@@ -1,10 +1,14 @@
-// LibraryPage.jsx - ИСПРАВЛЕННЫЙ (кликабельные авторы)
+// frontend/src/pages/LibraryPage.jsx
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import Shuffle from '../components/Shuffle';
 import CompactTrackCard from '../components/CompactTrackCard';
 import GooeyNav from '../components/GooeyNav';
 import './LibraryPage.css';
+
+// ИМПОРТЫ ДЛЯ РЕАЛЬНЫХ ПОДПИСОК И API
+import { apiFetch } from '../api/apiFetch';
+import { useSocial } from '../context/SocialContext';
 
 // Иконки
 const IconAll = () => (
@@ -43,6 +47,58 @@ const IconSearch = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
     <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Иконка лайка (сердечко) - Filled версия
+const IconHeartFilled = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Иконка лайка (сердечко) - Outline версия
+const IconHeartOutline = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Иконка репоста - Filled версия
+const IconRepostFilled = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Иконка репоста - Outline версия
+const IconRepostOutline = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Иконка шера (репост) - старая для совместимости
+const IconShare = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="share-icon">
+    <path
+      d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+// ✅ ИКОНКА: Play
+const IconPlay = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5v14l11-7z" fill="currentColor" />
+  </svg>
+);
+
+// ✅ ИКОНКА: Pause
+const IconPause = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" />
   </svg>
 );
 
@@ -140,28 +196,6 @@ const LibraryEmptyState = ({ message }) => {
   );
 };
 
-// Компонент карточки пользователя
-const UserCard = ({ user }) => {
-  return (
-    <div className="user-card">
-      <div className="user-card-avatar">
-        {user.avatar ? (
-          <img src={user.avatar} alt={user.username} />
-        ) : (
-          <div className="user-card-avatar-fallback">
-            <IconUser />
-          </div>
-        )}
-      </div>
-      <div className="user-card-info">
-        <h4 className="user-card-username">{user.username}</h4>
-        <p className="user-card-followers">{user.followers} followers</p>
-      </div>
-      <button className="user-card-follow-btn">Following</button>
-    </div>
-  );
-};
-
 // Компонент-разделитель
 const SectionDivider = () => (
   <div className="library-section-divider"></div>
@@ -191,7 +225,6 @@ const formatTimeAgo = (timestamp) => {
     const weeks = Math.floor(diffDays / 7);
     return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
   } else {
-    // Форматируем дату для старых записей
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -208,7 +241,6 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
   const [isArtistHovered, setIsArtistHovered] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ ФУНКЦИЯ ПЕРЕХОДА В ПРОФИЛЬ (1:1 из GlassMusicPlayer)
   const handleArtistClick = (e) => {
     e.stopPropagation();
     
@@ -220,7 +252,6 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
     navigate(`/profile/${track.uploaded_by.id}`);
   };
 
-  // ✅ Если onArtistClick передан, используем его (для обратной совместимости)
   const handleActualArtistClick = (e) => {
     e.stopPropagation();
     if (onArtistClick && track?.uploaded_by?.id) {
@@ -230,7 +261,6 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
     }
   };
 
-  // Обновляем время при монтировании и при изменении track
   useEffect(() => {
     if (!track.playedAt) {
       setTimeAgo('Some time ago');
@@ -241,9 +271,8 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
       setTimeAgo(formatTimeAgo(track.playedAt));
     };
     
-    updateTime(); // Первоначальное обновление
+    updateTime();
     
-    // Для "Just now" обновляем чаще
     const intervalMs = track.playedAtMs && (Date.now() - track.playedAtMs < 60000) ? 10000 : 60000;
     const interval = setInterval(updateTime, intervalMs);
     
@@ -277,7 +306,6 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
           >
             {track.title}
           </h5>
-          {/* ✅ ИСПРАВЛЕННЫЙ АВТОР: КЛИКАБЕЛЬНЫЙ */}
           <p 
             className="history-track-artist clickable-artist"
             onClick={handleActualArtistClick}
@@ -300,6 +328,117 @@ const HistoryTrackItem = ({ track, index, onTrackTitleClick, onArtistClick }) =>
   );
 };
 
+// ✅ КОМПОНЕНТ: Карточка трека в истории
+const HistoryTrackCard = ({
+  track,
+  isPlaying,
+  onPlayPause,
+  liked,
+  onLike,
+  reposted,
+  onRepost,
+  playedAtLabel,
+  onOpenTrack,
+  onOpenArtist,
+  playCount = 1
+}) => {
+  const cover = track?.cover || track?.cover_url || track?.image || null;
+
+  return (
+    <div className="history-track-card">
+      <div className="history-cover" onClick={onPlayPause} role="button" tabIndex={0}>
+        {cover ? (
+          <img className="history-cover-img" src={cover} alt={track?.title || "track"} />
+        ) : (
+          <div className="history-cover-fallback" />
+        )}
+
+        <div className="history-cover-overlay">
+          <button
+            type="button"
+            className="history-play-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPlayPause?.();
+            }}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? "❚❚" : "▶"}
+          </button>
+        </div>
+      </div>
+
+      <div className="history-info">
+        <div className="history-title-row">
+          <button
+            type="button"
+            className="history-title history-link"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenTrack?.();
+            }}
+            title={track?.title || ""}
+          >
+            {track?.title || "Untitled"}
+          </button>
+          
+          <div className="history-played-at">
+            {playedAtLabel}
+            {playCount > 1 && (
+              <span className="play-count-badge">
+                {playCount} plays
+              </span>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="history-artist history-link"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenArtist?.();
+          }}
+          title={track?.artist || track?.uploaded_by?.username || ""}
+        >
+          {track?.artist || track?.uploaded_by?.username || "Unknown"}
+        </button>
+
+        <div className="history-actions">
+          <button
+            type="button"
+            className={`history-action-btn ${liked ? "is-active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onLike?.();
+            }}
+            aria-label={liked ? "Unlike" : "Like"}
+          >
+            {liked ? <IconHeartFilled /> : <IconHeartOutline />}
+          </button>
+
+          <button
+            type="button"
+            className={`history-action-btn ${reposted ? "is-active" : ""}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRepost?.();
+            }}
+            aria-label={reposted ? "Undo repost" : "Repost"}
+          >
+            {reposted ? <IconRepostFilled /> : <IconRepostOutline />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Функция для поиска треков по запросу
 const searchTracks = (tracks, query) => {
   if (!query.trim()) return tracks;
@@ -307,21 +446,12 @@ const searchTracks = (tracks, query) => {
   const lowerQuery = query.toLowerCase().trim();
   
   return tracks.filter(track => {
-    // Ищем в названии трека
     const titleMatch = track.title.toLowerCase().includes(lowerQuery);
-    
-    // Ищем в имени артиста
     const artistMatch = track.artist.toLowerCase().includes(lowerQuery);
-    
-    // Ищем по первым буквам слов
     const titleWords = track.title.toLowerCase().split(' ');
     const artistWords = track.artist.toLowerCase().split(' ');
-    
-    // Проверяем, начинается ли любое слово с поискового запроса
     const startsWithTitle = titleWords.some(word => word.startsWith(lowerQuery));
     const startsWithArtist = artistWords.some(word => word.startsWith(lowerQuery));
-    
-    // Проверяем на частичное совпадение в начале слов
     const partialMatch = titleWords.some(word => 
       word.length >= 3 && lowerQuery.length >= 2 && 
       word.substring(0, Math.min(word.length, lowerQuery.length)) === lowerQuery.substring(0, Math.min(word.length, lowerQuery.length))
@@ -331,46 +461,347 @@ const searchTracks = (tracks, query) => {
   });
 };
 
-// Основной компонент LibraryPage (ИСПРАВЛЕННАЯ АРХИТЕКТУРА)
+// КОМПОНЕНТ КАРТОЧКИ ПОЛЬЗОВАТЕЛЯ - ВЕРТИКАЛЬНАЯ С ПРЕФИКСОМ lib-
+const UserCard = ({ user, onOpenProfile, onToggle }) => {
+  const followersCount = user?.followers_count ?? 0;
+  const avatarUrl =
+    user?.avatar || user?.avatar_url || user?.profile_image || user?.image || null;
+  const isFollowingUser = !!user?.__isFollowing;
+
+  return (
+    <div className="lib-user-card lib-user-card--vertical" role="group">
+      <button
+        type="button"
+        className="lib-user-card-avatar-btn"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenProfile?.();
+        }}
+        aria-label={`Open ${user?.username || "user"} profile`}
+      >
+        <div className="lib-user-card-avatar lib-user-card-avatar--xl">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={user?.username || "user"} />
+          ) : (
+            <div className="lib-user-card-avatar-fallback">
+              <IconUser />
+            </div>
+          )}
+        </div>
+      </button>
+
+      <button
+        type="button"
+        className="lib-user-card-name-btn lib-user-card-name-btn--center"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenProfile?.();
+        }}
+      >
+        <h4 className="lib-user-card-username lib-user-card-username--center">
+          {user?.username || "Unknown"}
+        </h4>
+      </button>
+
+      <p className="lib-user-card-followers lib-user-card-followers--center">
+        {followersCount.toLocaleString()} followers
+      </p>
+
+      <button
+        type="button"
+        className={`lib-user-card-follow-under lib-user-card-follow-under--xl ${
+          isFollowingUser ? "is-following" : ""
+        }`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle?.();
+        }}
+      >
+        {isFollowingUser ? "Following" : "Follow"}
+      </button>
+    </div>
+  );
+};
+
+// Основной компонент LibraryPage
 const LibraryPage = ({ 
-  // 🎵 Воспроизведение
   currentTrack, 
   isPlaying, 
   onPlayPause, 
-  
-  // ❤️ Лайки
   likedTrackIds = [], 
   onToggleLike,
-  
-  // 📦 Данные треков
   tracksById = {},
   recentTrackIds = [],
-  
-  // ⏰ Время и управление
   currentTime = 0,
   duration = 0,
   onSeek,
-  
-  // 🔗 Навигация
   onTrackTitleClick,
-  onArtistClick, // ← ДОБАВЛЕНО: обработчик клика по автору
-  
-  // 📤 Загруженные треки
+  onArtistClick,
   uploadedTracks = [],
   isLoadingTracks = false,
-  
-  // 🔑 Сессия
-  sessionToken
+  history = [],
+  sessionToken,
+  me,
+  setPlaybackQueue,
+  playQueueIds = []
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [activeSection, setActiveSection] = useState('overview');
   const [forceUpdate, setForceUpdate] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [likedSearchQuery, setLikedSearchQuery] = useState('');
-  const [historyTracks, setHistoryTracks] = useState([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  // ✅ Состояния для плейлистов
+  const [playlistFilter, setPlaylistFilter] = useState('all');
+  const [createdPlaylists, setCreatedPlaylists] = useState([]);
+  const [likedPlaylists, setLikedPlaylists] = useState([]);
+  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
+  
+  // ✅ Состояния для очереди плейлистов
+  const [playingPlaylistId, setPlayingPlaylistId] = useState(null);
+  const [playlistQueueCache, setPlaylistQueueCache] = useState({});
+  
+  // ✅ Добавляем методы для лайков/репостов плейлистов
+  const {
+    reposts,
+    toggleRepost,
+    toggleFollow,
+    isFollowing,
+    followsLoaded,
+    refreshFollows,
+    togglePlaylistLike,
+    togglePlaylistRepost,
+    isPlaylistLiked,
+    isPlaylistReposted,
+    getPlaylistLikeCount,
+    getPlaylistRepostCount,
+    setPlaylistLikeStatus,
+    setPlaylistRepostStatus,
+  } = useSocial();
+
+  const [meId, setMeId] = useState(null);
+  const [followingUsers, setFollowingUsers] = useState([]);
+  const [recommendedUsers, setRecommendedUsers] = useState([]);
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+
+  // 🔥 Логируем смену секции один раз, а не при каждом рендере
+  useEffect(() => {
+    console.log('🎯 LibraryPage: секция изменена на:', activeSection);
+  }, [activeSection]);
+
+  // 🔥 Читаем tab из URL при загрузке
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    console.log('📋 LibraryPage: tab из URL:', tabFromUrl);
+    
+    if (tabFromUrl) {
+      const sectionMap = {
+        'likes': 'likes',
+        'playlists': 'playlists',
+        'following': 'following',
+        'history': 'history'
+      };
+      
+      if (sectionMap[tabFromUrl]) {
+        setActiveSection(sectionMap[tabFromUrl]);
+      }
+    }
+  }, [searchParams]);
+
+  // Обновляем URL при изменении activeSection
+  useEffect(() => {
+    const sectionToTabMap = {
+      'likes': 'likes',
+      'playlists': 'playlists',
+      'following': 'following',
+      'history': 'history'
+    };
+    
+    const currentTab = searchParams.get('tab');
+    const newTab = sectionToTabMap[activeSection];
+    
+    if (newTab && currentTab !== newTab && activeSection !== 'overview') {
+      navigate(`/library?tab=${newTab}`, { replace: true });
+    }
+  }, [activeSection, navigate, searchParams]);
+
+  // ФУНКЦИЯ: Получение публичного профиля пользователя
+  const fetchPublicUser = async (userId) => {
+    try {
+      const r = await apiFetch(`/api/users/${userId}/`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d?.user || d || null;
+    } catch (e) {
+      console.error('LibraryPage: fetchPublicUser error', e);
+      return null;
+    }
+  };
+
+  // ЭФФЕКТ: Загружаем meId (кто я)
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMe = async () => {
+      try {
+        const resp = await apiFetch('/api/users/me/');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (mounted) setMeId(data?.user?.id || data?.id || null);
+      } catch (e) {
+        console.error('LibraryPage: loadMe error', e);
+      }
+    };
+
+    loadMe();
+    return () => { mounted = false; };
+  }, []);
+
+  // ✅ ЭФФЕКТ: Загрузка плейлистов (ИСПРАВЛЕНО - убрана зависимость isPlaylistReposted)
+  useEffect(() => {
+    if (!meId) return;
+
+    const loadPlaylists = async () => {
+      setIsLoadingPlaylists(true);
+      try {
+        // 1) Created playlists
+        const r1 = await apiFetch(`/api/users/${meId}/playlists/`);
+        let created = [];
+        if (r1.ok) {
+          const d1 = await r1.json();
+          created = d1?.playlists || d1 || [];
+        }
+
+        // 2) Liked playlists
+        const r2 = await apiFetch(`/api/users/${meId}/liked-playlists/`);
+        let liked = [];
+        if (r2.ok) {
+          const d2 = await r2.json();
+          liked = d2?.playlists || d2 || [];
+        }
+
+        // ✅ засеиваем счетчики и статусы плейлистов в SocialContext
+        [...(created || []), ...(liked || [])].forEach(pl => {
+          if (!pl?.id) return;
+
+          if (pl.likes_count !== undefined) {
+            const likedByMe = (liked || []).some(x => x?.id === pl.id);
+            setPlaylistLikeStatus?.(pl.id, likedByMe, pl.likes_count);
+          }
+
+          if (pl.repost_count !== undefined || pl.reposts_count !== undefined) {
+            const cnt = pl.repost_count ?? pl.reposts_count;
+            
+            // 🔥 ИСПРАВЛЕНО: НЕ затираем false. Берём статус из API (is_reposted) если есть,
+            // иначе оставляем то, что уже знает SocialContext из localStorage
+            const repostedByMe =
+              (pl.is_reposted === true) ? true : (isPlaylistReposted?.(pl.id) ?? false);
+
+            setPlaylistRepostStatus?.(pl.id, repostedByMe, cnt);
+          }
+        });
+
+        setCreatedPlaylists(Array.isArray(created) ? created : []);
+        setLikedPlaylists(Array.isArray(liked) ? liked : []);
+      } catch (e) {
+        console.error('LibraryPage: loadPlaylists error', e);
+        setCreatedPlaylists([]);
+        setLikedPlaylists([]);
+      } finally {
+        setIsLoadingPlaylists(false);
+      }
+    };
+
+    loadPlaylists();
+  }, [meId, setPlaylistLikeStatus, setPlaylistRepostStatus]); // ✅ Убрана isPlaylistReposted из зависимостей
+
+  // ФУНКЦИЯ: Загрузка моих подписок
+  const loadFollowingUsers = async () => {
+    if (!meId) return;
+
+    setIsLoadingFollowing(true);
+    try {
+      const resp = await apiFetch(`/api/users/${meId}/following/?per_page=50`);
+      const data = await resp.json();
+
+      const baseList = data?.following || [];
+      const hydrated = await Promise.all(
+        baseList.map(u => fetchPublicUser(u.id))
+      );
+
+      setFollowingUsers(hydrated.filter(Boolean));
+    } catch (e) {
+      console.error('LibraryPage: loadFollowingUsers error', e);
+      setFollowingUsers([]);
+    } finally {
+      setIsLoadingFollowing(false);
+    }
+  };
+
+  // ЭФФЕКТ: Загрузка подписок при переходе в секцию following
+  useEffect(() => {
+    if (activeSection !== 'following' && activeSection !== 'overview') return;
+    loadFollowingUsers();
+    refreshFollows?.();
+  }, [activeSection, meId, refreshFollows]);
+
+  // ВЫЧИСЛЕНИЕ: ID авторов, с которыми взаимодействовал пользователь
+  const interactedArtistIds = useMemo(() => {
+    const ids = new Set();
+
+    (likedTrackIds || []).forEach(trackId => {
+      const track = tracksById?.[trackId];
+      const authorId = track?.uploaded_by?.id;
+      if (authorId) ids.add(authorId);
+    });
+
+    Object.keys(reposts || {}).forEach(trackId => {
+      if (!reposts[trackId]) return;
+      const track = tracksById?.[Number(trackId)];
+      const authorId = track?.uploaded_by?.id;
+      if (authorId) ids.add(authorId);
+    });
+
+    if (meId) ids.delete(meId);
+
+    return Array.from(ids);
+  }, [likedTrackIds, reposts, tracksById, meId]);
+
+  // ЭФФЕКТ: Загрузка рекомендованных пользователей
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRecommended = async () => {
+      if (!followsLoaded) return;
+
+      try {
+        const hydrated = await Promise.all(
+          interactedArtistIds.map(id => fetchPublicUser(id))
+        );
+
+        const filtered = hydrated
+          .filter(Boolean)
+          .filter(u => !isFollowing(u.id))
+          .slice(0, 12);
+
+        if (mounted) setRecommendedUsers(filtered);
+      } catch (e) {
+        console.error('LibraryPage: loadRecommended error', e);
+      }
+    };
+
+    loadRecommended();
+    return () => { mounted = false; };
+  }, [interactedArtistIds, followsLoaded, isFollowing]);
 
   // ============================================
-  // ✅ ВАЖНО: Все данные берём из пропсов
+  // ✅ Все данные из пропсов
   // ============================================
 
   // ✅ ВСЕ ТРЕКИ из tracksById
@@ -379,12 +810,11 @@ const LibraryPage = ({
       track && track.id && track.title
     ).sort((a, b) => b.id - a.id).map(track => ({
       ...track,
-      // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
       uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
-    })); // Сортируем по ID (новые сверху)
+    }));
   }, [tracksById]);
 
-  // ✅ ЛАЙКНУТЫЕ ТРЕКИ (из tracksById + likedTrackIds)
+  // ✅ ЛАЙКНУТЫЕ ТРЕКИ
   const likedTracksData = useMemo(() => {
     if (!Array.isArray(likedTrackIds)) return [];
     return likedTrackIds
@@ -392,26 +822,90 @@ const LibraryPage = ({
       .filter(Boolean)
       .map(track => ({
         ...track,
-        // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
         uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
       }))
       .sort((a, b) => b.id - a.id);
   }, [likedTrackIds, tracksById]);
 
-  // ✅ НЕДАВНО ПРОИГРАННЫЕ ТРЕКИ (из recentTrackIds)
+  // ✅ НЕДАВНО ПРОИГРАННЫЕ ТРЕКИ
   const recentlyPlayedTracks = useMemo(() => {
     if (!Array.isArray(recentTrackIds)) return [];
-    return recentTrackIds
-      .map(id => tracksById[id])
-      .filter(Boolean)
-      .map(track => ({
-        ...track,
-        playedAt: new Date().toISOString(),
-        playedAtMs: Date.now() - Math.floor(Math.random() * 1000000), // Для демо
-        // ✅ ДОБАВЛЯЕМ uploaded_by если его нет в tracksById
-        uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
-      }));
+
+    const seen = new Set();
+    const uniqueIdsMostRecentFirst = [];
+
+    for (let i = recentTrackIds.length - 1; i >= 0; i--) {
+      const id = recentTrackIds[i];
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      uniqueIdsMostRecentFirst.push(id);
+    }
+
+    const now = Date.now();
+
+    return uniqueIdsMostRecentFirst
+      .map((id, idx) => {
+        const track = tracksById[id];
+        if (!track) return null;
+
+        return {
+          ...track,
+          playedAt: new Date(now - idx * 1000).toISOString(),
+          playedAtMs: now - idx * 1000,
+          uploaded_by: track.uploaded_by || { id: track.user_id || 0, username: track.artist }
+        };
+      })
+      .filter(Boolean);
   }, [recentTrackIds, tracksById]);
+
+  // ✅ ИСТОРИЯ ПРОСЛУШИВАНИЙ (из пропсов App.js)
+  const historyTracksFromApp = useMemo(() => {
+    if (!Array.isArray(history)) return [];
+    if (history.length === 0) return [];
+
+    const processed = history
+      .map((h) => {
+        const trackId = h.track_id ?? h.trackId ?? h.track ?? h?.track?.id;
+        const playedAt = h.played_at ?? h.playedAt;
+
+        if (!trackId) return null;
+
+        const base = tracksById?.[trackId];
+        if (!base) return null;
+
+        return {
+          ...base,
+          playedAt: playedAt || new Date().toISOString(),
+          playedAtMs: playedAt ? new Date(playedAt).getTime() : Date.now(),
+          uploaded_by: base.uploaded_by || { 
+            id: base.user_id || 0, 
+            username: base.artist || 'Unknown Artist'
+          }
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b.playedAtMs || 0) - (a.playedAtMs || 0));
+
+    const map = new Map();
+    for (const item of processed) {
+      const key = item?.id;
+      if (!key) continue;
+
+      if (!map.has(key)) {
+        map.set(key, { ...item, playCount: 1 });
+      } else {
+        const prev = map.get(key);
+        map.set(key, { 
+          ...prev, 
+          playCount: (prev.playCount || 1) + 1,
+          playedAtMs: Math.max(prev.playedAtMs || 0, item.playedAtMs || 0),
+          playedAt: prev.playedAtMs > item.playedAtMs ? prev.playedAt : item.playedAt
+        });
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => (b.playedAtMs || 0) - (a.playedAtMs || 0));
+  }, [history, tracksById]);
 
   // ✅ ЗАГРУЖЕННЫЕ ТРЕКИ ПОЛЬЗОВАТЕЛЯ
   const uploadedTracksData = useMemo(() => {
@@ -440,71 +934,19 @@ const LibraryPage = ({
     { label: 'Overview', href: '#overview' },
     { label: 'Likes', href: '#likes' },
     { label: 'Playlists', href: '#playlists' },
-    { label: 'Albums', href: '#albums' },
-    { label: 'Stations', href: '#stations' },
     { label: 'Following', href: '#following' },
     { label: 'History', href: '#history' }
   ];
-
-  // Тестовые данные для подписок
-  const testFollowing = [
-    {
-      id: 1,
-      username: 'axstraly',
-      avatar: '',
-      followers: '1.2k'
-    },
-    {
-      id: 2,
-      username: 'metalhead',
-      avatar: '',
-      followers: '845'
-    },
-    {
-      id: 3,
-      username: 'industrial_fan',
-      avatar: '',
-      followers: '2.1k'
-    }
-  ];
-
-  // Загрузка истории прослушивания с бэкенда
-  const fetchListeningHistory = async () => {
-    if (!sessionToken) return;
-    
-    setIsLoadingHistory(true);
-    try {
-      const response = await fetch('/api/history/', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setHistoryTracks(data.history);
-      }
-    } catch (error) {
-      console.error('Ошибка при получении истории:', error);
-      // Используем реальные данные из recentTrackIds
-      setHistoryTracks(recentlyPlayedTracks);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
 
   // Функция для получения недавних треков (сортированных)
   const recentTracksWithoutTime = useMemo(() => {
     const sorted = [...recentlyPlayedTracks].sort((a, b) => {
       const timeA = a.playedAtMs || 0;
       const timeB = b.playedAtMs || 0;
-      return timeB - timeA; // Новые сверху
+      return timeB - timeA;
     });
     
     return sorted.map(track => {
-      // Убираем временные метки для CompactTrackCard
       const { playedAt, playedAtMs, ...trackWithoutTime } = track;
       return trackWithoutTime;
     });
@@ -514,44 +956,10 @@ const LibraryPage = ({
   useEffect(() => {
     const interval = setInterval(() => {
       setForceUpdate(prev => prev + 1);
-    }, 1000); // Обновляем каждую секунду
+    }, 1000);
     
     return () => clearInterval(interval);
   }, []);
-
-  // Загружаем историю при изменении секции или токена
-  useEffect(() => {
-    if (activeSection === 'history' && sessionToken) {
-      fetchListeningHistory();
-    }
-  }, [activeSection, sessionToken]);
-
-  // Добавление трека в историю при прослушивании
-  const addTrackToHistory = async (trackId) => {
-    if (!sessionToken) return;
-    
-    try {
-      const response = await fetch('/api/history/add/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          track_id: trackId,
-          played_at: new Date().toISOString()
-        })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        // Обновляем локальное состояние
-        fetchListeningHistory();
-      }
-    } catch (error) {
-      console.error('Ошибка при добавлении в историю:', error);
-    }
-  };
 
   // Обработчик навигации
   const handleNavNavigate = (item, index) => {
@@ -559,8 +967,6 @@ const LibraryPage = ({
       'Overview': 'overview',
       'Likes': 'likes',
       'Playlists': 'playlists',
-      'Albums': 'albums',
-      'Stations': 'stations',
       'Following': 'following',
       'History': 'history'
     };
@@ -568,13 +974,8 @@ const LibraryPage = ({
     setActiveSection(sectionMap[item.label] || 'overview');
   };
 
-  // Обработчик воспроизведения с добавлением в историю
-  const handlePlayWithHistory = (trackId) => {
-    // Добавляем трек в историю (если есть токен)
-    if (sessionToken) {
-      addTrackToHistory(trackId);
-    }
-    // Вызываем оригинальный обработчик
+  // Обработчик воспроизведения
+  const handlePlay = (trackId) => {
     onPlayPause(trackId);
   };
 
@@ -585,22 +986,207 @@ const LibraryPage = ({
     }
   };
 
-  console.log('🎯 LibraryPage статус:', {
-    activeSection,
-    allTracksCount: allTracks.length,
-    likedTracksCount: likedTracksData.length,
-    recentTracksCount: recentlyPlayedTracks.length,
-    uploadedTracksCount: uploadedTracksData.length,
-    hasArtistClickHandler: !!onArtistClick
-  });
+  // ФУНКЦИЯ: Обработчик подписки/отписки
+  const handleFollowToggle = async (userId, isCurrentlyFollowing) => {
+    await toggleFollow(userId, !isCurrentlyFollowing);
+    refreshFollows?.();
+    loadFollowingUsers();
+  };
 
-  // Рендеринг раздела Overview (главная страница)
+  // Обработчик репоста
+  const handleRepost = async (trackId) => {
+    try {
+      console.log('📤 LibraryPage: toggleRepost', trackId);
+      await toggleRepost(trackId);
+    } catch (error) {
+      console.error('❌ LibraryPage: ошибка репоста', error);
+    }
+  };
+
+  // ✅ Функция для получения очереди треков плейлиста (ids) с бэка
+  const fetchPlaylistQueueIds = async (playlistId) => {
+    // Проверяем кэш
+    if (playlistQueueCache[playlistId]?.length) {
+      console.log('✅ LibraryPage: используем кэш для плейлиста', playlistId);
+      return playlistQueueCache[playlistId];
+    }
+
+    try {
+      console.log('📤 LibraryPage: загрузка треков плейлиста', playlistId);
+      const r = await apiFetch(`/api/playlists/${playlistId}/`);
+      if (!r.ok) {
+        console.error('❌ LibraryPage: ошибка загрузки плейлиста', r.status);
+        return [];
+      }
+      
+      const d = await r.json();
+      const items = d?.items || d?.playlist?.items || [];
+      const tracks = items
+        .map((it) => it?.track || it)
+        .filter(Boolean);
+
+      const ids = tracks.map((t) => t.id).filter((x) => x != null);
+      
+      // Сохраняем в кэш
+      setPlaylistQueueCache((prev) => ({ ...prev, [playlistId]: ids }));
+      console.log(`✅ LibraryPage: загружено ${ids.length} треков для плейлиста`, playlistId);
+      
+      return ids;
+    } catch (e) {
+      console.error('❌ LibraryPage: fetchPlaylistQueueIds error', e);
+      return [];
+    }
+  };
+
+  // ✅ Обработчик play/pause для плейлиста как очередь
+  const handlePlaylistPlayPause = async (pl) => {
+    if (!pl?.id) return;
+
+    console.log('▶️ LibraryPage: воспроизведение плейлиста', pl.id, pl.title);
+
+    // если уже этот плейлист активен — просто pause/resume
+    if (playingPlaylistId === pl.id && Array.isArray(playQueueIds) && playQueueIds.length > 0) {
+      console.log('⏯️ LibraryPage: тот же плейлист, toggle play/pause');
+      onPlayPause?.(); // toggle play/pause (без id)
+      return;
+    }
+
+    const ids = await fetchPlaylistQueueIds(pl.id);
+    if (!ids.length) {
+      console.log('⚠️ LibraryPage: в плейлисте нет треков');
+      return;
+    }
+
+    // ставим очередь в App.js
+    if (typeof setPlaybackQueue === 'function') {
+      setPlaybackQueue(ids);
+    }
+
+    setPlayingPlaylistId(pl.id);
+
+    // запускаем первый трек (передаем id первого трека)
+    console.log('▶️ LibraryPage: запускаем первый трек', ids[0]);
+    onPlayPause?.(ids[0]);
+  };
+
+  // ✅ Функция для получения всех плейлистов (объединение без дублей)
+  const getAllPlaylists = useMemo(() => {
+    const map = new Map();
+    [...createdPlaylists, ...likedPlaylists].forEach((p) => {
+      if (p?.id != null) map.set(p.id, p);
+    });
+    return Array.from(map.values());
+  }, [createdPlaylists, likedPlaylists]);
+
+  // ✅ Функция для получения плейлистов по фильтру
+  const getPlaylistsToShow = () => {
+    if (playlistFilter === 'created') return createdPlaylists;
+
+    if (playlistFilter === 'liked') {
+      // ✅ Фильтруем "на лету" по статусу лайка из SocialContext
+      return getAllPlaylists.filter(p => p?.id != null && isPlaylistLiked?.(p.id));
+    }
+
+    // all: возвращаем все плейлисты
+    return getAllPlaylists;
+  };
+
+  // ✅ Рендеринг секции плейлистов
+  const renderPlaylistsSection = () => {
+    const list = getPlaylistsToShow();
+
+    return (
+      <div className="library-section-content">
+        <LibrarySectionHeader
+          title="Playlists"
+          showFilter={true}
+          onFilterChange={setPlaylistFilter}
+        />
+
+        {isLoadingPlaylists ? (
+          <LibraryEmptyState message="Loading playlists..." />
+        ) : list.length === 0 ? (
+          <LibraryEmptyState message="No playlists yet" />
+        ) : (
+          <div className="library-playlists-list">
+            {list.map((pl) => {
+              const isThisPlaylistPlaying = playingPlaylistId === pl.id && Array.isArray(playQueueIds) && playQueueIds.length > 0;
+              
+              return (
+                <div key={pl.id} className="library-playlist-row">
+                  <div className="library-playlist-left">
+                    <div
+                      className="playlist-cover-wrap"
+                      onClick={() => navigate(`/playlist/${pl.id}`)}
+                      title="Open playlist"
+                    >
+                      <img
+                        className="library-playlist-cover"
+                        src={pl.cover_url || pl.cover || '/default-cover.jpg'}
+                        alt={pl.title}
+                      />
+                      <button
+                        className="playlist-cover-play"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlaylistPlayPause(pl);
+                        }}
+                        aria-label={isThisPlaylistPlaying && isPlaying ? "Pause playlist" : "Play playlist"}
+                      >
+                        {isThisPlaylistPlaying && isPlaying ? <IconPause /> : <IconPlay />}
+                      </button>
+                    </div>
+
+                    <div className="library-playlist-meta">
+                      <div
+                        className="library-playlist-title clickable"
+                        onClick={() => navigate(`/playlist/${pl.id}`)}
+                        title="Open playlist"
+                      >
+                        {pl.title}
+                      </div>
+
+                      <div className="library-playlist-sub">
+                        {(pl.track_count ?? pl.tracks_count ?? 0)} tracks
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="playlist-actions">
+                    <button
+                      className={`pl-action-btn ${isPlaylistLiked?.(pl.id) ? 'active' : ''}`}
+                      onClick={() => togglePlaylistLike?.(pl.id)}
+                      title="Like"
+                    >
+                      {isPlaylistLiked?.(pl.id) ? <IconHeartFilled /> : <IconHeartOutline />}
+                      <span>{getPlaylistLikeCount?.(pl.id) ?? pl.likes_count ?? 0}</span>
+                    </button>
+
+                    <button
+                      className={`pl-action-btn ${isPlaylistReposted?.(pl.id) ? 'active' : ''}`}
+                      onClick={() => togglePlaylistRepost?.(pl.id)}
+                      title="Repost"
+                    >
+                      {isPlaylistReposted?.(pl.id) ? <IconRepostFilled /> : <IconRepostOutline />}
+                      <span>{getPlaylistRepostCount?.(pl.id) ?? pl.repost_count ?? pl.reposts_count ?? 0}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Рендеринг раздела Overview
   const renderOverview = () => {
     const filteredRecentTracks = searchTracks(recentTracksWithoutTime, searchQuery);
+    const overviewPlaylists = getPlaylistsToShow();
     
     return (
       <div className="library-overview-content">
-        {/* Recently Played */}
         <div className="overview-section">
           <LibrarySectionHeader 
             title="Recently Played" 
@@ -624,10 +1210,10 @@ const LibraryPage = ({
                     track={track}
                     isPlaying={currentTrack === track.id && isPlaying}
                     isLiked={likedTrackIds.includes(track.id)}
-                    onPlayPause={handlePlayWithHistory}
+                    onPlayPause={() => handlePlay(track.id)}
                     onToggleLike={onToggleLike}
                     onTrackTitleClick={handleTrackTitleClick}
-                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
+                    onArtistClick={onArtistClick}
                     isNew={index === 0}
                   />
                 ))}
@@ -640,7 +1226,6 @@ const LibraryPage = ({
 
         <SectionDivider />
 
-        {/* Liked Tracks */}
         <div className="overview-section">
           <LibrarySectionHeader title="Liked Tracks" />
           {likedTracksData.length > 0 ? (
@@ -655,10 +1240,10 @@ const LibraryPage = ({
                     track={track}
                     isPlaying={currentTrack === track.id && isPlaying}
                     isLiked={likedTrackIds.includes(track.id)}
-                    onPlayPause={handlePlayWithHistory}
+                    onPlayPause={() => handlePlay(track.id)}
                     onToggleLike={onToggleLike}
                     onTrackTitleClick={handleTrackTitleClick}
-                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
+                    onArtistClick={onArtistClick}
                   />
                 ))}
               </div>
@@ -670,7 +1255,6 @@ const LibraryPage = ({
 
         <SectionDivider />
 
-        {/* Your Uploads */}
         {uploadedTracksData.length > 0 && (
           <>
             <div className="overview-section">
@@ -685,10 +1269,10 @@ const LibraryPage = ({
                     track={track}
                     isPlaying={currentTrack === track.id && isPlaying}
                     isLiked={likedTrackIds.includes(track.id)}
-                    onPlayPause={handlePlayWithHistory}
+                    onPlayPause={() => handlePlay(track.id)}
                     onToggleLike={onToggleLike}
                     onTrackTitleClick={handleTrackTitleClick}
-                    onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
+                    onArtistClick={onArtistClick}
                     isNew={true}
                   />
                 ))}
@@ -698,42 +1282,262 @@ const LibraryPage = ({
           </>
         )}
 
-        {/* Playlists */}
         <div className="overview-section">
-          <LibrarySectionHeader title="Playlists" showFilter={true} />
-          <LibraryEmptyState message="No playlists yet" />
+          <div className="library-header">
+            <h2 className="library-section-title">Playlists</h2>
+            <div className="playlist-filter">
+              <button 
+                onClick={() => setPlaylistFilter('all')} 
+                className={playlistFilter === 'all' ? 'active' : ''}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => setPlaylistFilter('created')} 
+                className={playlistFilter === 'created' ? 'active' : ''}
+              >
+                Created
+              </button>
+              <button 
+                onClick={() => setPlaylistFilter('liked')} 
+                className={playlistFilter === 'liked' ? 'active' : ''}
+              >
+                Liked
+              </button>
+            </div>
+          </div>
+          {isLoadingPlaylists ? (
+            <LibraryEmptyState message="Loading playlists..." />
+          ) : overviewPlaylists.length > 0 ? (
+            <div className="library-playlists-grid">
+              {overviewPlaylists.slice(0, 6).map(pl => (
+                <div
+                  key={pl.id}
+                  className="library-playlist-card"
+                  onClick={() => navigate(`/playlist/${pl.id}`)}
+                >
+                  <img
+                    src={pl.cover_url || pl.cover || '/default-cover.jpg'}
+                    alt={pl.title}
+                  />
+                  <div className="playlist-title">{pl.title}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <LibraryEmptyState message="No playlists yet" />
+          )}
         </div>
 
         <SectionDivider />
 
-        {/* Albums */}
-        <div className="overview-section">
-          <LibrarySectionHeader title="Albums" showFilter={true} />
-          <LibraryEmptyState message="No albums yet" />
-        </div>
-
-        <SectionDivider />
-
-        {/* Stations */}
-        <div className="overview-section">
-          <LibrarySectionHeader title="Liked Stations" />
-          <LibraryEmptyState message="No stations liked yet" />
-        </div>
-
-        <SectionDivider />
-
-        {/* Following */}
         <div className="overview-section">
           <LibrarySectionHeader title="Following" />
-          {testFollowing.length > 0 ? (
+
+          {isLoadingFollowing ? (
+            <LibraryEmptyState message="Loading following..." />
+          ) : followingUsers.length > 0 ? (
             <div className="library-users-grid">
-              {testFollowing.map(user => (
-                <UserCard key={user.id} user={user} />
-              ))}
+              {followingUsers.slice(0, 6).map(user => {
+                const followingNow = followsLoaded ? isFollowing(user.id) : false;
+                return (
+                  <UserCard
+                    key={`overview-following-${user.id}`}
+                    user={{ ...user, __isFollowing: followingNow }}
+                    onOpenProfile={() => navigate(`/profile/${user.id}`)}
+                    onToggle={() => handleFollowToggle(user.id, followingNow)}
+                  />
+                );
+              })}
             </div>
           ) : (
             <LibraryEmptyState message="Not following anyone yet" />
           )}
+        </div>
+      </div>
+    );
+  };
+
+  // Рендеринг раздела лайков
+  const renderLikesSection = () => {
+    return (
+      <div className="library-section-content">
+        <LibrarySectionHeader 
+          title="Liked Tracks" 
+          showSearch={true}
+          onSearchChange={setLikedSearchQuery}
+          searchPlaceholder="Search in liked tracks..."
+        />
+        
+        {likedTracksData.length > 0 ? (
+          <>
+            <div className="liked-tracks-header">
+              <div className="liked-tracks-count">
+                {filteredLikedTracks.length} of {likedTracksData.length} liked tracks
+                {likedSearchQuery && (
+                  <span className="search-filtered">
+                    {" "}filtered by "<span className="search-query">{likedSearchQuery}</span>"
+                  </span>
+                )}
+              </div>
+              
+              {likedSearchQuery && filteredLikedTracks.length === 0 && (
+                <div className="no-search-results">
+                  <p>No liked tracks found for "<span className="search-query">{likedSearchQuery}</span>"</p>
+                  <p className="search-suggestions">
+                    Try searching by title or artist name...
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {filteredLikedTracks.length > 0 ? (
+              <div className="library-tracks-grid">
+                {filteredLikedTracks.map(track => (
+                  <CompactTrackCard
+                    key={`like-${track.id}`}
+                    track={track}
+                    isPlaying={currentTrack === track.id && isPlaying}
+                    isLiked={likedTrackIds.includes(track.id)}
+                    onPlayPause={() => handlePlay(track.id)}
+                    onToggleLike={onToggleLike}
+                    onTrackTitleClick={handleTrackTitleClick}
+                    onArtistClick={onArtistClick}
+                  />
+                ))}
+              </div>
+            ) : !likedSearchQuery ? (
+              <LibraryEmptyState message="No liked tracks yet" />
+            ) : null}
+          </>
+        ) : (
+          <LibraryEmptyState message="No liked tracks yet" />
+        )}
+      </div>
+    );
+  };
+
+  // Рендеринг раздела following
+  const renderFollowingSection = () => {
+    return (
+      <div className="library-section-content">
+        <div className="library-section-header">
+          <div className="library-title-wrapper">
+            <h2 className="library-section-title">Following</h2>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 40 }}>
+          <h3 className="library-following-block-title">Recommended artists</h3>
+          {recommendedUsers.length > 0 ? (
+            <div className="library-users-grid">
+              {recommendedUsers.map(user => {
+                const followingNow = followsLoaded ? isFollowing(user.id) : false;
+                return (
+                  <UserCard
+                    key={`rec-${user.id}`}
+                    user={{ ...user, __isFollowing: followingNow }}
+                    onOpenProfile={() => navigate(`/profile/${user.id}`)}
+                    onToggle={() => handleFollowToggle(user.id, followingNow)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <LibraryEmptyState message="No recommendations yet" />
+          )}
+        </div>
+
+        <SectionDivider />
+
+        <div style={{ marginTop: 40 }}>
+          <h3 className="library-following-block-title">You follow</h3>
+
+          {isLoadingFollowing ? (
+            <div className="library-loading-state"><p>Loading following...</p></div>
+          ) : followingUsers.length > 0 ? (
+            <div className="library-users-grid">
+              {followingUsers.map(user => {
+                const followingNow = followsLoaded ? isFollowing(user.id) : false;
+                return (
+                  <UserCard
+                    key={`fol-${user.id}`}
+                    user={{ ...user, __isFollowing: followingNow }}
+                    onOpenProfile={() => navigate(`/profile/${user.id}`)}
+                    onToggle={() => handleFollowToggle(user.id, followingNow)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <LibraryEmptyState message="Not following anyone yet" />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Рендеринг раздела истории
+  const renderHistorySection = () => {
+    const displayHistoryTracks = historyTracksFromApp.length > 0
+      ? historyTracksFromApp
+      : recentlyPlayedTracks;
+    
+    if (!displayHistoryTracks || displayHistoryTracks.length === 0) {
+      return (
+        <div className="library-section-content">
+          <LibrarySectionHeader title="History" />
+          <LibraryEmptyState message="No listening history yet. Play some tracks for 30+ seconds to build your history!" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="library-section-content">
+        <LibrarySectionHeader title="History" />
+
+        <div className="history-tracks-list">
+          {displayHistoryTracks.map((track) => {
+            const trackId = track.id;
+            const liked = likedTrackIds?.includes(trackId);
+            const reposted = !!reposts?.[trackId];
+            const isThisPlaying = currentTrack === trackId && isPlaying;
+            
+            const artistId = track?.artistId || track?.uploaded_by?.id || 
+                           track?.uploaded_by_id || track?.user_id;
+
+            const playedAtLabel = track.playedAt
+              ? new Date(track.playedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+              : null;
+
+            return (
+              <HistoryTrackCard
+                key={`hist-${trackId}-${track.playedAt || ""}`}
+                track={track}
+                isPlaying={isThisPlaying}
+                onPlayPause={() => handlePlay(trackId)}
+                liked={liked}
+                onLike={() => onToggleLike?.(trackId)}
+                reposted={reposted}
+                onRepost={() => handleRepost(trackId)}
+                playedAtLabel={playedAtLabel}
+                playCount={track.playCount || 1}
+                onOpenTrack={() => navigate(`/track/${trackId}`)}
+                onOpenArtist={() => {
+                  if (artistId) {
+                    navigate(`/profile/${artistId}`);
+                  } else {
+                    console.warn('❌ LibraryPage: не найден artistId для трека', trackId);
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     );
@@ -744,144 +1548,14 @@ const LibraryPage = ({
     switch (activeSection) {
       case 'overview':
         return renderOverview();
-
       case 'likes':
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader 
-              title="Liked Tracks" 
-              showSearch={true}
-              onSearchChange={setLikedSearchQuery}
-              searchPlaceholder="Search in liked tracks..."
-            />
-            
-            {likedTracksData.length > 0 ? (
-              <>
-                <div className="liked-tracks-header">
-                  <div className="liked-tracks-count">
-                    {filteredLikedTracks.length} of {likedTracksData.length} liked tracks
-                    {likedSearchQuery && (
-                      <span className="search-filtered">
-                        {" "}filtered by "<span className="search-query">{likedSearchQuery}</span>"
-                      </span>
-                    )}
-                  </div>
-                  
-                  {likedSearchQuery && filteredLikedTracks.length === 0 && (
-                    <div className="no-search-results">
-                      <p>No liked tracks found for "<span className="search-query">{likedSearchQuery}</span>"</p>
-                      <p className="search-suggestions">
-                        Try searching by title or artist name...
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {filteredLikedTracks.length > 0 ? (
-                  <div className="library-tracks-grid">
-                    {filteredLikedTracks.map(track => (
-                      <CompactTrackCard
-                        key={`like-${track.id}`}
-                        track={track}
-                        isPlaying={currentTrack === track.id && isPlaying}
-                        isLiked={likedTrackIds.includes(track.id)}
-                        onPlayPause={handlePlayWithHistory}
-                        onToggleLike={onToggleLike}
-                        onTrackTitleClick={handleTrackTitleClick}
-                        onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
-                      />
-                    ))}
-                  </div>
-                ) : !likedSearchQuery ? (
-                  <LibraryEmptyState message="No liked tracks yet" />
-                ) : null}
-              </>
-            ) : (
-              <LibraryEmptyState message="No liked tracks yet" />
-            )}
-          </div>
-        );
-
+        return renderLikesSection();
       case 'playlists':
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader title="Playlists" showFilter={true} />
-            <LibraryEmptyState message="No playlists yet" />
-          </div>
-        );
-
-      case 'albums':
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader title="Albums" showFilter={true} />
-            <LibraryEmptyState message="No albums yet" />
-          </div>
-        );
-
-      case 'stations':
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader title="Liked Stations" />
-            <LibraryEmptyState message="No stations liked yet" />
-          </div>
-        );
-
+        return renderPlaylistsSection();
       case 'following':
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader title="Following" />
-            {testFollowing.length > 0 ? (
-              <div className="library-users-grid">
-                {testFollowing.map(user => (
-                  <UserCard key={user.id} user={user} />
-                ))}
-              </div>
-            ) : (
-              <LibraryEmptyState message="Not following anyone yet" />
-            )}
-          </div>
-        );
-
+        return renderFollowingSection();
       case 'history':
-        const displayHistoryTracks = historyTracks.length > 0 ? historyTracks : recentlyPlayedTracks;
-        
-        return (
-          <div className="library-section-content">
-            <LibrarySectionHeader title="Listening History" />
-            {isLoadingHistory ? (
-              <div className="library-loading-state">
-                <p>Loading history...</p>
-              </div>
-            ) : displayHistoryTracks.length > 0 ? (
-              <>
-                <div className="history-count">
-                  {displayHistoryTracks.length} tracks in history
-                  {currentTrack && (
-                    <span className="history-currently-playing">
-                      {" • "}Currently playing: {
-                        allTracks.find(t => t.id === currentTrack)?.title || 'Unknown track'
-                    }
-                    </span>
-                  )}
-                </div>
-                <div className="history-timeline">
-                  {displayHistoryTracks.map((track, index) => (
-                    <HistoryTrackItem 
-                      key={`history-${track.id}-${track.playedAtMs || 0}-${index}`}
-                      track={track}
-                      index={index}
-                      onTrackTitleClick={handleTrackTitleClick}
-                      onArtistClick={onArtistClick} // ← ПЕРЕДАЕМ ФУНКЦИЮ!
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <LibraryEmptyState message="No listening history yet" />
-            )}
-          </div>
-        );
-
+        return renderHistorySection();
       default:
         return renderOverview();
     }
@@ -895,7 +1569,16 @@ const LibraryPage = ({
           particleCount={8}
           particleDistances={[70, 15]}
           particleR={90}
-          initialActiveIndex={0}
+          initialActiveIndex={libraryNav.findIndex(item => {
+            const sectionMap = {
+              'Overview': 'overview',
+              'Likes': 'likes',
+              'Playlists': 'playlists',
+              'Following': 'following',
+              'History': 'history'
+            };
+            return sectionMap[item.label] === activeSection;
+          })}
           animationTime={500}
           timeVariance={200}
           colors={[1, 2, 3, 4, 5, 6]}

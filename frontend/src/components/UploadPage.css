@@ -85,6 +85,8 @@
   color: var(--upload-text);
   position: relative;
   overflow-x: hidden;
+  /* 🔥 ИСПРАВЛЕНИЕ: фиксированный отступ снизу для стабильности */
+  padding-bottom: 0;
 }
 
 .upload-content {
@@ -93,6 +95,8 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+  /* 🔥 ИСПРАВЛЕНИЕ: гарантируем место для нижней панели */
+  padding-bottom: 120px;
 }
 
 /* Заголовок */
@@ -171,6 +175,9 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  /* 🔥 ИСПРАВЛЕНИЕ: форма не влияет на нижний отступ */
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 /* Drop Zones */
@@ -536,17 +543,6 @@
   padding: 6px 0;
 }
 
-/* ✅ ИЛИ ВАРИАНТ 2: pointer-events для .upload-actions */
-/* 
-.upload-actions {
-  pointer-events: none;
-}
-
-.upload-actions button {
-  pointer-events: auto;
-}
-*/
-
 /* Полоса прокрутки для выпадающего списка */
 .dropdown-content::-webkit-scrollbar {
   width: 6px;
@@ -720,37 +716,56 @@
   font-size: 0.9rem;
 }
 
-/* ФИКС: Кнопки выровнены и подняты вверх */
+/* ==================================================== */
+/* 🔥 ФИКС: СТАБИЛЬНАЯ НИЖНЯЯ ПАНЕЛЬ С КНОПКАМИ */
+/* ==================================================== */
+
+/* Контейнер кнопок - фиксированная высота, не растягивается */
 .upload-actions {
+  height: 56px !important;           /* Фиксированная высота */
+  min-height: 56px !important;
+  max-height: 56px !important;
+  
   display: flex;
-  align-items: center;
+  align-items: center;              /* Вертикальное выравнивание */
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 16px;
+  
   margin-top: 0.5rem;
-  padding-top: 0.5rem;
+  padding: 0 24px !important;       /* Горизонтальные отступы, вертикальных - 0 */
+  
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  /* ✅ ВАРИАНТ 2: pointer-events (если оставить drop-down) */
-  /* pointer-events: none; */
+  
+  /* Сбрасываем всё, что может влиять на высоту */
+  flex-shrink: 0;
+  flex-grow: 0;
+  
+  /* Принудительно строка */
+  flex-direction: row !important;
 }
 
-.upload-actions button {
+/* Сами кнопки - фиксированная высота */
+.cancel-btn,
+.upload-btn {
+  height: 40px !important;          /* Фиксированная высота кнопок */
+  min-height: 40px !important;
+  max-height: 40px !important;
+  
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+  
   line-height: 1;
   font-size: 0.8rem;
   white-space: nowrap;
-  /* ✅ ВАРИАНТ 2: для кнопок возвращаем pointer-events */
-  /* pointer-events: auto; */
-}
-
-.upload-actions svg {
-  margin-top: -1px;
+  
+  padding: 0 28px !important;       /* Горизонтальные отступы */
+  margin: 0 !important;             /* Сбрасываем марджины */
+  
+  box-sizing: border-box;
 }
 
 .cancel-btn {
-  padding: 12px 28px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
@@ -766,7 +781,6 @@
 }
 
 .upload-btn {
-  padding: 12px 36px;
   background: linear-gradient(135deg, var(--upload-accent), #ec4899);
   border: none;
   border-radius: 12px;
@@ -794,7 +808,16 @@
 .upload-btn svg {
   width: 18px;
   height: 18px;
+  margin: 0;
 }
+
+/* Гарантия, что SVG в кнопках не влияет на высоту */
+.upload-btn svg,
+.cancel-btn svg {
+  flex-shrink: 0;
+}
+
+/* ==================================================== */
 
 /* Spinner */
 .spinner-icon {
@@ -960,6 +983,7 @@
   font-weight: 600;
   color: white;
   flex-shrink: 0;
+  overflow: hidden; /* 🔥 Для обрезки img */
 }
 
 .user-avatar img {
@@ -967,6 +991,11 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.user-avatar span {
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .user-info {
@@ -1045,6 +1074,7 @@
 @media (max-width: 768px) {
   .upload-content {
     padding: 1rem;
+    padding-bottom: 120px; /* Сохраняем отступ */
   }
   
   .upload-title {
@@ -1063,14 +1093,22 @@
     grid-template-columns: 1fr;
   }
   
+  /* 🔥 На планшетах кнопки остаются в строку */
   .upload-actions {
-    flex-direction: column;
+    flex-direction: row !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    padding: 0 16px !important;
   }
-  
+
   .cancel-btn,
   .upload-btn {
-    width: 100%;
-    justify-content: center;
+    width: auto !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 24px !important;
   }
   
   .upload-section {
@@ -1081,7 +1119,7 @@
     margin-top: 1rem;
   }
   
-  /* На мобилках лучше оставить drop-down */
+  /* На планшетах лучше оставить drop-down */
   .custom-select-dropdown {
     top: calc(100% + 6px) !important;
     bottom: auto !important;
@@ -1089,6 +1127,7 @@
   }
 }
 
+/* 🔥 Только на телефонах кнопки в колонку */
 @media (max-width: 480px) {
   .upload-title {
     font-size: 1.8rem !important;
@@ -1096,6 +1135,10 @@
   
   .upload-header {
     padding: 0.5rem;
+  }
+  
+  .upload-content {
+    padding-bottom: 140px; /* Чуть больше отступ на телефонах */
   }
   
   .drop-zone {
@@ -1120,5 +1163,22 @@
   .custom-option {
     padding: 10px 14px;
     font-size: 0.85rem;
+  }
+  
+  /* 🔥 ТОЛЬКО ЗДЕСЬ кнопки в колонку */
+  .upload-actions {
+    flex-direction: column !important;
+    height: auto !important;           /* Высота подстраивается */
+    min-height: 100px !important;
+    max-height: none !important;
+    padding: 12px !important;
+    gap: 8px;
+  }
+
+  .cancel-btn,
+  .upload-btn {
+    width: 100% !important;
+    height: 44px !important;
+    justify-content: center;
   }
 }

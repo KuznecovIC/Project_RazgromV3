@@ -1,0 +1,460 @@
+/* ====== RAZGROM PIXEL / NEON PACK (Appeal) ====== */
+
+/* ВАЖНО: если у тебя уже есть пиксельный шрифт в проекте — он подхватится.
+   Если нет — просто будет fallback на monospace, ничего не сломает. */
+   :root{
+    --neonA: rgba(185,130,255,0.85);
+    --neonB: rgba(120,220,255,0.65);
+    --glass: rgba(0,0,0,0.62);
+    --glass2: rgba(0,0,0,0.38);
+    --stroke: rgba(255,255,255,0.14);
+  }
+  
+  /* пиксельная "хрустящая" подача */
+  .appeal-title,
+  .appeal-label,
+  .appeal-btn{
+    font-family: "Press Start 2P", "VT323", "Pixelify Sans", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    -webkit-font-smoothing: none;
+    text-rendering: geometricPrecision;
+  }
+  
+  .appeal-title{
+    position: relative;
+    text-shadow:
+      0 0 10px rgba(185,130,255,0.35),
+      0 0 28px rgba(185,130,255,0.22);
+    animation: razGlow 2.2s ease-in-out infinite;
+  }
+  
+  /* мягкое пульсирующее свечение заголовка */
+  @keyframes razGlow{
+    0%,100%{
+      text-shadow:
+        0 0 10px rgba(185,130,255,0.25),
+        0 0 28px rgba(185,130,255,0.18);
+      filter: brightness(1);
+    }
+    50%{
+      text-shadow:
+        0 0 12px rgba(185,130,255,0.55),
+        0 0 40px rgba(120,220,255,0.22);
+      filter: brightness(1.08);
+    }
+  }
+  
+  /* Карточке — неоновая рамка + анимированный "блик" */
+  .appeal-card{
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: var(--glass);
+    border: 1px solid var(--stroke);
+  }
+  
+  /* неоновая окантовка */
+  .appeal-card::before{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius: 26px;
+    background: radial-gradient(1200px 220px at 30% 0%,
+                rgba(185,130,255,0.22),
+                transparent 55%),
+                radial-gradient(900px 200px at 80% 100%,
+                rgba(120,220,255,0.16),
+                transparent 60%);
+    filter: blur(10px);
+    opacity: .9;
+    z-index: -1;
+    animation: borderBreath 3.8s ease-in-out infinite;
+  }
+  
+  @keyframes borderBreath{
+    0%,100%{ transform: translateY(0); opacity: .75; }
+    50%{ transform: translateY(-4px); opacity: 1; }
+  }
+  
+  /* сканлайны (очень деликатно) */
+  .appeal-card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+      linear-gradient(to bottom,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.0) 18%,
+        rgba(0,0,0,0.0) 60%,
+        rgba(0,0,0,0.20)),
+      repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.05) 0px,
+        rgba(255,255,255,0.05) 1px,
+        rgba(0,0,0,0.0) 3px,
+        rgba(0,0,0,0.0) 6px
+      );
+    opacity: .18;
+    mix-blend-mode: overlay;
+    animation: scanMove 4.2s linear infinite;
+  }
+  
+  @keyframes scanMove{
+    0%{ transform: translateY(-12px); }
+    100%{ transform: translateY(12px); }
+  }
+  
+  /* поля — чуть живее, с подсветкой при hover */
+  .appeal-field{
+    background: var(--glass2);
+    border: 1px solid rgba(255,255,255,0.10);
+    transition: transform 140ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+  
+  .appeal-field:hover{
+    border-color: rgba(185,130,255,0.30);
+    box-shadow:
+      0 0 0 1px rgba(185,130,255,0.12),
+      0 10px 26px rgba(0,0,0,0.35);
+    transform: translateY(-1px);
+  }
+  
+  /* textarea — добавим "неон" и мягкую анимацию свечения */
+  .appeal-textarea{
+    background: rgba(10,10,10,0.62);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
+    transition: border-color 160ms ease, box-shadow 180ms ease, transform 160ms ease;
+  }
+  
+  .appeal-textarea:focus{
+    border-color: rgba(185,130,255,0.55);
+    box-shadow:
+      0 0 0 4px rgba(185,130,255,0.14),
+      0 0 22px rgba(185,130,255,0.14);
+    transform: translateY(-1px);
+  }
+  
+  /* кнопки — неон, блик и микро-подпрыгивание */
+  .appeal-btn{
+    position: relative;
+    overflow: hidden;
+    background: rgba(185,130,255,0.16);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow:
+      0 0 0 1px rgba(185,130,255,0.10),
+      0 10px 24px rgba(0,0,0,0.35);
+  }
+  
+  .appeal-btn::before{
+    content:"";
+    position:absolute;
+    top:-30%;
+    left:-60%;
+    width: 50%;
+    height: 160%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    transform: rotate(18deg);
+    opacity: .0;
+    transition: opacity 140ms ease;
+  }
+  
+  .appeal-btn:hover{
+    transform: translateY(-2px);
+    border-color: rgba(185,130,255,0.55);
+    box-shadow:
+      0 0 0 1px rgba(185,130,255,0.18),
+      0 0 26px rgba(185,130,255,0.16),
+      0 14px 34px rgba(0,0,0,0.42);
+  }
+  
+  .appeal-btn:hover::before{
+    opacity: 1;
+    animation: btnShine 650ms ease;
+  }
+  
+  @keyframes btnShine{
+    0%{ transform: translateX(0) rotate(18deg); }
+    100%{ transform: translateX(260%) rotate(18deg); }
+  }
+  
+  .appeal-btn.ghost{
+    background: rgba(255,255,255,0.06);
+  }
+  
+  .appeal-btn.disabled{
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  /* сообщение "готово" — тоже немного неона */
+  .appeal-done{
+    box-shadow: 0 0 22px rgba(110,255,170,0.10);
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .appeal-title,
+    .appeal-card::before,
+    .appeal-card::after{
+      animation: none !important;
+    }
+  }
+  
+  /* ====== ОРИГИНАЛЬНЫЙ CSS (ниже, без изменений) ====== */
+  
+  .appeal-page {
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    overflow-x: hidden;
+    background-color: #0a0a0a;
+  }
+  
+  .appeal-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+  }
+  
+  .appeal-center {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .appeal-card {
+    background: rgba(20, 20, 30, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .appeal-card.enter {
+    animation: cardAppear 0.5s ease forwards;
+  }
+  
+  @keyframes cardAppear {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .appeal-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  
+  .colorbends-text {
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .appeal-sub {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 2.5rem;
+    font-size: 1rem;
+  }
+  
+  .appeal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .appeal-field {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .appeal-field-wide {
+    grid-column: span 2;
+  }
+  
+  .appeal-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+  }
+  
+  .appeal-value {
+    font-size: 1.2rem;
+    font-weight: 500;
+    word-break: break-word;
+  }
+  
+  .appeal-reason {
+    color: #f87171;
+    font-style: italic;
+  }
+  
+  .appeal-textarea {
+    width: 100%;
+    min-height: 120px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.2s ease;
+  }
+  
+  .appeal-textarea:focus {
+    outline: none;
+    border-color: #a78bfa;
+    background: rgba(0, 0, 0, 0.4);
+  }
+  
+  .appeal-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .appeal-hint {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: right;
+  }
+  
+  .appeal-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #fca5a5;
+    text-align: center;
+  }
+  
+  .appeal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-bottom: 1.5rem;
+  }
+  
+  .appeal-btn {
+    padding: 0.8rem 2rem;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    color: white;
+  }
+  
+  .appeal-btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .appeal-btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .appeal-btn:active {
+    transform: translateY(1px);
+  }
+  
+  .appeal-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .appeal-done {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    color: #a7f3d0;
+    text-align: center;
+    animation: doneAppear 0.3s ease;
+  }
+  
+  @keyframes doneAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .appeal-note {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .appeal-center {
+      padding: 1rem;
+    }
+  
+    .appeal-card {
+      padding: 1.5rem;
+    }
+  
+    .appeal-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  
+    .appeal-field-wide {
+      grid-column: span 1;
+    }
+  
+    .appeal-title {
+      font-size: 1.8rem;
+    }
+  
+    .appeal-actions {
+      flex-direction: column-reverse;
+    }
+  
+    .appeal-btn {
+      width: 100%;
+    }
+  }

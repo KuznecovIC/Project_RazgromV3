@@ -1,0 +1,669 @@
+/* StudioPlaylistsPage.css */
+
+/* Общий контейнер страницы */
+.studioPlaylists{
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  padding: 24px 0 130px;
+  z-index: 1;
+}
+
+/* Фоновый градиент (под GridScan) */
+.spBg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Обертка контента как у остальных страниц */
+.spWrap{
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 18px clamp(16px, 3vw, 70px) 0;
+}
+
+/* Верхняя строка */
+.spTitleRow{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.spTopActions{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Кнопки */
+.spBtn{
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.spBtn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.22);
+}
+
+.spBtn:disabled{
+  opacity: .55;
+  cursor: default;
+  transform: none;
+}
+
+.spBtnPrimary{
+  border-color: rgba(132, 86, 255, 0.35);
+  background: rgba(132, 86, 255, 0.12);
+  box-shadow: 0 0 0 1px rgba(132, 86, 255, 0.10) inset;
+}
+
+.spBtnPrimary:hover{
+  background: rgba(132, 86, 255, 0.18);
+  border-color: rgba(192, 132, 252, 0.55);
+}
+
+.spSaveStatus{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.9);
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+}
+
+/* Две колонки */
+.spPanels{
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.spPanel{
+  border-radius: 22px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 14px 44px rgba(0,0,0,0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+/* Левая панель */
+.spPanelLeft{
+  padding: 14px;
+}
+
+/* Блок меты */
+.spMeta{
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.spCover{
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+}
+
+.spCover img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spCoverPlaceholder{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.9);
+}
+
+.spCoverPlus{
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(132,86,255,0.35);
+  background: rgba(132,86,255,0.12);
+  font-size: 26px;
+}
+
+.spCoverText{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+/* Поля */
+.spMetaFields{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spLabel{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spLabel > span{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.85);
+}
+
+.spInput,
+.spTextarea,
+.spSearchInput{
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+  padding: 12px 12px;
+  outline: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+}
+
+.spInput:focus,
+.spTextarea:focus,
+.spSearchInput:focus{
+  border-color: rgba(132,86,255,0.55);
+  box-shadow: 0 0 0 3px rgba(132,86,255,0.14);
+}
+
+.spTextarea{
+  resize: vertical;
+}
+
+/* Visibility */
+.visibilitySelector{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.visBtn{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85);
+  cursor: pointer;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 9px;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.visBtn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.10);
+}
+
+.visBtn.active{
+  border-color: rgba(132,86,255,0.55);
+  background: rgba(132,86,255,0.16);
+  color: rgba(255,255,255,0.95);
+}
+
+/* Автор */
+.spOwner{
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+}
+
+.spOwnerAvatar{
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  flex: 0 0 auto;
+}
+
+.spOwnerAvatar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spOwnerAvatarFallback{
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.08);
+}
+
+.spOwnerMeta{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spOwnerName{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.92);
+}
+
+.spOwnerHint{
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Waveform */
+.spWave{
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  padding: 12px;
+}
+
+.spWaveHead{
+  margin-bottom: 10px;
+}
+
+.spWaveTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 6px;
+}
+
+.spWaveSub{
+  font-size: 12px;
+  color: rgba(255,255,255,0.70);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.spWaveBody{
+  height: 140px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  padding: 10px;
+  overflow: hidden;
+}
+
+.spWaveLoading,
+.spWaveEmpty{
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
+}
+
+.spWaveBars{
+  height: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  align-items: end;
+}
+
+.spWaveBar{
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
+}
+
+.spWaveBar:hover{
+  transform: scaleY(1.02);
+  background: rgba(255,255,255,0.26);
+}
+
+.spWaveBar.played{
+  background: rgba(132,86,255,0.55);
+}
+
+.spWaveFoot{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.spMini{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Правая панель (поиск) */
+.spPanelRight{
+  display: flex;
+  flex-direction: column;
+}
+
+.spSearchHead{
+  padding: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.spSearchTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  margin-bottom: 10px;
+  color: rgba(255,255,255,0.9);
+}
+
+.spErr{
+  margin-top: 10px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,120,120,0.95);
+}
+
+.spSearchBody{
+  padding: 12px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.spSearchLoading,
+.spSearchHint{
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.72);
+}
+
+.spResults{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spResult{
+  display: grid;
+  grid-template-columns: 52px 1fr 42px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.16);
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.spResult:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.spResult.in{
+  border-color: rgba(132,86,255,0.35);
+  background: rgba(132,86,255,0.08);
+}
+
+.spResultCover{
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+}
+
+.spResultCover img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spResultCoverPh{
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.08);
+}
+
+.spResultTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 4px;
+}
+
+.spResultArtist{
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+
+.spAddBtn{
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  display: grid;
+  place-items: center;
+}
+
+.spAddBtn svg{
+  width: 18px;
+  height: 18px;
+}
+
+.spAddBtn:hover{
+  transform: scale(1.04);
+  background: rgba(255,255,255,0.10);
+}
+
+.spAddBtn.minus{
+  border-color: rgba(255,120,120,0.35);
+  background: rgba(255,120,120,0.10);
+}
+
+/* Треклист */
+.spTracklist{
+  border-radius: 22px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 14px 44px rgba(0,0,0,0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.spTracklistHead{
+  padding: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.spTracklistTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 8px;
+}
+
+.spTracklistSub{
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.68);
+}
+
+.spTracklistEmpty{
+  padding: 20px 14px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.72);
+}
+
+.spTrackRows{
+  display: flex;
+  flex-direction: column;
+}
+
+.spTrackRow{
+  display: grid;
+  grid-template-columns: 34px 52px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.spTrackRow:hover{
+  background: rgba(255,255,255,0.05);
+}
+
+.spTrackRow.active{
+  background: rgba(132,86,255,0.10);
+}
+
+.spTrackIdx{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
+  text-align: center;
+}
+
+.spTrackCover{
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+}
+
+.spTrackCover img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.spTrackCoverPh{
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.08);
+}
+
+.spTrackTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 4px;
+}
+
+.spTrackArtist{
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+
+.spRemoveBtn{
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+
+.spRemoveBtn svg{
+  width: 18px;
+  height: 18px;
+}
+
+.spRemoveBtn:hover{
+  transform: scale(1.04);
+  background: rgba(255,120,120,0.10);
+  border-color: rgba(255,120,120,0.35);
+}
+
+/* Адаптив */
+@media (max-width: 1100px){
+  .spPanels{
+    grid-template-columns: 1fr;
+  }
+  .spMeta{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px){
+  .spTitleRow{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .spTopActions{
+    width: 100%;
+  }
+}

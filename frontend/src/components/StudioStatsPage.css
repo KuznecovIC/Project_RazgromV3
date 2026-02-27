@@ -1,0 +1,397 @@
+.studioStatsPage {
+    padding: 14px 0 70px; /* слева/справа 0 */
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  
+  /* HEADER - full-width как графики + стекло */
+  .studioStatsHeader {
+    position: relative;
+    z-index: 50;
+  
+    /* ✅ full-bleed как графики */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  
+    /* ✅ стекло */
+    background: rgba(18, 16, 28, 0.38);
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  
+    /* ✅ важно: чтобы контент точно имел высоту */
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+  
+    padding: 0;         /* убираем боковые отступы */
+    overflow: hidden;
+  
+    margin-bottom: 95px;
+  }
+  
+  /* ✅ фикс: section внутри ScrollVelocity должен растягиваться */
+  .studioStatsHeader section {
+    width: 100%;
+  }
+  
+  /* ⚠️ ВАЖНО: убрали width: 100% чтобы не ломать ширину текста в ленте */
+  .custom-scroll-text {
+    font-family: 'Press Start 2P', sans-serif;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 16px;
+    letter-spacing: 2px;
+    /* width: 100%; - УДАЛЕНО, чтобы текст занимал только свою ширину */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    white-space: nowrap;
+  }
+  
+  /* Карусель - full-width marquee */
+  .studioStatsCarousel {
+    margin-top: 0; /* теперь отступ управляется через header */
+  }
+  
+  /* FULL-BLEED (на всю ширину экрана) */
+  .studioStatsMarquee {
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding: 0;
+  }
+  
+  /* движущаяся лента */
+  .studioStatsMarqueeScroller {
+    display: flex;
+    gap: 14px;
+    will-change: transform;
+    padding: 0 14px; /* микро-отступ от самых углов */
+  }
+  
+  /* одна копия набора карточек */
+  .studioStatsCarouselCopy {
+    display: flex;
+    gap: 14px;
+  }
+  
+  /* ОГРОМНАЯ версия карточки (используется классом studioStatsMiniCardBig) */
+  .studioStatsMiniCardBig {
+    flex: 0 0 31vw;      /* примерно 3 в экран */
+    height: 42vh;        /* чуть ниже */
+    padding: 16px 16px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(132, 86, 255, 0.25);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  
+  .studioStatsMiniCardBig:hover {
+    transform: translateY(-2px);
+    border-color: rgba(192, 132, 252, 0.55);
+    background: rgba(255, 255, 255, 0.055);
+  }
+  
+  .miniTop {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .miniTitle {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  
+  .miniValue {
+    font-size: 16px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+  }
+  
+  .miniUnit {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .miniChart {
+    height: 110px;
+  }
+  
+  /* график занимает почти всю карточку */
+  .miniChartBig {
+    height: calc(28vh - 40px);
+  }
+  
+  .statsLineSvg {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .statsLineGrid {
+    stroke: rgba(255, 255, 255, 0.22);
+    stroke-width: 1;
+    fill: none;
+  }
+  
+  .statsLinePath {
+    stroke: rgba(192, 132, 252, 0.95);
+    stroke-width: 2.2;
+    fill: none;
+    filter: drop-shadow(0 0 8px rgba(132, 86, 255, 0.25));
+  }
+  
+  .statsLineDot {
+    fill: rgba(255, 255, 255, 0.9);
+    stroke: rgba(192, 132, 252, 0.9);
+    stroke-width: 2;
+  }
+  
+  /* Стили для загрузки и отсутствия данных */
+  .studioStatsLoading,
+  .studioStatsNoData {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(132, 86, 255, 0.3);
+    border-top-color: rgba(132, 86, 255, 0.9);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* ===== FULL PANEL внутри страницы ===== */
+  .studioStatsExpandedWrap {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding: 170px 18px 40px;  /* ✅ увеличен верхний отступ (было 18px, стало 110px) */
+    margin-top: 30px;
+  }
+  
+  .studioStatsExpandedGlass {
+    position: relative;
+    border-radius: 22px;
+    min-height: 72vh;
+    padding: 20px 20px 24px;
+  
+    background: rgba(18, 16, 28, 0.40);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+  }
+  
+  .studioStatsExpandedClose {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+  
+  .studioStatsExpandedClose:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .studioStatsExpandedTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding-right: 46px;
+    margin-bottom: 20px;
+  }
+  
+  .studioStatsExpandedTitle {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.92);
+    padding-top: 4px;
+  }
+  
+  .studioStatsExpandedNumbers {
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+  }
+  
+  .studioStatsExpandedNumbers.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .studioStatsExpandedNumbers .now {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .studioStatsExpandedNumbers .now b {
+    color: rgba(192, 132, 252, 0.95);
+    font-size: 18px;
+    margin-left: 6px;
+  }
+  
+  .studioStatsExpandedNumbers .delta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.65);
+  }
+  
+  /* ✅ Улучшенный контейнер для графика */
+  .studioStatsExpandedChart {
+    height: min(68vh, 620px);
+    border-radius: 18px;
+  
+    background: radial-gradient(
+        1200px 500px at 50% 20%,
+        rgba(192, 132, 252, 0.12),
+        transparent 60%
+      ),
+      rgba(0, 0, 0, 0.22);
+  
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+    padding: 8px 0;
+  }
+  
+  /* ✅ Стили для анимированной линии (будут применены через JS) */
+  .statsLineSvg path {
+    vector-effect: non-scaling-stroke;
+  }
+  
+  /* Адаптация для мобильных */
+  @media (max-width: 980px) {
+    .studioStatsMiniCardBig {
+      flex: 0 0 85vw;
+      height: 45vh;
+    }
+    
+    .miniChartBig {
+      height: calc(30vh - 40px);
+    }
+    
+    .custom-scroll-text {
+      font-size: 14px;
+    }
+    
+    .studioStatsExpandedChart {
+      height: 400px;
+    }
+    
+    .studioStatsExpandedGlass {
+      min-height: 60vh;
+      padding: 16px 16px 20px;
+    }
+    
+    .studioStatsExpandedWrap {
+      padding-top: 90px; /* ✅ меньше отступ на планшетах */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .custom-scroll-text {
+      font-size: 12px;
+    }
+    
+    .studioStatsHeader {
+      min-height: 70px;
+    }
+    
+    .studioStatsExpandedChart {
+      height: 300px;
+    }
+    
+    .studioStatsExpandedGlass {
+      min-height: 50vh;
+      padding: 14px 14px 18px;
+    }
+    
+    .studioStatsExpandedTop {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .studioStatsExpandedNumbers {
+      text-align: left;
+      width: 100%;
+    }
+    
+    .studioStatsExpandedNumbers .now b {
+      font-size: 16px;
+    }
+    
+    .studioStatsExpandedWrap {
+      padding-top: 70px; /* ✅ ещё меньше отступ на телефонах */
+    }
+  }
+  
+  /* Для предотвращения скачка ширины при блокировке скролла */
+  body.no-scroll {
+    overflow: hidden !important;
+  }
+  
+  /* Стили для осей и подписей графика */
+  .statsGridLine {
+    stroke: rgba(255,255,255,0.20);
+    stroke-width: 1;
+    stroke-dasharray: 6 8;
+  }
+  
+  .statsAxisText {
+    fill: rgba(255,255,255,0.75);
+    font-size: 12px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+    user-select: none;
+  }
+  
+  .statsPointText {
+    fill: rgba(192,132,252,0.95);
+    font-size: 12px;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.65);
+    user-select: none;
+    pointer-events: none;
+  }

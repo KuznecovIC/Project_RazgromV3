@@ -1,8 +1,10 @@
-/* TrackPage.css - ИСПРАВЛЕННЫЙ С ВСЕМИ ФИКСАМИ */
+/* TrackPage.css - ПОЛНЫЙ ФЕЙС-КОНТРОЛЬ СТИЛЕЙ */
 
+/* ==================== ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ ==================== */
 .track-page {
   min-height: 100vh;
   background-attachment: fixed;
+  position: relative;
 }
 
 .track-page .background-gridscan {
@@ -12,7 +14,7 @@
   pointer-events: none;
 }
 
-/* Прозрачный фон логотипа в хедере страницы трека */
+/* ==================== ХЕДЕР ==================== */
 .sound-nav .brand {
   background: transparent !important;
   border: none;
@@ -28,7 +30,7 @@
   box-shadow: none;
 }
 
-/* 🔴 ФИКС #1: СТИЛИ ДЛЯ РЕАЛЬНОГО АВАТАРА В HEADER */
+/* ==================== АВАТАРЫ ==================== */
 .user-avatar-circle {
   width: 40px;
   height: 40px;
@@ -83,16 +85,16 @@
   object-fit: cover;
 }
 
-/* ВАЖНО: добавить padding-bottom для контента, чтобы не перекрывался плеером */
+/* ==================== ОСНОВНОЙ КОНТЕНТ ==================== */
 .track-page-content {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 110px 20px 100px;
   position: relative;
   z-index: 1;
 }
 
-/* HERO-БЛОК ВВЕРХУ (как в SoundCloud) */
+/* ==================== HERO БЛОК ==================== */
 .track-hero {
   display: flex;
   flex-direction: column;
@@ -124,6 +126,7 @@
   justify-content: flex-end;
 }
 
+/* ==================== ОБЛОЖКА ==================== */
 .track-cover-large {
   width: 320px;
   height: 320px;
@@ -181,27 +184,176 @@
   transform: translateY(-2px);
 }
 
-.track-stats {
+/* ==================== СТАТИСТИКА ТРЕКА - НОВЫЙ ДИЗАЙН ==================== */
+.track-stats-hero {
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 18px 25px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out;
 }
 
-.track-stats-hero {
-  margin-top: 10px;
+/* Стеклянный эффект заднего фона */
+.track-stats-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(
+      135deg, 
+      rgba(132, 86, 255, 0.08) 0%, 
+      rgba(255, 159, 252, 0.05) 50%, 
+      rgba(132, 86, 255, 0.08) 100%
+    );
+  border-radius: 16px;
+  z-index: 0;
+}
+
+/* Блестящие градиентные линии */
+.track-stats-hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  z-index: 1;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+  min-width: 140px;
 }
 
+.stat-item:hover {
+  background: rgba(132, 86, 255, 0.15);
+  border-color: rgba(132, 86, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(132, 86, 255, 0.25),
+    inset 0 0 20px rgba(132, 86, 255, 0.1);
+}
+
+/* Стили для иконок статистики с подсветкой */
 .stat-item svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  color: #8456ff;
+  filter: 
+    drop-shadow(0 0 8px rgba(132, 86, 255, 0.6))
+    drop-shadow(0 0 4px rgba(132, 86, 255, 0.4));
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
+.stat-item:hover svg {
+  filter: 
+    drop-shadow(0 0 12px rgba(132, 86, 255, 0.9))
+    drop-shadow(0 0 6px rgba(132, 86, 255, 0.6))
+    drop-shadow(0 0 3px rgba(132, 86, 255, 0.3));
+  transform: scale(1.1);
+}
+
+/* Специальные стили для сердечка */
+.stat-item .heart-icon {
+  color: #ff6b9d;
+  filter: 
+    drop-shadow(0 0 10px rgba(255, 107, 157, 0.7))
+    drop-shadow(0 0 5px rgba(255, 107, 157, 0.4));
+}
+
+.stat-item:hover .heart-icon {
+  filter: 
+    drop-shadow(0 0 14px rgba(255, 107, 157, 0.9))
+    drop-shadow(0 0 8px rgba(255, 107, 157, 0.6))
+    drop-shadow(0 0 4px rgba(255, 107, 157, 0.3));
+}
+
+/* Стиль для иконки проигрывания */
+.stat-item .play-icon {
+  color: #00ccff;
+  filter: 
+    drop-shadow(0 0 10px rgba(0, 204, 255, 0.7))
+    drop-shadow(0 0 5px rgba(0, 204, 255, 0.4));
+}
+
+.stat-item:hover .play-icon {
+  filter: 
+    drop-shadow(0 0 14px rgba(0, 204, 255, 0.9))
+    drop-shadow(0 0 8px rgba(0, 204, 255, 0.6))
+    drop-shadow(0 0 4px rgba(0, 204, 255, 0.3));
+}
+
+/* Стиль для иконки репоста */
+.stat-item .share-icon {
+  color: #ffcc00;
+  filter: 
+    drop-shadow(0 0 10px rgba(255, 204, 0, 0.7))
+    drop-shadow(0 0 5px rgba(255, 204, 0, 0.4));
+}
+
+.stat-item:hover .share-icon {
+  filter: 
+    drop-shadow(0 0 14px rgba(255, 204, 0, 0.9))
+    drop-shadow(0 0 8px rgba(255, 204, 0, 0.6))
+    drop-shadow(0 0 4px rgba(255, 204, 0, 0.3));
+}
+
+/* Текст счетчика */
+.stat-item span {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  background: linear-gradient(45deg, #ffffff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Анимированный эффект при наведении на текст */
+.stat-item:hover span {
+  background: linear-gradient(45deg, #c084fc, #8456ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.3);
+}
+
+/* ==================== КНОПКИ ДЕЙСТВИЙ ==================== */
 .track-actions-main {
   display: flex;
   gap: 15px;
@@ -238,14 +390,15 @@
   background: rgba(132, 86, 255, 0.3);
 }
 
-/* 🔴🔴🔴 КРИТИЧЕСКИ ВАЖНО: WAVEFORM SECTION - ЕДИНАЯ ГЕОМЕТРИЯ */
+/* ==================== WAVEFORM СЕКЦИЯ ==================== */
 .track-waveform-section {
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(12px);
   position: relative;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-/* 🔴 ОСНОВНОЙ КОНТЕЙНЕР WAVEFORM */
 .waveform-container-large {
   width: 100%;
   height: 100px;
@@ -253,13 +406,10 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  /* 🔴 ВАЖНО: НИКАКОГО PADDING */
   padding: 0 !important;
   margin: 0 !important;
-  border-radius: 0 !important; /* ❌ НЕЛЬЗЯ */
 }
 
-/* 🔴 ИСПРАВЛЕННЫЙ ВНУТРЕННИЙ КОНТЕЙНЕР */
 .waveform-inner {
   position: absolute;
   top: 0;
@@ -268,15 +418,13 @@
   bottom: 0;
   display: flex;
   align-items: flex-end;
-  /* 🔴 НИКАКИХ GAP */
   gap: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* 🔴 ПАЛОЧКИ - РАВНАЯ ШИРИНА */
 .waveform-bar-large {
-  flex: 1; /* 🔴 КРИТИЧЕСКИ ВАЖНО: равная ширина */
+  flex: 1;
   min-width: 3px;
   height: var(--height, 30%);
   background: rgba(255, 255, 255, 0.25);
@@ -284,10 +432,8 @@
   cursor: pointer;
   position: relative;
   z-index: 3;
-  /* 🔴 УБИРАЕМ ВСЕ MARGIN И PADDING */
   margin: 0 !important;
   padding: 0 !important;
-  border-radius: 0 !important; /* ❌ НЕЛЬЗЯ */
 }
 
 .waveform-bar-large:hover {
@@ -299,12 +445,11 @@
   box-shadow: 0 0 10px rgba(132, 86, 255, 0.6);
 }
 
-/* 🔴 ЛАЗЕР - ПРАВИЛЬНАЯ ПОЗИЦИЯ */
 .waveform-laser {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0; /* 🔴 Позиция будет установлена через inline style */
+  left: 0;
   width: 2px;
   background: #ffffff;
   box-shadow: 
@@ -312,22 +457,18 @@
     0 0 30px #8456ff;
   z-index: 10;
   pointer-events: none;
-  /* 🔴 ДВИГАЕМ ТОЛЬКО ЧЕРЕЗ TRANSFORM */
   transform: translateX(var(--laser-x, 0px));
-  border-radius: 0 !important; /* ❌ НЕЛЬЗЯ */
 }
 
-/* 🔴 ПРОГРЕСС-ФОН */
 .waveform-progress {
   position: absolute;
-  top: 0; /* 🔴 БЕЗ PADDING */
+  top: 0;
   left: 0;
   height: 100%;
   background: rgba(132, 86, 255, 0.15);
-  transition: width 0.05s linear; /* 🔴 Быстрый отклик */
+  transition: width 0.05s linear;
   pointer-events: none;
   z-index: 1;
-  border-radius: 0 !important; /* ❌ НЕЛЬЗЯ */
 }
 
 .waveform-controls {
@@ -335,6 +476,7 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 20px;
+  padding: 0 15px 15px;
 }
 
 .play-button-large {
@@ -397,7 +539,7 @@
   filter: drop-shadow(0 0 5px rgba(132, 86, 255, 0.5));
 }
 
-/* НИЖНИЙ ЛЕЙАУТ: контент + сайдбар */
+/* ==================== ОСНОВНОЙ ЛЕЙАУТ ==================== */
 .track-body {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) 0.9fr;
@@ -416,101 +558,166 @@
   gap: 18px;
 }
 
-/* Artist info */
+/* ==================== БЛОК ИНФОРМАЦИИ ОБ АВТОРЕ ==================== */
 .artist-info-section {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 20px;
   padding: 25px;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
   backdrop-filter: blur(10px);
 }
 
-.artist-details {
+.track-artist {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
+  width: 100%;
 }
 
 .artist-avatar {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  border: 2px solid rgba(132, 86, 255, 0.3);
 }
 
-.artist-avatar svg {
-  width: 26px;
-  height: 26px;
-  color: rgba(255, 255, 255, 0.8);
+.artist-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.artist-info h4 {
-  font-family: 'Press Start 2P', sans-serif;
+.artist-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.artist-details h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
   color: white;
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artist-details h4:hover {
+  color: #c084fc;
 }
 
 .artist-stats {
   display: flex;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.stat-separator {
+  color: #64748b;
+  margin: 0 4px;
 }
 
 .artist-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.follow-button {
-  padding: 6px 14px;
-  border-radius: 16px;
+.artist-actions .follow-button {
+  padding: 8px 20px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(132, 86, 255, 0.2);
   color: #8456ff;
   cursor: pointer;
   font-family: 'Press Start 2P', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.follow-button:hover {
+.artist-actions .follow-button:hover:not(:disabled) {
   background: rgba(132, 86, 255, 0.3);
   transform: translateY(-2px);
 }
 
-.repost-button {
-  padding: 6px 10px;
+.artist-actions .follow-button.following {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.artist-actions .follow-button.following:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.artist-actions .follow-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.artist-actions .repost-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
   color: white;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   cursor: pointer;
   font-family: 'Press Start 2P', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   transition: all 0.3s ease;
+  min-width: 100px;
+  justify-content: center;
 }
 
-.repost-button svg {
+.artist-actions .repost-button svg {
   width: 14px;
   height: 14px;
 }
 
-.repost-button:hover {
+.artist-actions .repost-button:hover:not(:disabled) {
   background: rgba(132, 86, 255, 0.25);
   transform: translateY(-1px);
 }
 
-/* Comments section */
+.artist-actions .repost-button.reposted {
+  background: rgba(132, 86, 255, 0.3);
+  color: #fff;
+  border-color: rgba(132, 86, 255, 0.5);
+}
+
+.artist-actions .repost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== КОММЕНТАРИИ ==================== */
 .comments-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
@@ -670,7 +877,241 @@
   display: none;
 }
 
-/* Related content */
+/* ==================== БЛОК "MORE FROM" - НОВЫЙ ДИЗАЙН ==================== */
+.albums-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.albums-header h3 {
+  margin-bottom: 0 !important;
+}
+
+.view-all-button {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.65rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(132, 86, 255, 0.45);
+  background: rgba(132, 86, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-all-button:hover {
+  background: rgba(132, 86, 255, 0.25);
+  border-color: rgba(132, 86, 255, 0.75);
+  transform: translateY(-1px);
+}
+
+.view-all-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.morefrom-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.morefrom-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.morefrom-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateX(6px);
+  box-shadow: 0 6px 16px rgba(132, 86, 255, 0.18);
+}
+
+.morefrom-cover {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+}
+
+.morefrom-cover img {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.morefrom-play-button {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%) scale(0.85);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.morefrom-card:hover .morefrom-play-button {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.morefrom-play-button svg {
+  width: 12px;
+  height: 12px;
+  color: #ffffff;
+}
+
+.morefrom-play-button.playing {
+  border-color: rgba(132, 86, 255, 0.75);
+  background: rgba(132, 86, 255, 0.25);
+}
+
+.morefrom-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.morefrom-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.78rem;
+  color: #ffffff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.morefrom-card:hover .morefrom-title {
+  color: #8456ff;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.25);
+}
+
+.morefrom-artist {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.morefrom-artist:hover {
+  color: #8456ff;
+  text-shadow: 0 0 8px rgba(132, 86, 255, 0.25);
+}
+
+.morefrom-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.62rem;
+  color: #64748b;
+}
+
+.morefrom-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.morefrom-meta-item svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
+}
+
+/* Кнопки лайка/репоста в MORE FROM */
+.morefrom-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.morefrom-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.morefrom-like-btn,
+.morefrom-repost-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.morefrom-like-btn:hover,
+.morefrom-repost-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(132, 86, 255, 0.55);
+  background: rgba(132, 86, 255, 0.12);
+  color: #ffffff;
+}
+
+.morefrom-like-btn.liked {
+  border-color: rgba(255, 105, 180, 0.55);
+  background: rgba(255, 105, 180, 0.1);
+  color: #ff6b9d;
+}
+
+.morefrom-repost-btn.reposted {
+  border-color: rgba(132, 86, 255, 0.75);
+  background: rgba(132, 86, 255, 0.18);
+  color: #8456ff;
+}
+
+.morefrom-action-count {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 24px;
+  text-align: left;
+}
+
+.morefrom-like-btn svg,
+.morefrom-repost-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==================== RELATED TRACKS ==================== */
 .related-section,
 .albums-section,
 .playlists-section,
@@ -691,7 +1132,133 @@
   font-size: 1rem;
 }
 
-/* 🔴 ФИКС #2: БОЛЬШИЕ АВАТАРКИ ДЛЯ USERS WHO LIKED/REPOSTED */
+.related-tracks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.related-track-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.related-track-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateX(6px);
+}
+
+.related-track-cover {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+}
+
+.related-track-cover img {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.related-play-button {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%) scale(0.85);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.related-track-card:hover .related-play-button {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.related-play-button svg {
+  width: 12px;
+  height: 12px;
+  color: #ffffff;
+}
+
+.related-track-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.related-track-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.78rem;
+  color: #ffffff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+}
+
+.related-track-card:hover .related-track-title {
+  color: #8456ff;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.25);
+}
+
+.related-track-artist {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.related-track-artist:hover {
+  color: #8456ff;
+  text-shadow: 0 0 8px rgba(132, 86, 255, 0.25);
+}
+
+.related-track-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.62rem;
+  color: #64748b;
+}
+
+.related-track-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.related-track-meta-item svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
+}
+
+/* ==================== USERS GRID ==================== */
 .users-grid {
   display: flex;
   flex-wrap: wrap;
@@ -700,8 +1267,8 @@
 }
 
 .user-card {
-  width: 48px; /* 🔴 УВЕЛИЧЕНО с 34px до 48px */
-  height: 48px; /* 🔴 УВЕЛИЧЕНО с 34px до 48px */
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   background: rgba(132, 86, 255, 0.1);
@@ -709,9 +1276,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0; /* 🔴 КРИТИЧЕСКИ ВАЖНО: предотвращает сжатие */
+  flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .user-card:hover {
@@ -731,16 +1299,16 @@
 .user-avatar img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 🔴 ВАЖНО: правильно обрезаем изображение */
+  object-fit: cover;
 }
 
 .user-avatar svg {
-  width: 24px; /* 🔴 УВЕЛИЧЕНО с 18px до 24px */
-  height: 24px; /* 🔴 УВЕЛИЧЕНО с 18px до 24px */
+  width: 24px;
+  height: 24px;
   color: #94a3b8;
 }
 
-.related-tracks-grid,
+/* ==================== ПЛЕЙЛИСТЫ И АЛЬБОМЫ ==================== */
 .albums-grid,
 .playlists-grid {
   display: flex;
@@ -748,27 +1316,24 @@
   gap: 10px;
 }
 
-.related-track-card,
 .album-card,
 .playlist-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 12px;
+  padding: 8px 12px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-.related-track-card:hover,
 .album-card:hover,
 .playlist-card:hover {
   background: rgba(255, 255, 255, 0.09);
   transform: translateX(6px);
 }
 
-.related-track-cover img,
 .album-card img,
 .playlist-card img {
   width: 42px;
@@ -777,57 +1342,50 @@
   object-fit: cover;
 }
 
-.related-track-cover {
-  position: relative;
-}
-
-.related-play-button {
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(0, 0, 0, 0.6);
+.album-info,
+.playlist-info {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.2s ease;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
 }
 
-.related-play-button svg {
-  width: 12px;
-  height: 12px;
-  color: white;
-}
-
-.related-track-card:hover .related-play-button {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.related-track-info h4,
-.album-info h4,
-.playlist-info h4 {
+.album-title,
+.playlist-title {
   font-family: 'Press Start 2P', sans-serif;
   color: white;
-  margin: 0 0 4px 0;
   font-size: 0.8rem;
-}
-
-.related-track-info p,
-.album-info p,
-.playlist-info p {
-  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin: 0;
-  font-size: 0.7rem;
 }
 
-/* 🔴 ФИКС #3: Стили для кликабельных имен авторов */
+.album-artist,
+.playlist-creator {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: 'Press Start 2P', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-artist:hover,
+.playlist-creator:hover {
+  color: #8456ff !important;
+}
+
+.album-track-count,
+.playlist-track-count {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+/* ==================== КЛИКАБЕЛЬНЫЕ ЭЛЕМЕНТЫ ==================== */
 .track-author-link {
   cursor: pointer;
   color: inherit;
@@ -840,68 +1398,7 @@
   text-shadow: 0 0 6px rgba(132, 86, 255, 0.6);
 }
 
-/* Для заголовков */
-.artist-info h4.track-author-link {
-  color: white;
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
-}
-
-.artist-info h4.track-author-link:hover {
-  color: #8456ff;
-}
-
-/* Для комментариев */
-.comment-username.track-author-link {
-  color: white;
-  font-family: 'Press Start 2P', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.comment-username.track-author-link:hover {
-  color: #8456ff;
-}
-
-/* Для треков */
-.related-track-artist.track-author-link,
-.playlist-creator.track-author-link,
-.album-artist.track-author-link {
-  color: #94a3b8;
-  font-size: 0.8rem;
-  font-family: "'Press Start 2P', sans-serif";
-}
-
-.related-track-artist.track-author-link:hover,
-.playlist-creator.track-author-link:hover,
-.album-artist.track-author-link:hover {
-  color: #8456ff !important;
-}
-
-/* Для аватарок */
-.user-avatar img.track-author-link,
-.comment-avatar img.track-author-link {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.user-avatar img.track-author-link:hover,
-.comment-avatar img.track-author-link:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(132, 86, 255, 0.5);
-}
-
-/* Для основного артиста на странице */
-.track-artist-main .track-author-link {
-  color: #c084fc;
-  font-family: 'Press Start 2P', sans-serif;
-  font-size: 1.5rem;
-}
-
-.track-artist-main .track-author-link:hover {
-  color: #8456ff !important;
-}
-
+/* ==================== ЗАГРУЗКА И ОШИБКИ ==================== */
 .loading-screen,
 .track-not-found {
   display: flex;
@@ -938,7 +1435,7 @@
   transform: translateY(-2px);
 }
 
-/* Стили для подвала на странице трека */
+/* ==================== ПЛЕЕР В ПОДВАЛЕ ==================== */
 .track-page .glass-player-footer {
   position: fixed !important;
   bottom: 0 !important;
@@ -963,7 +1460,59 @@
   }
 }
 
-/* 🔴 АДАПТИВНОСТЬ ДЛЯ МОБИЛЬНЫХ */
+/* ==================== АНИМАЦИИ ==================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iconPulse {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(132, 86, 255, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(132, 86, 255, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(132, 86, 255, 0.6));
+  }
+}
+
+.stat-item svg.pulse {
+  animation: iconPulse 2s infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.like-button.syncing {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.like-button.syncing::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #8456ff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ==================== АДАПТИВНОСТЬ ==================== */
 @media (max-width: 768px) {
   .track-cover-large {
     margin-top: -55px !important;
@@ -1018,7 +1567,6 @@
     height: 16px !important;
   }
   
-  /* 🔴 АДАПТИВНОСТЬ ДЛЯ ВЕЙВФОРМА */
   .waveform-container-large {
     height: 80px;
   }
@@ -1031,7 +1579,6 @@
     width: 1.5px;
   }
   
-  /* 🔴 АДАПТИВНОСТЬ ДЛЯ АВАТАРОК */
   .user-card {
     width: 42px;
     height: 42px;
@@ -1042,13 +1589,159 @@
     height: 20px;
   }
   
-  /* 🔴 АДАПТИВНОСТЬ ДЛЯ КЛИКАБЕЛЬНЫХ ИМЕН */
   .track-artist-main .track-author-link {
     font-size: 1.2rem;
   }
   
   .artist-info h4.track-author-link {
     font-size: 1rem;
+  }
+  
+  .artist-avatar {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .artist-details h4 {
+    font-size: 1.2rem;
+  }
+  
+  .artist-stats {
+    font-size: 0.85rem;
+  }
+  
+  .artist-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+  
+  .artist-actions .follow-button,
+  .artist-actions .repost-button {
+    flex: 1;
+    min-width: auto;
+  }
+  
+  .track-stats-hero {
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+  }
+  
+  .stat-item {
+    min-width: auto;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .stat-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .stat-item span {
+    font-size: 0.85rem;
+  }
+
+  .albums-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .view-all-button {
+    align-self: flex-start;
+    font-size: 0.6rem;
+    padding: 6px 8px;
+  }
+
+  .morefrom-card {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .morefrom-cover {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+  }
+
+  .morefrom-cover img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .morefrom-play-button {
+    width: 24px;
+    height: 24px;
+  }
+
+  .morefrom-title {
+    font-size: 0.7rem;
+  }
+
+  .morefrom-artist {
+    font-size: 0.6rem;
+  }
+
+  .morefrom-meta {
+    font-size: 0.55rem;
+    gap: 8px;
+  }
+
+  .morefrom-actions {
+    gap: 8px;
+  }
+
+  .morefrom-like-btn,
+  .morefrom-repost-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .morefrom-like-btn svg,
+  .morefrom-repost-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .morefrom-action-count {
+    font-size: 0.55rem;
+    min-width: 20px;
+  }
+
+  .related-track-cover {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+
+  .related-track-cover img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .related-play-button {
+    width: 24px;
+    height: 24px;
+  }
+
+  .related-track-title {
+    font-size: 0.7rem;
+  }
+
+  .related-track-artist {
+    font-size: 0.6rem;
+  }
+
+  .related-track-meta {
+    font-size: 0.55rem;
   }
 }
 
@@ -1098,7 +1791,6 @@
     padding: 90px 12px 30px;
   }
   
-  /* 🔴 АДАПТИВНОСТЬ ДЛЯ АВАТАРОК НА МОБИЛЬНЫХ */
   .user-card {
     width: 40px;
     height: 40px;
@@ -1109,7 +1801,6 @@
     height: 18px;
   }
   
-  /* 🔴 АДАПТИВНОСТЬ ДЛЯ КЛИКАБЕЛЬНЫХ ИМЕН */
   .track-artist-main .track-author-link {
     font-size: 1rem;
   }
@@ -1117,49 +1808,161 @@
   .artist-info h4.track-author-link {
     font-size: 0.9rem;
   }
+  
+  .artist-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .artist-details h4 {
+    font-size: 1.1rem;
+  }
+  
+  .artist-stats {
+    font-size: 0.8rem;
+  }
+  
+  .artist-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .artist-actions .follow-button,
+  .artist-actions .repost-button {
+    width: 100%;
+  }
+  
+  .track-stats-hero {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .stat-item {
+    padding: 6px 10px;
+  }
+  
+  .stat-item svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .stat-item span {
+    font-size: 0.8rem;
+  }
+
+  .morefrom-card {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .morefrom-cover {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+  }
+
+  .morefrom-cover img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .morefrom-play-button {
+    width: 22px;
+    height: 22px;
+  }
+
+  .morefrom-play-button svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .morefrom-title {
+    font-size: 0.65rem;
+  }
+
+  .morefrom-artist {
+    font-size: 0.55rem;
+  }
+
+  .morefrom-meta {
+    font-size: 0.5rem;
+    gap: 6px;
+  }
+
+  .morefrom-meta-item svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .morefrom-actions {
+    gap: 6px;
+  }
+
+  .morefrom-like-btn,
+  .morefrom-repost-btn {
+    width: 24px;
+    height: 24px;
+  }
+
+  .morefrom-like-btn svg,
+  .morefrom-repost-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .morefrom-action-count {
+    font-size: 0.5rem;
+    min-width: 18px;
+  }
+
+  .related-track-cover {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+  }
+
+  .related-track-cover img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .related-play-button {
+    width: 22px;
+    height: 22px;
+  }
+
+  .related-track-title {
+    font-size: 0.65rem;
+  }
+
+  .related-track-artist {
+    font-size: 0.55rem;
+  }
+
+  .related-track-meta {
+    font-size: 0.5rem;
+    gap: 6px;
+  }
+
+  .related-track-meta-item svg {
+    width: 10px;
+    height: 10px;
+  }
 }
 
-.like-button.syncing {
-  opacity: 0.7;
-  cursor: wait;
-}
-
-.like-button.syncing::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid #8456ff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* 🔴 ДОПОЛНИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ ДЛЯ ТОЧНОЙ ГЕОМЕТРИИ */
-
-/* Убираем любые лишние отступы у waveform */
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ ФИКСЫ ==================== */
 .waveform-inner > * {
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box;
 }
 
-/* Гарантируем, что палочки занимают всю ширину равномерно */
 .waveform-bar-large {
   flex-grow: 1;
   flex-shrink: 1;
-  flex-basis: 0; /* 🔴 РАВНОЕ РАСПРЕДЕЛЕНИЕ */
+  flex-basis: 0;
 }
 
-/* Улучшаем точность лазера при перетаскивании */
 .waveform-laser.dragging {
   animation: none;
   box-shadow: 
@@ -1168,7 +1971,6 @@
     0 0 75px rgba(132, 86, 255, 0.8);
 }
 
-/* Улучшаем видимость активной палочки при клике */
 .waveform-bar-large:active,
 .waveform-bar-large.clicked {
   background: linear-gradient(to top, #ff66f9, #6a11cb);
@@ -1181,26 +1983,22 @@
 }
 
 .repeat-btn.active {
-  color: #a855f7; /* фиолетовый */
+  color: #a855f7;
 }
 
-/* 🔴 ДОПОЛНИТЕЛЬНЫЙ ФИКС ДЛЯ ГАРАНТИИ НЕСЖИМАНИЯ */
 .users-grid .user-card {
   flex-shrink: 0 !important;
   -webkit-flex-shrink: 0 !important;
 }
 
-/* 🔴 ФИКС ДЛЯ ПРАВИЛЬНОГО СБОРА ШАФФЛ-АНИМАЦИИ */
 .track-artist-main .shuffle-container {
   display: inline-block;
 }
 
-/* 🔴 ФИКС ДЛЯ ТОЧНОСТИ ЦВЕТА ПРИ HOVER */
 .track-author-link:hover * {
   color: #8456ff !important;
 }
 
-/* Стили для кнопки Follow */
 .follow-button {
   background: #8456ff;
   color: white;
@@ -1244,4 +2042,1021 @@
 .follow-button.following:hover:not(:disabled) {
   background: #444;
   border-color: #666;
+}
+
+.repost-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid #8456ff;
+  color: #8456ff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.repost-button:hover:not(:disabled) {
+  background: rgba(132, 86, 255, 0.15);
+}
+
+.repost-button.reposted {
+  background: rgba(132, 86, 255, 0.2);
+  color: #fff;
+  border-color: #fff;
+}
+
+.repost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.artist-actions .repost-button {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
+.track-actions-main .repost-button {
+  background: rgba(132, 86, 255, 0.1);
+}
+
+.track-actions-main .repost-button.reposted {
+  background: rgba(132, 86, 255, 0.3);
+  border-color: #fff;
+}
+
+.artist-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.artist-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-artist {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.artist-details {
+  flex-grow: 1;
+}
+
+.artist-details h4 {
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.artist-details h4:hover {
+  color: #c084fc;
+}
+
+.artist-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.stat-separator {
+  color: #64748b;
+}
+
+.artist-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ==================== СТАТУСЫ ДЛЯ ПЛЕЙЛИСТОВ ==================== */
+/* Блок кнопок лайк/репост внутри плашки — прижимаем вправо */
+.playlistMetaActionsInside {
+  margin-left: auto;           /* 👈 ключ! уводит вправо внутри рамки */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+  position: relative;
+}
+
+/* Кнопки внутри плашки — компактные "капсулы" со свечением */
+.playlistActionBtnInside {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 14px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: rgba(10, 10, 12, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.playlistActionBtnInside svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.playlistActionBtnInside span {
+  min-width: 16px;
+  text-align: center;
+  font-weight: 900;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+}
+
+.playlistActionBtnInside:hover {
+  transform: translateY(-1px);
+  background: rgba(20, 20, 24, 0.26);
+  border-color: rgba(255, 255, 255, 0.26);
+}
+
+.playlistActionBtnInside:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.playlistActionBtnInside.liked {
+  color: #ff6b9d;
+  box-shadow:
+    0 0 16px rgba(255, 107, 157, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.playlistActionBtnInside.reposted {
+  color: #8456ff;
+  box-shadow:
+    0 0 16px rgba(132, 86, 255, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.playlistLikedBy,
+.playlistRepostedBy {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.playlistLikedBy h4,
+.playlistRepostedBy h4 {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.playlistLikedBy ul,
+.playlistRepostedBy ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.playlistLikedBy li,
+.playlistRepostedBy li {
+  font-size: 0.85rem;
+  color: #fff;
+  margin: 6px 0;
+}
+
+.playlistLikedBy .active,
+.playlistRepostedBy .active {
+  color: #8456ff;
+}
+
+/* ==================== СТИЛИ ДЛЯ КНОПОК И ВРЕМЕНИ В ПЛЕЕРЕ ==================== */
+.player-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Центрируем всё по горизонтали */
+  gap: 24px; /* Отступ между левой кнопкой, временем и правой кнопкой */
+  width: 100%;
+  position: relative;
+}
+
+/* Кнопки влево/вправо (prev/next) */
+.player-nav-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Запрещаем кнопкам сжиматься */
+
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 10, 12, 0.35);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+/* Размер иконки внутри кнопки */
+.player-nav-btn svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* Ховер/нажатие */
+.player-nav-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(20, 20, 24, 0.48);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.player-nav-btn:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* Disabled состояние (когда нельзя листать) */
+.player-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+.time-display {
+  min-width: 110px; /* Фиксируем минимальную ширину, чтобы время не прыгало */
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 1px;
+  display: flex;
+  gap: 4px; /* Небольшой отступ между цифрами и слешем */
+  justify-content: center;
+}
+
+/* Если сепаратор — это отдельный элемент, убираем лишние отступы */
+.time-separator {
+  margin: 0 2px;
+}
+
+/* Страховка: на плейлисте подвал всегда виден */
+.track-page.playlist-page .glass-player-footer {
+  display: block !important;
+}
+
+/* Кликабельный плейлист в блоке More playlists */
+.clickable-playlist {
+  color: #a855f7; /* фиолетовый */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clickable-playlist:hover {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
+/* ==================== НОВЫЕ СТИЛИ ДЛЯ БЛОКА MORE PLAYLISTS ==================== */
+/* ✅ ИСПРАВЛЕНИЕ: Контейнер для блока "More playlists from..." */
+.playlist-more-section {
+  margin-top: 30px;
+  width: 100%;
+}
+
+/* ✅ ИСПРАВЛЕНИЕ: Заголовок блока - убираем все отступы и выравниваем влево */
+.playlist-more-section h3 {
+  margin: 0 0 16px 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  font-family: 'Press Start 2P', sans-serif;
+  color: white;
+  font-size: 1rem;
+}
+
+/* ✅ ИСПРАВЛЕНИЕ: Контейнер для списка плейлистов */
+.playlist-more-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+/* Стили для карточек плейлистов внутри нового блока */
+.playlist-more-list .playlist-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  width: 100%;
+}
+
+.playlist-more-list .playlist-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateX(6px);
+}
+
+.playlist-more-list .playlist-card img {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.playlist-more-list .playlist-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.playlist-more-list .playlist-title {
+  font-family: 'Press Start 2P', sans-serif;
+  color: white;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.playlist-more-list .playlist-track-count {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+/* Фиолетовый кликабельный заголовок */
+.playlist-more-list .clickable-playlist {
+  color: #a855f7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playlist-more-list .clickable-playlist:hover {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}
+
+/* Загрузка и пустые состояния */
+.playlist-more-section .loading-users,
+.playlist-more-section .no-users {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+}
+
+/* ==================== ФИНАЛЬНЫЙ ФИКС: More playlists from... ==================== */
+/* Убираем принудительный отступ у названий плейлистов */
+.playlists-section .playlist-info {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.playlists-section .playlist-title {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+
+/* Дополнительная страховка для родительского контейнера */
+.playlists-section .playlists-grid {
+  align-items: stretch;
+}
+
+.playlists-section .playlist-card {
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+/* ==================== НОВЫЕ СТИЛИ (ДОБАВИТЬ В КОНЕЦ ФАЙЛА) ==================== */
+
+/* 🔥 КРАСИВЫЕ ПИЛЮЛИ ДЛЯ ТЕГОВ - стеклянные с неоновым бордером */
+.track-hashtags .hashtag {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  border-radius: 100px;
+  padding: 8px 18px;
+  margin-right: 12px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+
+.track-hashtags .hashtag:hover {
+  border-color: #8456ff;
+  background: rgba(132, 86, 255, 0.1);
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(132, 86, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.track-hashtags .hashtag:active {
+  transform: translateY(0);
+  transition: all 0.1s ease;
+}
+
+/* 🔥 ПУСТОЕ СОСТОЯНИЕ ДЛЯ RELATED TRACKS - аккуратный блок */
+.related-empty {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(132, 86, 255, 0.3);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* 🔥 АДАПТИВНЫЕ СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ */
+@media (max-width: 768px) {
+  .track-hashtags .hashtag {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .track-hashtags .hashtag {
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+  
+  .related-empty {
+    padding: 24px 16px;
+    font-size: 0.7rem;
+  }
+}
+
+.track-hashtags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+
+.hashtag-pill{
+  cursor:pointer;
+  border:1px solid rgba(192,132,252,0.35);
+  background: rgba(255,255,255,0.06);
+  color:#c084fc;
+  padding:8px 12px;
+  border-radius:999px;
+  font-family:'Press Start 2P', sans-serif;
+  font-size:12px;
+  line-height:1;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.hashtag-pill:hover{
+  transform: translateY(-1px);
+  background: rgba(192,132,252,0.14);
+  border-color: rgba(192,132,252,0.7);
+}
+
+/* ==================== НОВЫЕ СТИЛИ ДЛЯ IN PLAYLISTS ==================== */
+
+/* Основной контейнер секции */
+.inplaylists-section {
+  margin-top: 32px;
+  width: 100%;
+}
+
+/* Заголовок секции */
+.inplaylists-section h3 {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+/* Контейнер для списка плейлистов */
+.inplaylists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Карточка плейлиста */
+.inplaylists-card {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  align-items: center;
+}
+
+.inplaylists-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Обложка плейлиста */
+.inplaylists-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* Контейнер с информацией */
+.inplaylists-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Название плейлиста - НЕ пиксельный шрифт */
+.inplaylists-title {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Автор плейлиста - кликабельный, с hover эффектом */
+.inplaylists-author {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #94a3b8;
+  opacity: 0.9;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inplaylists-author:hover {
+  color: #c084fc;
+  opacity: 1;
+}
+
+/* Дополнительная информация (количество треков) */
+.inplaylists-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Кнопка View all */
+.view-all-playlists-btn {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(132, 86, 255, 0.1);
+  border: 1px solid rgba(132, 86, 255, 0.2);
+  color: #8456ff;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.view-all-playlists-btn:hover {
+  background: rgba(132, 86, 255, 0.15);
+  border-color: rgba(132, 86, 255, 0.4);
+}
+
+/* Пустое состояние */
+.inplaylists-section .related-empty {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(132, 86, 255, 0.3);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* ==================== АДАПТИВНОСТЬ ДЛЯ IN PLAYLISTS ==================== */
+@media (max-width: 768px) {
+  .inplaylists-card {
+    padding: 10px 14px;
+    gap: 14px;
+  }
+  
+  .inplaylists-cover {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .inplaylists-title {
+    font-size: 14px;
+  }
+  
+  .inplaylists-author {
+    font-size: 12px;
+  }
+  
+  .inplaylists-sub {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inplaylists-card {
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  
+  .inplaylists-cover {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .inplaylists-title {
+    font-size: 13px;
+  }
+  
+  .inplaylists-author {
+    font-size: 11px;
+  }
+  
+  .inplaylists-sub {
+    font-size: 10px;
+  }
+  
+  .view-all-playlists-btn {
+    padding: 10px;
+    font-size: 10px;
+  }
+}
+
+/* ==================== НОВЫЕ СТИЛИ ДЛЯ IN PLAYLISTS ==================== */
+
+/* Основной контейнер секции */
+.inplaylists-section {
+  margin-top: 32px;
+  width: 100%;
+}
+
+/* Заголовок секции */
+.inplaylists-section h3 {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+/* Контейнер для списка плейлистов */
+.inplaylists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Карточка плейлиста */
+.inplaylists-card {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  align-items: center;
+}
+
+.inplaylists-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Обложка плейлиста */
+.inplaylists-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* Контейнер с информацией */
+.inplaylists-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Название плейлиста - ПИКСЕЛЬНЫЙ ШРИФТ как было */
+.inplaylists-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+  line-height: 1.4;
+}
+
+.inplaylists-title:hover {
+  color: #c084fc !important;
+}
+
+/* Автор плейлиста - кликабельный, с hover эффектом */
+.inplaylists-author {
+  margin-top: 2px;
+  font-size: 12px;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #94a3b8;
+  opacity: 0.9;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.inplaylists-author:hover {
+  color: #c084fc;
+  opacity: 1;
+}
+
+/* Дополнительная информация (количество треков) - тоже пиксельный */
+.inplaylists-sub {
+  font-size: 11px;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #64748b;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+/* Кнопка View all */
+.view-all-playlists-btn {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(132, 86, 255, 0.1);
+  border: 1px solid rgba(132, 86, 255, 0.2);
+  color: #8456ff;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.view-all-playlists-btn:hover {
+  background: rgba(132, 86, 255, 0.15);
+  border-color: rgba(132, 86, 255, 0.4);
+}
+
+/* Пустое состояние */
+.inplaylists-section .related-empty {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(132, 86, 255, 0.3);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* ==================== АДАПТИВНОСТЬ ДЛЯ IN PLAYLISTS ==================== */
+@media (max-width: 768px) {
+  .inplaylists-card {
+    padding: 10px 14px;
+    gap: 14px;
+  }
+  
+  .inplaylists-cover {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .inplaylists-title {
+    font-size: 13px;
+  }
+  
+  .inplaylists-author {
+    font-size: 11px;
+  }
+  
+  .inplaylists-sub {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inplaylists-card {
+    padding: 8px 12px;
+    gap: 12px;
+  }
+  
+  .inplaylists-cover {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .inplaylists-title {
+    font-size: 12px;
+  }
+  
+  .inplaylists-author {
+    font-size: 10px;
+  }
+  
+  .inplaylists-sub {
+    font-size: 9px;
+  }
+  
+  .view-all-playlists-btn {
+    padding: 10px;
+    font-size: 10px;
+  }
+}
+
+/* PlaylistPage: More playlists - выравнивание текста по центру */
+.pp-morepl-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  margin-bottom: 8px;
+}
+
+.pp-morepl-card:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pp-morepl-card img {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.pp-morepl-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-morepl-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #c084fc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  margin: 0;
+  cursor: pointer;
+}
+
+.pp-morepl-title:hover {
+  text-decoration: underline;
+  color: #d8b4fe;
+}
+
+.pp-morepl-author {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.pp-morepl-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Обновляем существующие стили для playlists-grid */
+.playlists-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* PlaylistPage ONLY: pixel typography for "More playlists" (scoped) */
+.ppMorePlaylists .pp-morepl-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 12px;           /* аккуратно, чтобы не ломать карточку */
+  letter-spacing: 0.6px;
+  line-height: 1.25;
+  color: #c084fc;            /* фиолетовый цвет для названий */
+}
+
+.ppMorePlaylists .pp-morepl-author {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  line-height: 1.25;
+  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Дополнительно: делаем заголовок секции тоже пиксельным */
+.ppMorePlaylists h3 {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.8px;
+  margin-bottom: 15px;
+  color: #ffffff;
 }

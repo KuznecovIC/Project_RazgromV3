@@ -1,0 +1,764 @@
+/* SearchHub – общий хаб поиска (SoundCloud-like) */
+
+.searchhub {
+  width: 100%;
+  min-height: 100vh;
+  padding: 26px 0 40px;
+  color: #fff;
+
+  /* ✅ Пиксельный стиль */
+  font-family: 'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  letter-spacing: 0.2px;
+}
+
+.searchhub-inner {
+  width: min(1220px, calc(100% - 44px));
+  margin: 0 auto;
+}
+
+.sh-top {
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.sh-title h1 {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.sh-found {
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.sh-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 26px;
+}
+
+.sh-left {
+  position: sticky;
+  top: 84px;
+  align-self: start;
+}
+
+.sh-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.sh-tab {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.sh-tab:hover {
+  border-color: rgba(132, 86, 255, 0.55);
+}
+
+.sh-tab.active {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.sh-tab.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sh-filter {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.sh-filter-title {
+  font-weight: 900;
+  opacity: 0.9;
+  margin-bottom: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.sh-country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sh-country {
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 11px;
+}
+
+.sh-country:hover {
+  color: #8456ff;
+}
+
+.sh-country.active {
+  color: #cdbdff;
+  font-weight: 900;
+}
+
+.sh-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sh-tag {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.90);
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 10px;
+}
+
+.sh-tag:hover {
+  border-color: rgba(132, 86, 255, 0.75);
+  color: #8456ff;
+}
+
+.sh-tag.active {
+  background: rgba(132, 86, 255, 0.22);
+  border-color: rgba(132, 86, 255, 0.85);
+  color: #cdbdff;
+}
+
+.sh-right {
+  min-width: 0;
+}
+
+.sh-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.85;
+  padding: 10px 0;
+  font-size: 12px;
+}
+
+.sh-loading svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sh-block {
+  margin-bottom: 26px;
+}
+
+.sh-block-title {
+  font-weight: 950;
+  opacity: 0.92;
+  margin: 10px 0 12px;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+/* ===== People ===== */
+
+.sh-people {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sh-person-card {
+  display: grid;
+  grid-template-columns: 84px 1fr 150px;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.sh-person-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sh-person-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sh-person-fallback {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sh-person-name {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-weight: 950;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.sh-person-name:hover {
+  color: #cdbdff;
+}
+
+.sh-person-sub {
+  margin-top: 6px;
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+.sh-person-followers {
+  margin-top: 8px;
+  opacity: 0.85;
+  font-size: 11px;
+}
+
+.sh-follow {
+  justify-self: end;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(132, 86, 255, 0.70);
+  background: rgba(132, 86, 255, 0.78);
+  color: #fff;
+  font-weight: 950;
+  cursor: pointer;
+  font-size: 11px;
+  box-shadow: 0 10px 30px rgba(132, 86, 255, 0.18);
+}
+
+.sh-follow:hover {
+  background: rgba(132, 86, 255, 0.90);
+}
+
+.sh-follow.active {
+  background: rgba(132, 86, 255, 0.28);
+  color: #fff;
+  border-color: rgba(132, 86, 255, 0.70);
+}
+
+/* ===== Tracks ===== */
+
+.sh-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sh-track {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 18px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.sh-cover {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sh-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sh-cover-fallback {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sh-cover-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.18s ease;
+}
+
+.sh-cover:hover .sh-cover-play {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sh-cover-play svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sh-track-mid {
+  min-width: 0;
+}
+
+.sh-track-topline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sh-artist {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 900;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.sh-artist:hover {
+  color: #cdbdff;
+}
+
+.sh-titlelink {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 950;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.sh-titlelink:hover {
+  color: #cdbdff;
+}
+
+/* ✅ Waveform как в TrackPage */
+.sh-waveform-container {
+  position: relative;
+  width: 100%;
+  height: 58px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sh-waveform-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  padding: 8px 10px;
+  z-index: 3;
+}
+
+.sh-waveform-bar {
+  flex: 1;
+  min-width: 2px;
+  height: var(--height, 25%);
+  background: rgba(255, 255, 255, 0.32);
+  border-radius: 2px;
+  transition: filter 0.12s ease;
+}
+
+.sh-waveform-bar.played {
+  background: rgba(132, 86, 255, 0.95);
+  box-shadow: 0 0 14px rgba(132, 86, 255, 0.28);
+}
+
+.sh-waveform-container:hover .sh-waveform-bar {
+  filter: brightness(1.05);
+}
+
+.sh-waveform-progress {
+  position: absolute;
+  inset: 0;
+  left: 0;
+  width: 0%;
+  background: rgba(132, 86, 255, 0.10);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sh-waveform-laser {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 4;
+  pointer-events: none;
+  box-shadow: 0 0 18px rgba(132, 86, 255, 0.45);
+}
+
+.sh-wf-empty {
+  width: 100%;
+  height: 100%;
+  opacity: 0.35;
+  background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+}
+
+/* Actions (like/repost/views/comments) */
+.sh-track-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.92;
+}
+
+.sh-action-btn {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+.sh-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #cdbdff;
+}
+
+.sh-action-btn.active {
+  color: #cdbdff;
+}
+
+.sh-action-btn svg,
+.sh-action-meta svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sh-action-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+/* ===== Gooey bursts (как в GooeyNav, но для фильтров/тегов) ===== */
+
+.sh-gooey-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.sh-gooey-effect {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.sh-gooey-effect.filter {
+  filter: blur(7px) contrast(100) blur(0);
+  mix-blend-mode: lighten;
+}
+
+.sh-gooey-effect.filter::before {
+  content: '';
+  position: absolute;
+  inset: -75px;
+  z-index: -2;
+  background: transparent;
+}
+
+/* ✅ 2. УБИРАЕМ БЕЛУЮ ПЛАШКУ / СВЕЧЕНИЕ */
+.sh-gooey-effect.filter::after {
+  content: none !important;
+}
+
+.sh-gooey-effect.active::after {
+  animation: sh-pill 0.3s ease both;
+}
+
+@keyframes sh-pill {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ✅ 3. FORCED PIXEL FONT (чтобы не перебивалось глобальными стилями) */
+.searchhub,
+.searchhub h1,
+.searchhub .sh-found,
+.searchhub .sh-tab,
+.searchhub .sh-filter-title,
+.searchhub .sh-country,
+.searchhub .sh-tag,
+.searchhub .sh-block-title,
+.searchhub .sh-person-name,
+.searchhub .sh-person-sub,
+.searchhub .sh-person-followers,
+.searchhub .sh-follow,
+.searchhub .sh-artist,
+.searchhub .sh-titlelink,
+.searchhub .sh-track-actions,
+.searchhub .sh-action-btn,
+.searchhub .sh-action-meta {
+  font-family: 'Press Start 2P', sans-serif !important;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .sh-grid {
+    grid-template-columns: 1fr;
+  }
+  .sh-left {
+    position: relative;
+    top: 0;
+  }
+}
+
+/* ===== Playlists - ОБНОВЛЕННЫЙ БЛОК ===== */
+
+.sh-playlists {
+display: flex;
+flex-direction: column;
+gap: 14px;
+}
+
+.sh-playlist-card {
+display: grid;
+grid-template-columns: 70px 1fr;
+gap: 16px;
+padding: 14px;
+border-radius: 16px;
+background: rgba(0, 0, 0, 0.24);
+border: 1px solid rgba(255, 255, 255, 0.10);
+transition: all 0.2s ease;
+align-items: center;
+}
+
+.sh-playlist-card:hover {
+border-color: rgba(132, 86, 255, 0.4);
+background: rgba(20, 20, 30, 0.4);
+}
+
+.sh-playlist-cover-container {
+position: relative;
+width: 70px;
+height: 70px;
+border-radius: 12px;
+overflow: hidden;
+background: rgba(255, 255, 255, 0.08);
+}
+
+.sh-playlist-cover {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+/* 👇 КНОПКА PLAY НА ОБЛОЖКЕ (HOVER) */
+.sh-pl-play {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+background: rgba(0, 0, 0, 0.5);
+border: none;
+color: white;
+cursor: pointer;
+opacity: 0;
+transition: opacity 0.2s ease;
+backdrop-filter: blur(2px);
+}
+
+.sh-pl-play svg {
+width: 28px;
+height: 28px;
+filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.sh-pl-play.playing {
+opacity: 1;
+background: rgba(132, 86, 255, 0.3);
+}
+
+.sh-playlist-cover-container:hover .sh-pl-play {
+opacity: 1;
+}
+
+.sh-playlist-info {
+min-width: 0;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.sh-playlist-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+}
+
+/* 👇 КЛИКАБЕЛЬНЫЙ ТАЙТЛ (фиолетовый на hover) */
+.sh-pl-title-link {
+font-weight: 950;
+text-transform: uppercase;
+font-size: 12px;
+color: #fff;
+cursor: pointer;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+transition: color 0.15s ease;
+line-height: 1.4;
+}
+
+.sh-pl-title-link:hover {
+color: #cdbdff;
+text-decoration: underline;
+text-decoration-color: #8456ff;
+}
+
+/* 👇 КНОПКИ ЛАЙК/РЕПОСТ - СТЕКЛЯННАЯ ОБВОДКА */
+.sh-pl-actions {
+display: flex;
+align-items: center;
+gap: 6px;
+flex-shrink: 0;
+margin-top: 15px; /* 👈 ОПУСКАЕМ НА 5 ПИКСЕЛЕЙ НИЖЕ */
+}
+
+.sh-pl-like,
+.sh-pl-repost {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 4px;
+background: rgba(20, 20, 30, 0.6);
+border: 1px solid rgba(255, 255, 255, 0.25);
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
+color: rgba(255, 255, 255, 0.9);
+font-size: 10px;
+font-weight: 900;
+cursor: pointer;
+padding: 6px 10px;
+border-radius: 24px;
+transition: all 0.2s ease;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+min-width: 52px;
+}
+
+.sh-pl-like svg,
+.sh-pl-repost svg {
+width: 14px;
+height: 14px;
+}
+
+/* 👇 HOVER ЭФФЕКТЫ */
+.sh-pl-like:hover {
+background: rgba(132, 86, 255, 0.25);
+border-color: rgba(132, 86, 255, 0.6);
+color: #fff;
+}
+
+.sh-pl-like.liked {
+background: rgba(132, 86, 255, 0.3);
+border-color: rgba(132, 86, 255, 0.8);
+color: #fff;
+}
+
+.sh-pl-repost:hover {
+background: rgba(76, 175, 80, 0.25);
+border-color: rgba(76, 175, 80, 0.6);
+color: #fff;
+}
+
+.sh-pl-repost.reposted {
+background: rgba(76, 175, 80, 0.3);
+border-color: rgba(76, 175, 80, 0.8);
+color: #fff;
+}
+
+/* 👇 КОЛИЧЕСТВО ЛАЙКОВ/РЕПОСТОВ */
+.sh-pl-like span,
+.sh-pl-repost span {
+font-size: 10px;
+font-weight: 900;
+opacity: 0.9;
+}
+
+.sh-pl-sub {
+opacity: 0.75;
+font-size: 11px;
+margin-top: 2px;
+}
+
+/* Удаляем старые стили .sh-playlist, .sh-pl-cover, .sh-pl-title, .sh-pl-open */
+.sh-playlist,
+.sh-pl-cover,
+.sh-pl-title,
+.sh-pl-open {
+display: none;
+}

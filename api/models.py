@@ -1,5 +1,3 @@
-# models.py - ТОЛЬКО модели, логика в views.py
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
@@ -7,6 +5,8 @@ import os
 from django.conf import settings
 import logging
 from django.core.files.storage import FileSystemStorage
+import mutagen  # 🔥 ДЛЯ БЫСТРОГО ВЫЧИСЛЕНИЯ ДЛИТЕЛЬНОСТИ
+from uuid import uuid4  # 🔥 ДЛЯ ГЕНЕРАЦИИ ИМЕН ФАЙЛОВ
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,54 @@ def user_header_path(instance, filename):
     filename = f"header_{instance.id}_{timestamp}.{ext}"
     return f"headers/{filename}"
 
+def voice_message_path(instance, filename):
+    """Путь для голосовых сообщений"""
+    ext = filename.split('.')[-1].lower()
+    timestamp = int(timezone.now().timestamp())
+    filename = f"voice_{instance.sender_id}_{timestamp}.{ext}"
+    return f"voices/{filename}"
+
+# 🔥 НОВЫЕ ФУНКЦИИ ДЛЯ МЕДИА В ЧАТЕ
+def message_image_path(instance, filename):
+    """Путь для изображений в чате"""
+    ext = os.path.splitext(filename)[1] or '.jpg'
+    # Используем conversation_id и sender_id для организации файлов
+    conv_id = instance.conversation_id or 'no_conv'
+    sender_id = instance.sender_id or 'no_user'
+    return f"chat_images/conv_{conv_id}/u_{sender_id}/{uuid4().hex}{ext}"
+
+def message_video_path(instance, filename):
+    """Путь для видео в чате"""
+    ext = os.path.splitext(filename)[1] or '.mp4'
+    conv_id = instance.conversation_id or 'no_conv'
+    sender_id = instance.sender_id or 'no_user'
+    return f"chat_videos/conv_{conv_id}/u_{sender_id}/{uuid4().hex}{ext}"
+
+# ==================== УТИЛИТА ДЛЯ БЫСТРОГО ВЫЧИСЛЕНИЯ ДЛИТЕЛЬНОСТИ ====================
+def get_audio_duration_fast(file_path):
+    """
+    🔥 БЫСТРОЕ вычисление длительности аудиофайла
+    Использует mutagen для чтения метаданных, а не весь файл
+    """
+    try:
+        if not os.path.exists(file_path):
+            logger.warning(f"Файл не найден: {file_path}")
+            return 0
+        
+        # 🔥 Мгновенное чтение метаданных через mutagen
+        audio = mutagen.File(file_path, easy=True)
+        if audio and hasattr(audio.info, 'length'):
+            duration = int(audio.info.length)
+            logger.info(f"Длительность файла {file_path}: {duration} секунд")
+            return duration
+        
+        logger.warning(f"Не удалось получить длительность для {file_path}")
+        return 0
+        
+    except Exception as e:
+        logger.error(f"Ошибка при вычислении длительности {file_path}: {e}")
+        return 0
+
 # ==================== CUSTOM USER ====================
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
@@ -85,6 +133,18 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=50, unique=True)
     bio = models.TextField(max_length=500, blank=True)
+    
+    # 🔥 НОВОЕ ПОЛЕ: статус пользователя (отображается в личном кабинете)
+    status_text = models.CharField(max_length=120, blank=True, default='')
+    
+    # 🔥 NEW: Страна пользователя (используется в "About")
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Страна',
+        help_text='Страна проживания пользователя'
+    )
     
     avatar = models.ImageField(
         upload_to=avatar_upload_path,
@@ -134,6 +194,27 @@ class CustomUser(AbstractUser):
     reposts_count = models.IntegerField(default=0)
     playlists_count = models.IntegerField(default=0)
     
+    # 🎧 NOW PLAYING (для MessageHub)
+    now_playing_track = models.ForeignKey(
+        'Track',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='now_playing_users',
+        verbose_name='Сейчас слушает трек'
+    )
+
+    now_playing_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Обновлено сейчас слушает'
+    )
+
+    now_playing_is_playing = models.BooleanField(
+        default=False,
+        verbose_name='Сейчас играет'
+    )
+    
     is_artist = models.BooleanField(default=False)
     is_pro = models.BooleanField(default=False)
     pro_expires_at = models.DateTimeField(null=True, blank=True)
@@ -142,6 +223,38 @@ class CustomUser(AbstractUser):
     instagram = models.CharField(max_length=100, blank=True, default='')
     twitter = models.CharField(max_length=100, blank=True, default='')
     soundcloud = models.CharField(max_length=100, blank=True, default='')
+    
+    # 🚫 BAN SYSTEM - НОВЫЕ ПОЛЯ
+    is_banned = models.BooleanField(default=False)
+    ban_reason = models.TextField(blank=True, default='')
+    ban_until = models.DateTimeField(null=True, blank=True)  # если None и is_banned=True => перманент
+    ban_created_at = models.DateTimeField(null=True, blank=True)
+    banned_by = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='bans_created',
+        verbose_name='Кто забанил'
+    )
+    
+    # 🔥 НОВОЕ ПОЛЕ: Ручной режим присутствия
+    PRESENCE_MODE_CHOICES = [
+        ('auto', 'Auto'),
+        ('online', 'Online'),
+        ('afk', 'AFK'),
+        ('dnd', 'Do Not Disturb'),
+        ('offline', 'Offline'),
+    ]
+
+    presence_mode = models.CharField(
+        max_length=10,
+        choices=PRESENCE_MODE_CHOICES,
+        default='auto',
+        blank=True,
+        verbose_name='Режим присутствия',
+        help_text='Ручной режим присутствия: auto (авто), online (всегда онлайн), afk (отошел), dnd (не беспокоить), offline (всегда оффлайн)'
+    )
     
     objects = CustomUserManager()
     
@@ -249,7 +362,50 @@ class CustomUser(AbstractUser):
             status='published'
         ).order_by('-created_at')[:limit]
 
-# ==================== СИСТЕМА ПОДПИСОК - УБРАЛ save/delete ЛОГИКУ ====================
+# ==================== МОДЕЛЬ АПЕЛЛЯЦИИ НА БАН ====================
+class BanAppeal(models.Model):
+    STATUS_CHOICES = [
+        ('pending', '⏳ Pending'),
+        ('reviewed', '✅ Reviewed'),
+        ('rejected', '❌ Rejected'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='ban_appeals'
+    )
+
+    # Снепшоты на момент подачи (чтобы не терялись)
+    username_snapshot = models.CharField(max_length=80, blank=True, default='')
+    banned_by_snapshot = models.CharField(max_length=120, blank=True, default='')
+    ban_reason_snapshot = models.TextField(blank=True, default='')
+    ban_until_snapshot = models.CharField(max_length=80, blank=True, default='')
+
+    disagree_text = models.TextField(blank=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_comment = models.TextField(blank=True, default='')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # --- AI helper (только рекомендации, НЕ решение) ---
+    ai_status = models.CharField(max_length=20, blank=True, default='')  # 'ready' | 'error' | ''
+    ai_summary = models.TextField(blank=True, default='')
+    ai_recommendation = models.CharField(max_length=180, blank=True, default='')
+    ai_risk = models.IntegerField(default=0)  # 0..100
+    ai_model = models.CharField(max_length=80, blank=True, default='')
+    ai_generated_at = models.DateTimeField(null=True, blank=True)
+    ai_error = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Апелляция бана'
+        verbose_name_plural = 'Апелляции банов'
+
+    def __str__(self):
+        return f"Appeal #{self.id} from {self.user_id} ({self.username_snapshot})"
+
+# ==================== СИСТЕМА ПОДПИСОК ====================
 class Follow(models.Model):
     follower = models.ForeignKey(
         CustomUser,
@@ -283,9 +439,6 @@ class Follow(models.Model):
     
     def __str__(self):
         return f"{self.follower.username} → {self.following.username}"
-    
-    # 🔴🔴🔴 КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: УБРАЛ save() и delete() переопределения
-    # Логика обновления статистики будет ТОЛЬКО в views.py
 
 # ==================== USER PROFILE EXTENSION ====================
 class UserProfile(models.Model):
@@ -495,6 +648,7 @@ class Track(models.Model):
         verbose_name='Количество точек waveform'
     )
     
+    # 🔥 КРИТИЧЕСКОЕ ПОЛЕ: общее количество прослушиваний
     play_count = models.PositiveIntegerField(
         default=0,
         verbose_name='Количество прослушиваний'
@@ -660,6 +814,13 @@ class Track(models.Model):
         default=0
     )
     
+    # 🔥 КРИТИЧЕСКОЕ ДОПОЛНЕНИЕ: флаг, что длительность уже вычислена
+    _duration_calculated = models.BooleanField(
+        default=False,
+        editable=False,
+        verbose_name='Длительность вычислена'
+    )
+    
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Трек'
@@ -677,6 +838,78 @@ class Track(models.Model):
         return f"{self.title} - {self.artist}"
     
     def save(self, *args, **kwargs):
+        """
+        🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+        duration_seconds вычисляется ТОЛЬКО ОДИН РАЗ при создании трека.
+        При последующих сохранениях файл НЕ читается.
+        """
+        is_new = self.pk is None
+        
+        # 🔥 1. ТОЛЬКО при создании нового трека вычисляем длительность
+        if is_new and self.audio_file and not self._duration_calculated:
+            try:
+                # Быстрое вычисление длительности через mutagen
+                file_path = self.audio_file.path
+                if os.path.exists(file_path):
+                    self.duration_seconds = get_audio_duration_fast(file_path)
+                    
+                    # Форматируем в строку
+                    minutes = self.duration_seconds // 60
+                    seconds = self.duration_seconds % 60
+                    self.duration = f"{minutes}:{seconds:02d}"
+                    
+                    self._duration_calculated = True
+                    logger.info(f"Трек новый: длительность вычислена = {self.duration_seconds} сек ({self.duration})")
+                else:
+                    logger.warning(f"Файл не найден: {file_path}")
+                    self._duration_calculated = False
+                    
+            except Exception as e:
+                logger.error(f"Ошибка вычисления длительности для нового трека: {e}")
+                # Устанавливаем значения по умолчанию
+                self.duration_seconds = 0
+                self.duration = "0:00"
+                self._duration_calculated = True  # Помечаем как вычисленное, чтобы не пытаться снова
+        
+        # 🔥 2. Если это не новый трек, НЕ вычисляем длительность заново
+        # (если только аудиофайл не был изменен - но это редкий случай)
+        elif not is_new and self.audio_file and not self._duration_calculated:
+            # Проверяем, изменился ли аудиофайл
+            try:
+                old_track = Track.objects.get(pk=self.pk)
+                if old_track.audio_file != self.audio_file:
+                    # Аудиофайл изменился - нужно пересчитать
+                    file_path = self.audio_file.path
+                    if os.path.exists(file_path):
+                        self.duration_seconds = get_audio_duration_fast(file_path)
+                        
+                        minutes = self.duration_seconds // 60
+                        seconds = self.duration_seconds % 60
+                        self.duration = f"{minutes}:{seconds:02d}"
+                        
+                        self._duration_calculated = True
+                        logger.info(f"Трек {self.id}: аудио изменено, длительность пересчитана = {self.duration_seconds} сек")
+            except Track.DoesNotExist:
+                pass
+        
+        # 🔥 3. Фолбэк: если есть строка duration, но нет duration_seconds - парсим
+        elif self.duration and (not self.duration_seconds or self.duration_seconds == 0):
+            try:
+                if ':' in self.duration:
+                    parts = self.duration.split(':')
+                    if len(parts) == 2:
+                        minutes, seconds = map(int, parts)
+                        self.duration_seconds = minutes * 60 + seconds
+                        self._duration_calculated = True
+                        logger.info(f"Трек {self.id if self.id else 'new'}: duration '{self.duration}' → {self.duration_seconds} секунд")
+                    elif len(parts) == 3:
+                        hours, minutes, seconds = map(int, parts)
+                        self.duration_seconds = hours * 3600 + minutes * 60 + seconds
+                        self._duration_calculated = True
+            except Exception as e:
+                logger.error(f"Ошибка парсинга duration для трека {self.id if self.id else 'new'}: {self.duration} - {e}")
+        
+        # 🔥 4. Обновление published_at при публикации
         if self.pk and self.status == 'published':
             try:
                 old_track = Track.objects.get(pk=self.pk)
@@ -686,8 +919,10 @@ class Track(models.Model):
             except Track.DoesNotExist:
                 pass
         
+        # 🔥 5. Сохраняем
         super().save(*args, **kwargs)
         
+        # 🔥 6. Логика для генерации waveform
         if self.status == 'published' and not self.waveform_generated:
             logger.info(f"Трек {self.id} опубликован, можно сгенерировать waveform")
     
@@ -741,26 +976,31 @@ class Track(models.Model):
         return []
     
     def get_duration_seconds(self):
-        try:
-            if not self.duration:
-                return 0
-            
-            if ':' in self.duration:
-                parts = self.duration.split(':')
-                if len(parts) == 2:
-                    minutes, seconds = map(int, parts)
-                    return minutes * 60 + seconds
-                elif len(parts) == 3:
-                    hours, minutes, seconds = map(int, parts)
-                    return hours * 3600 + minutes * 60 + seconds
-            
-            if hasattr(self, 'duration_seconds') and self.duration_seconds:
-                return self.duration_seconds
-            
-            return 0
-        except Exception as e:
-            logger.error(f"Ошибка преобразования длительности '{self.duration}': {e}")
-            return 0
+        """
+        🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+        ВСЕГДА приоритет у duration_seconds (число), а не у duration (строка).
+        duration_seconds - это источник истины, который рассчитывается при загрузке трека.
+        """
+        # 🔥 Сначала проверяем duration_seconds (самое быстрое)
+        if self.duration_seconds and self.duration_seconds > 0:
+            return self.duration_seconds
+        
+        # 🔥 Потом парсим строку duration (тоже быстро)
+        if self.duration:
+            try:
+                if ':' in self.duration:
+                    parts = self.duration.split(':')
+                    if len(parts) == 2:
+                        minutes, seconds = map(int, parts)
+                        return minutes * 60 + seconds
+                    elif len(parts) == 3:
+                        hours, minutes, seconds = map(int, parts)
+                        return hours * 3600 + minutes * 60 + seconds
+            except Exception as e:
+                logger.error(f"Ошибка преобразования длительности '{self.duration}': {e}")
+        
+        # 🔥 НИКОГДА не читаем аудиофайл здесь!
+        return 0
     
     def get_formatted_duration(self):
         return self.duration
@@ -770,9 +1010,11 @@ class Track(models.Model):
             return round(self.file_size / (1024 * 1024), 2)
         return 0
     
+    # 🔥 НОВАЯ ЛОГИКА: Инкремент счетчика прослушиваний
     def increment_play_count(self):
         self.play_count += 1
         self.save(update_fields=['play_count', 'updated_at'])
+        logger.info(f"Трек {self.id}: play_count увеличен до {self.play_count}")
     
     def increment_like_count(self):
         self.like_count += 1
@@ -846,8 +1088,62 @@ class TrackRepost(models.Model):
     def __str__(self):
         return f"{self.user.username} reposted {self.track.title}"
 
-# ==================== ЗАЩИТА ОТ НАКРУТКИ ПРОСЛУШИВАНИЙ ====================
+# ==================== LISTENING HISTORY ====================
+class ListeningHistory(models.Model):
+    """
+    🔥 УНИКАЛЬНАЯ ЗАПИСЬ прослушивания (один раз на пользователя)
+    Используется для проверки "уже прослушанных" треков
+    """
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='listening_history',
+        verbose_name='Пользователь'
+    )
+    
+    track = models.ForeignKey(
+        Track,
+        on_delete=models.CASCADE,
+        related_name='listening_history',
+        verbose_name='Трек'
+    )
+    
+    listened_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Время прослушивания'
+    )
+    
+    # 🔥 ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ для отладки и аналитики
+    listened_seconds = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Прослушано секунд'
+    )
+    
+    is_counted = models.BooleanField(
+        default=True,
+        verbose_name='Учтено в статистике'
+    )
+    
+    class Meta:
+        ordering = ['-listened_at']
+        # 🔥 КРИТИЧЕСКИ ВАЖНО: одна запись на пользователя
+        unique_together = ['user', 'track']
+        indexes = [
+            models.Index(fields=['user', 'listened_at']),
+            models.Index(fields=['track', 'listened_at']),
+            models.Index(fields=['user', 'track']),
+        ]
+        verbose_name = 'Уникальное прослушивание'
+        verbose_name_plural = 'Уникальные прослушивания'
+    
+    def __str__(self):
+        return f"{self.user.username} → {self.track.title} ({self.listened_at})"
+
+# ==================== PLAY HISTORY ====================
 class PlayHistory(models.Model):
+    """
+    Детальная история всех прослушиваний (много записей)
+    """
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -889,28 +1185,16 @@ class PlayHistory(models.Model):
     )
     
     class Meta:
-        unique_together = ['user', 'track']
         ordering = ['-played_at']
         indexes = [
             models.Index(fields=['user', 'track', 'played_at']),
             models.Index(fields=['track', 'played_at']),
         ]
-        verbose_name = 'История прослушиваний'
-        verbose_name_plural = 'История прослушиваний'
+        verbose_name = 'Детальная история прослушивания'
+        verbose_name_plural = 'Детальная история прослушиваний'
     
     def __str__(self):
-        return f"{self.user.username} played {self.track.title}"
-    
-    def save(self, *args, **kwargs):
-        recent_play = PlayHistory.objects.filter(
-            user=self.user,
-            track=self.track,
-            played_at__gte=timezone.now() - timezone.timedelta(minutes=30)
-        ).exists()
-        
-        if not recent_play:
-            super().save(*args, **kwargs)
-            self.track.increment_play_count()
+        return f"{self.user.username} played {self.track.title} for {self.duration_listened}s"
 
 # ==================== ГЛОБАЛЬНАЯ СТАТИСТИКА ====================
 class DailyStats(models.Model):
@@ -962,6 +1246,93 @@ class DailyStats(models.Model):
     def __str__(self):
         return f"Статистика за {self.date}"
 
+# ==================== ДНЕВНАЯ СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ ====================
+class UserDailyStats(models.Model):
+    """
+    Снимок метрик пользователя на конец каждого дня
+    Используется для построения графиков истории и расчета процентов роста
+    """
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='daily_stats',
+        verbose_name='Пользователь'
+    )
+
+    date = models.DateField(
+        verbose_name='Дата',
+        db_index=True
+    )
+
+    # Основные метрики
+    followers = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Подписчики'
+    )
+    
+    following = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Подписки'
+    )
+    
+    tracks = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Треки'
+    )
+
+    # Метрики взаимодействия
+    total_listens = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Всего прослушиваний'
+    )
+    
+    total_likes = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Всего лайков'
+    )
+    
+    total_reposts = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Всего репостов'
+    )
+    
+    total_comments = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Всего комментариев'
+    )
+
+    # Метаданные
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Время создания записи'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Время обновления'
+    )
+
+    class Meta:
+        unique_together = ['user', 'date']
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['user', 'date']),
+            models.Index(fields=['date']),
+        ]
+        verbose_name = 'Дневная статистика пользователя'
+        verbose_name_plural = 'Дневная статистика пользователей'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
+    def update_from_totals(self, totals_dict):
+        """Обновить поля из словаря с totals"""
+        for field in ['followers', 'following', 'tracks', 'total_listens', 
+                      'total_likes', 'total_reposts', 'total_comments']:
+            if field in totals_dict:
+                setattr(self, field, totals_dict[field])
+        self.save()
+
 # ==================== ЛАЙКИ ====================
 class TrackLike(models.Model):
     user = models.ForeignKey(
@@ -991,6 +1362,66 @@ class TrackLike(models.Model):
     
     def __str__(self):
         return f"{self.user.username} liked {self.track.title}"
+
+# ==================== ЛАЙКИ ПЛЕЙЛИСТОВ ====================
+class PlaylistLike(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='liked_playlists',
+        verbose_name='Пользователь'
+    )
+    
+    playlist = models.ForeignKey(
+        'Playlist',
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='Плейлист'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата лайка'
+    )
+
+    class Meta:
+        unique_together = ['user', 'playlist']
+        ordering = ['-created_at']
+        verbose_name = 'Лайк плейлиста'
+        verbose_name_plural = 'Лайки плейлистов'
+    
+    def __str__(self):
+        return f"{self.user.username} liked playlist {self.playlist.title}"
+
+# ==================== РЕПОСТЫ ПЛЕЙЛИСТОВ ====================
+class PlaylistRepost(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='reposted_playlists',
+        verbose_name='Пользователь'
+    )
+    
+    playlist = models.ForeignKey(
+        'Playlist',
+        on_delete=models.CASCADE,
+        related_name='reposts',
+        verbose_name='Плейлист'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата репоста'
+    )
+
+    class Meta:
+        unique_together = ['user', 'playlist']
+        ordering = ['-created_at']
+        verbose_name = 'Репост плейлиста'
+        verbose_name_plural = 'Репосты плейлистов'
+    
+    def __str__(self):
+        return f"{self.user.username} reposted playlist {self.playlist.title}"
 
 # ==================== USER TRACK INTERACTION ====================
 class UserTrackInteraction(models.Model):
@@ -1140,40 +1571,6 @@ class CommentLike(models.Model):
     
     def __str__(self):
         return f"{self.user.username} liked comment #{self.comment.id}"
-
-# ==================== LISTENING HISTORY ====================
-class ListeningHistory(models.Model):
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='history',
-        verbose_name='Пользователь'
-    )
-    
-    track = models.ForeignKey(
-        Track,
-        on_delete=models.CASCADE,
-        verbose_name='Трек'
-    )
-    
-    listened_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Время прослушивания'
-    )
-    
-    play_count = models.IntegerField(
-        default=1,
-        verbose_name='Количество прослушиваний'
-    )
-    
-    class Meta:
-        ordering = ['-listened_at']
-        unique_together = ['user', 'track']
-        verbose_name = 'История прослушивания'
-        verbose_name_plural = 'История прослушиваний'
-    
-    def __str__(self):
-        return f"{self.user.username} listened {self.track.title} at {self.listened_at}"
 
 # ==================== КОММЕНТАРИИ К ТРЕКАМ ====================
 class TrackComment(models.Model):
@@ -1492,49 +1889,239 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.type}"
 
-# ==================== СООБЩЕНИЯ ====================
+# ==================== ДИАЛОГИ И СООБЩЕНИЯ ====================
+
+class Conversation(models.Model):
+    """
+    Диалог (чат) между пользователями
+    Поддерживает как 1-на-1, так и групповые чаты
+    """
+    # участники диалога
+    participants = models.ManyToManyField(
+        CustomUser,
+        related_name='conversations',
+        verbose_name='Участники'
+    )
+
+    # для групповых чатов (пока не используем, но оставим на будущее)
+    is_group = models.BooleanField(
+        default=False,
+        verbose_name='Групповой чат'
+    )
+    
+    title = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name='Название (для групп)'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Диалог'
+        verbose_name_plural = 'Диалоги'
+
+    def __str__(self):
+        if self.is_group and self.title:
+            return f"Group: {self.title}"
+        
+        # Для 1-на-1 показываем участников
+        participants = self.participants.all()[:3]
+        names = [p.username for p in participants]
+        return f"Conversation {self.id}: {', '.join(names)}"
+
+
 class Message(models.Model):
+    """
+    Сообщение в диалоге
+    """
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Диалог',
+        null=True,
+        blank=True
+    )
+
     sender = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
         related_name='sent_messages',
         verbose_name='Отправитель'
     )
-    
-    receiver = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name='received_messages',
-        verbose_name='Получатель'
+
+    text = models.TextField(
+        verbose_name='Текст сообщения',
+        blank=True,
+        default=''
+    )
+
+    # опционально: прикрепить трек (удобно для твоей платформы)
+    track = models.ForeignKey(
+        Track,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='messages_with_track',
+        verbose_name='Прикрепленный трек'
+    )
+
+    # ✅ ГОЛОСОВЫЕ СООБЩЕНИЯ
+    voice = models.FileField(
+        upload_to=voice_message_path,
+        null=True,
+        blank=True,
+        verbose_name='Голосовое сообщение'
     )
     
-    content = models.TextField(
-        verbose_name='Содержание'
+    voice_duration = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Длительность голосового сообщения (сек)'
     )
     
-    sent_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Время отправки'
+    waveform = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name='Waveform данные для голосового сообщения'
     )
-    
+
+    # ✅ ИЗОБРАЖЕНИЯ / ВИДЕО (НОВЫЕ ПОЛЯ)
+    image = models.ImageField(
+        upload_to=message_image_path,
+        null=True,
+        blank=True,
+        verbose_name='Изображение'
+    )
+
+    video = models.FileField(
+        upload_to=message_video_path,
+        null=True,
+        blank=True,
+        verbose_name='Видео'
+    )
+
+    # 🔥 РЕАКЦИИ НА СООБЩЕНИЯ (НОВОЕ ПОЛЕ)
+    reactions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Реакции на сообщение',
+        help_text='Формат: {"❤️": [1,5], "😂": [2]} - список user_id кто поставил'
+    )
+
     is_read = models.BooleanField(
         default=False,
         verbose_name='Прочитано'
     )
-    
+
     read_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name='Время прочтения'
     )
-    
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата отправки',
+        null=True,
+        blank=True
+    )
+
     class Meta:
-        ordering = ['-sent_at']
+        ordering = ['created_at']
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
-    
+        indexes = [
+            models.Index(fields=['conversation', 'created_at']),
+            models.Index(fields=['sender', 'created_at']),
+        ]
+
     def __str__(self):
-        return f"{self.sender.username} → {self.receiver.username}: {self.content[:50]}"
+        if self.voice:
+            return f"Voice message {self.id} from {self.sender.username} ({self.voice_duration}s)"
+        elif self.image:
+            return f"Image message {self.id} from {self.sender.username}"
+        elif self.video:
+            return f"Video message {self.id} from {self.sender.username}"
+        return f"Message {self.id} from {self.sender.username} in conv {self.conversation_id}"
+
+
+# ==================== СОСТОЯНИЕ ДИАЛОГОВ ====================
+class DialogState(models.Model):
+    """
+    Состояние диалога для конкретного пользователя:
+    - is_hidden = True - диалог скрыт из списка
+    - is_hidden = False - диалог отображается в списке
+    - last_read_message - последнее прочитанное сообщение
+    - last_read_at - когда последний раз читал
+    """
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='dialog_states',
+        verbose_name='Пользователь'
+    )
+    
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='states',
+        verbose_name='Диалог'
+    )
+    
+    is_hidden = models.BooleanField(
+        default=False,
+        verbose_name='Скрыт из списка'
+    )
+    
+    # 🔥 НОВЫЕ ПОЛЯ ДЛЯ READ RECEIPTS
+    last_read_message = models.ForeignKey(
+        'Message',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Последнее прочитанное сообщение'
+    )
+    
+    last_read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Время последнего прочтения'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+
+    class Meta:
+        unique_together = ('user', 'conversation')
+        verbose_name = 'Состояние диалога'
+        verbose_name_plural = 'Состояния диалогов'
+        indexes = [
+            models.Index(fields=['user', 'is_hidden']),
+            models.Index(fields=['conversation', 'user']),
+            models.Index(fields=['user', 'last_read_at']),
+        ]
+
+    def __str__(self):
+        status = 'Скрыт' if self.is_hidden else 'Виден'
+        if self.last_read_message:
+            return f"{self.user.username} - Диалог {self.conversation.id} - {status}, прочитано до #{self.last_read_message.id}"
+        return f"{self.user.username} - Диалог {self.conversation.id} - {status}, ничего не прочитано"
+
 
 # ==================== АНАЛИТИКА ====================
 class TrackAnalytics(models.Model):
@@ -1747,6 +2334,177 @@ class WaveformGenerationTask(models.Model):
         self.error_message = error_message
         self.save(update_fields=['status', 'completed_at', 'error_message'])
 
+# ==================== НАКАЗАНИЯ / АПЕЛЛЯЦИИ / РЕПОРТЫ ====================
+
+class ModerationAction(models.Model):
+    """Модель для отслеживания всех модерационных действий над пользователем"""
+    ACTION_CHOICES = [
+        ('ban', 'Ban'),
+        ('unban', 'Unban'),
+        ('warning', 'Warning'),
+        ('mute', 'Mute'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='moderation_actions'
+    )
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='moderation_actions_made'
+    )
+
+    action_type = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    reason = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Модерационное действие'
+        verbose_name_plural = 'Модерационные действия'
+
+    def __str__(self):
+        return f"{self.action_type} -> {self.user_id} ({self.created_at})"
+
+
+class UserAppeal(models.Model):
+    """Апелляции пользователей на модерационные действия"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='appeals'
+    )
+    related_action = models.ForeignKey(
+        ModerationAction, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='appeals'
+    )
+
+    message = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    admin_response = models.TextField(blank=True, default='')
+    responded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='appeals_responded'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Апелляция'
+        verbose_name_plural = 'Апелляции'
+
+    def __str__(self):
+        return f"Appeal({self.user_id}) {self.status}"
+
+
+class UserReport(models.Model):
+    """Репорты на пользователей"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='reports_sent'
+    )
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reports_received'
+    )
+
+    reason = models.CharField(max_length=140, blank=True, default='')
+    message = models.TextField(blank=True, default='')
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_response = models.TextField(blank=True, default='')
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reports_reviewed'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Репорт'
+        verbose_name_plural = 'Репорты'
+
+    def __str__(self):
+        return f"Report({self.reporter_id} -> {self.target_user_id}) {self.status}"
+
+# ==================== ЖАЛОБЫ НА ПОЛЬЗОВАТЕЛЕЙ ====================
+class UserReportOld(models.Model):
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reports_sent_old'
+    )
+    reported_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reports_received_old'
+    )
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('reviewed', 'Reviewed'),
+        ('rejected', 'Rejected'),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    # 🔥 НОВЫЕ ПОЛЯ ДЛЯ АДМИН-ОБРАБОТКИ
+    admin_comment = models.TextField(blank=True, default='')  # причина отказа/решения
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='reports_decided_old'
+    )
+
+    # если решение = бан (снапшот)
+    ban_reason_admin = models.TextField(blank=True, default='')
+    ban_days = models.IntegerField(null=True, blank=True)
+    ban_permanent = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.reporter} reported {self.reported_user}"
+
 # ==================== СИГНАЛЫ ====================
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -1787,3 +2545,35 @@ def comment_post_save(sender, instance, created, **kwargs):
 def comment_post_delete(sender, instance, **kwargs):
     instance.track.comment_count = Comment.objects.filter(track=instance.track).count()
     instance.track.save(update_fields=['comment_count'])
+
+# ==================== СИГНАЛЫ ДЛЯ ЛАЙКОВ ПЛЕЙЛИСТОВ ====================
+@receiver(post_save, sender=PlaylistLike)
+def playlistlike_post_save(sender, instance, created, **kwargs):
+    """Обновление счетчика лайков плейлиста при создании лайка"""
+    if created:
+        instance.playlist.likes_count = PlaylistLike.objects.filter(playlist=instance.playlist).count()
+        instance.playlist.save(update_fields=['likes_count'])
+
+@receiver(post_delete, sender=PlaylistLike)
+def playlistlike_post_delete(sender, instance, **kwargs):
+    """Обновление счетчика лайков плейлиста при удалении лайка"""
+    instance.playlist.likes_count = PlaylistLike.objects.filter(playlist=instance.playlist).count()
+    instance.playlist.save(update_fields=['likes_count'])
+
+# ==================== СИГНАЛЫ ДЛЯ РЕПОСТОВ ПЛЕЙЛИСТОВ ====================
+@receiver(post_save, sender=PlaylistRepost)
+def playlistrepost_post_save(sender, instance, created, **kwargs):
+    """Обновление счетчика репостов плейлиста при создании репоста"""
+    if created:
+        # Здесь нужно добавить поле reposts_count в модель Playlist
+        # instance.playlist.reposts_count = PlaylistRepost.objects.filter(playlist=instance.playlist).count()
+        # instance.playlist.save(update_fields=['reposts_count'])
+        pass
+
+@receiver(post_delete, sender=PlaylistRepost)
+def playlistrepost_post_delete(sender, instance, **kwargs):
+    """Обновление счетчика репостов плейлиста при удалении репоста"""
+    # Здесь нужно добавить поле reposts_count в модель Playlist
+    # instance.playlist.reposts_count = PlaylistRepost.objects.filter(playlist=instance.playlist).count()
+    # instance.playlist.save(update_fields=['reposts_count'])
+    pass

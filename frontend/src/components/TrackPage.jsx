@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// frontend/src/components/TrackPage.jsx
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom'; // ✅ Добавлен Link
 import GridScan from '../GridScan';
 import Shuffle from './Shuffle';
 import GooeyNav from './GooeyNav';
@@ -8,10 +15,11 @@ import logoMark from '../logo1.ico';
 import './TrackPage.css';
 import GlassMusicPlayer from './GlassMusicPlayer';
 import { apiFetch } from '../api/apiFetch';
+import { useSocial } from '../context/SocialContext';
 
 // Иконки
 const IconPlay = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="play-icon">
     <path d="M8 5v14l11-7z" fill="currentColor" />
   </svg>
 );
@@ -23,19 +31,28 @@ const IconPause = () => (
 );
 
 const IconHeart = ({ filled = false }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="heart-icon">
     <path 
       d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-      fill={filled ? "#8456ff" : "currentColor"}
-      stroke={filled ? "#8456ff" : "currentColor"}
+      fill={filled ? "#ff6b9d" : "currentColor"}
+      stroke={filled ? "#ff6b9d" : "currentColor"}
       strokeWidth="0.5"
     />
   </svg>
 );
 
 const IconShare = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="share-icon">
     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+  </svg>
+);
+
+const IconRepost = ({ active = false }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path 
+      d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" 
+      fill={active ? "#8456ff" : "currentColor"}
+    />
   </svg>
 );
 
@@ -117,6 +134,21 @@ const IconMessage = () => (
   </svg>
 );
 
+// 🎯 НОВАЯ ИКОНКА: Admin
+const IconAdmin = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M12 2l8 4v6c0 5-3.4 9.4-8 10-4.6-.6-8-5-8-10V6l8-4z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      fill="none"
+      strokeLinejoin="round"
+    />
+    <path d="M12 8v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M12 16h.01" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+  </svg>
+);
+
 const IconDots = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="6" cy="12" r="1.6" fill="currentColor" />
@@ -148,6 +180,78 @@ const IconUpload = () => (
   </svg>
 );
 
+// ============================================
+// ✅ ИКОНКИ И ХЕЛПЕРЫ ДЛЯ MORE FROM (КАК В SIDEBAR)
+// ============================================
+
+const IconClockMini = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm1 11.2 4.2 2.5-.8 1.3L11 14V7h2v6.2Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+const IconPlayCountMini = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm-1 14V8l7 4-7 4Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+// ✅ Иконка комментариев для мета-строки (мини)
+const IconCommentMini = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+// 👇 форматирование как в Sidebar (только число, без слова plays)
+const formatPlaysNumber = (count) => {
+  const n = Number(count || 0);
+  if (!n) return '0';
+  if (n < 1000) return `${n}`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}K`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+};
+
+const formatDurationCompact = (value) => {
+  // value может быть number (сек) или строка "1:42"
+  if (typeof value === 'string' && value.includes(':')) return value;
+  const s = Number(value || 0);
+  if (!s || Number.isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+};
+
+// ✅ Хелперы для аватара как в ProtectedApp
+const isBackendDefaultImage = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  return (
+    url.includes('/static/default_avatar') ||
+    url.includes('/static/default_cover') ||
+    url.includes('default_avatar') ||
+    url.includes('default_cover')
+  );
+};
+
+const getAvatarUrl = (user) => {
+  if (user?.avatar) {
+    if (String(user.avatar).startsWith('http')) return user.avatar;
+    return `http://localhost:8000${user.avatar}`;
+  }
+  return null;
+};
+
+// ============================================
+
 const TrackPage = ({ 
   currentTime,
   duration,
@@ -170,15 +274,53 @@ const TrackPage = ({
   getAuthToken,
   onSeek,
   onPlayTrack,
+  // 🔥 НОВЫЙ ПРОП
+  setPlaybackContext,
 }) => {
   const { trackId } = useParams();
   const navigate = useNavigate();
   const currentTrackId = parseInt(trackId);
+
+  // 🔥 НОВЫЙ ХУК: управление single-track режимом
+  useEffect(() => {
+    console.log('🎵 TrackPage: Активирован режим single-track');
+    // При монтировании страницы трека включаем single-режим
+    if (typeof setPlaybackContext === 'function') {
+      setPlaybackContext('single');
+    }
+
+    // При размонтировании страницы (уходе с неё) возвращаем обычный режим
+    return () => {
+      console.log('🎵 TrackPage: Деактивирован режим single-track');
+      if (typeof setPlaybackContext === 'function') {
+        setPlaybackContext(null);
+      }
+    };
+  }, [setPlaybackContext]); // Сработает только при монтировании и размонтировании
+  
+  // ✅ Состояние для поиска в шапке
+  const [topSearch, setTopSearch] = useState('');
+  
+  // ✅ Подключаем SocialContext для лайков/репостов — добавили likeCounts и getLikeCount
+  const {
+    toggleLike: toggleLikeGlobal,
+    toggleRepost: toggleRepostGlobal,
+    isLiked: isLikedGlobal,
+    isReposted: isRepostedGlobal,
+    getRepostCount,
+    likeCounts,
+    getLikeCount
+  } = useSocial();
   
   const [track, setTrack] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('linear-gradient(135deg, #0d0c1d, #111129)');
+  
+  // 🔥 ДИНАМИЧЕСКИЕ ЦВЕТА ДЛЯ GRIDSCAN (HEX, валидные для THREE.Color)
+  const [gridScanColor, setGridScanColor] = useState('#8456ff');
+  const [gridLinesColor, setGridLinesColor] = useState('#cbd5e1');
+  
   const [isLoading, setIsLoading] = useState(true);
   const [waveformData, setWaveformData] = useState([]);
   const [isAddingComment, setIsAddingComment] = useState(false);
@@ -191,14 +333,27 @@ const TrackPage = ({
   const [loadingLikes, setLoadingLikes] = useState(true);
   const [repeatActive, setRepeatActive] = useState(false);
   
-  // 🔴 СОСТОЯНИЯ ДЛЯ FOLLOW СИСТЕМЫ
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   
-  // ✅ ДОБАВЛЕНО: состояние для реальных пользователей
   const [usersWhoLiked, setUsersWhoLiked] = useState([]);
   const [usersWhoReposted, setUsersWhoReposted] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  
+  const [isReposted, setIsReposted] = useState(false);
+  
+  // ✅ More from (реальные треки автора)
+  const [moreFromTracks, setMoreFromTracks] = useState([]);
+  const [moreFromTotalCount, setMoreFromTotalCount] = useState(0);
+  const [loadingMoreFrom, setLoadingMoreFrom] = useState(false);
+  
+  // ✅ State для related tracks
+  const [relatedTracks, setRelatedTracks] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  
+  // ✅ State для плейлистов трека
+  const [inPlaylists, setInPlaylists] = useState([]);
+  const [loadingInPlaylists, setLoadingInPlaylists] = useState(false);
   
   const isSeekingRef = useRef(false);
   const userMenuRef = useRef(null);
@@ -213,7 +368,58 @@ const TrackPage = ({
   
   const isCurrentTrackPlaying = currentTrack === currentTrackId && isPlaying;
 
-  // 🔴 ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СТАТУСА FOLLOW
+  // ✅ authorId для переиспользования
+  const authorId = useMemo(() => track?.uploaded_by?.id || track?.artistId, [track]);
+
+  // ✅ Подсчет общего количества треков автора для отображения в карточке
+  const authorTracksCount = useMemo(() => {
+    if (!authorId) return 0;
+    
+    // moreFromTotalCount — это количество треков автора БЕЗ текущего
+    // Если текущий трек принадлежит этому автору — добавляем 1
+    const currentBelongsToAuthor = (track?.uploaded_by?.id || track?.artistId) === authorId;
+    return (moreFromTotalCount || 0) + (currentBelongsToAuthor ? 1 : 0);
+  }, [authorId, moreFromTotalCount, track]);
+
+  // ✅ isAdmin как в ProtectedApp
+  const isAdmin = !!(user?.is_admin || user?.is_staff || user?.is_superuser);
+
+  // ✅ actionIcons с условной иконкой Admin/Notifications
+  const actionIcons = [
+    { label: 'Upload', Icon: IconUpload },
+    { label: isAdmin ? 'Admin' : 'Notifications', Icon: isAdmin ? IconAdmin : IconBell },
+    { label: 'Messages', Icon: IconMessage }
+  ];
+
+  // 🔥 СБРОС ЦВЕТОВ ПРИ СМЕНЕ ТРЕКА
+  useEffect(() => {
+    setGridScanColor('#8456ff');
+    setGridLinesColor('#cbd5e1');
+  }, [currentTrackId]);
+
+  // ✅ Обработчики для шапки
+  const submitTopSearch = useCallback(() => {
+    const q = (topSearch || '').trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  }, [topSearch, navigate]);
+
+  const goToStudio = useCallback(() => {
+    navigate('/studio');
+  }, [navigate]);
+
+  const goToHome = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
+  const goToFeed = useCallback(() => {
+    navigate('/feed');
+  }, [navigate]);
+
+  const goToLibrary = useCallback(() => {
+    navigate('/library');
+  }, [navigate]);
+
   const checkFollowStatus = useCallback(async (authorId) => {
     const authToken = getAuthTokenForTrackPage();
     if (!authToken) return false;
@@ -230,7 +436,6 @@ const TrackPage = ({
     return false;
   }, [getAuthTokenForTrackPage]);
 
-  // 🔴 ФУНКЦИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ FOLLOW
   const handleFollowToggle = async () => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -262,7 +467,6 @@ const TrackPage = ({
         const newFollowingState = !isFollowing;
         setIsFollowing(newFollowingState);
         
-        // 🔴 ОБНОВЛЯЕМ КОЛИЧЕСТВО ПОДПИСЧИКОВ В РЕАЛЬНОМ ВРЕМЕНИ
         if (track?.uploaded_by) {
           const currentFollowers = parseInt(track.uploaded_by.followers_count || track.uploaded_by.followers || 0, 10) || 0;
           const newCount = isFollowing 
@@ -279,12 +483,11 @@ const TrackPage = ({
           }));
         }
         
-        // 🔴 ДИСПАТЧИМ СОБЫТИЕ ДЛЯ ОБНОВЛЕНИЯ В ДРУГИХ КОМПОНЕНТАХ
         const currentUserId = user?.id || null;
         window.dispatchEvent(new CustomEvent('followStatusChanged', {
           detail: {
             targetUserId: authorId,
-            currentUserId, // ✅ КТО подписался
+            currentUserId,
             isFollowing: newFollowingState,
             timestamp: Date.now()
           }
@@ -304,21 +507,157 @@ const TrackPage = ({
     }
   };
 
-  // ✅ Загрузка реальных пользователей
-  const loadUsersData = useCallback(async () => {
-    if (!currentTrackId) return;
-    
+  const handleRepost = async () => {
     const authToken = getAuthTokenForTrackPage();
+
     if (!authToken) {
-      setUsersWhoLiked([]);
-      setUsersWhoReposted([]);
+      alert('Войдите в систему, чтобы репостить треки');
       return;
     }
+
+    if (syncInProgress || isReposted) return;
+
+    setSyncInProgress(true);
+
+    try {
+      const response = await apiFetch('/api/repost/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ track_id: currentTrackId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTrack(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            reposts: data.repost_count || (prev.stats.reposts + 1)
+          }
+        }));
+        setIsReposted(true);
+
+        if (user) {
+          setUsersWhoReposted(prev => {
+            const userAlreadyExists = prev.some(u => 
+              u.id === user.id || u.username === user.username
+            );
+            if (!userAlreadyExists) {
+              return [
+                {
+                  id: user.id || 'current-user',
+                  username: user.username,
+                  avatar: user.avatar || '',
+                  avatar_url: user.avatar_url || user.avatar || '',
+                  name: user.username
+                },
+                ...prev
+              ];
+            }
+            return prev;
+          });
+        }
+
+        window.dispatchEvent(new CustomEvent('trackReposted', {
+          detail: {
+            trackId: currentTrackId,
+            userId: user?.id,
+            repostCount: data.repost_count || (track?.stats?.reposts + 1),
+            isReposted: true,
+            timestamp: Date.now()
+          }
+        }));
+        
+        console.log('✅ Трек успешно репостнут');
+        
+      } else {
+        alert(data.error || 'Не удалось репостнуть трек');
+      }
+    } catch (e) {
+      console.error('❌ Ошибка репоста:', e);
+      alert('Сетевая ошибка при репосте');
+    } finally {
+      setSyncInProgress(false);
+    }
+  };
+
+  const handleUnrepost = async () => {
+    const authToken = getAuthTokenForTrackPage();
+    
+    if (!authToken) {
+      alert('Войдите в систему, чтобы удалить репост');
+      return;
+    }
+    
+    if (syncInProgress || !isReposted) return;
+    
+    setSyncInProgress(true);
+    
+    try {
+      const response = await apiFetch('/api/repost/', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ track_id: currentTrackId })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        const newRepostCount = data.repost_count ?? (track?.stats?.reposts > 0 ? track.stats.reposts - 1 : 0);
+        setTrack(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            reposts: newRepostCount
+          },
+        }));
+        setIsReposted(false);
+        
+        if (user) {
+          setUsersWhoReposted(prev => 
+            prev.filter(u => !(u.id === user.id || u.username === user.username))
+          );
+        }
+        
+        window.dispatchEvent(
+          new CustomEvent('trackReposted', {
+            detail: {
+              trackId: currentTrackId,
+              userId: user?.id,
+              repostCount: newRepostCount,
+              isReposted: false,
+              timestamp: Date.now()
+            },
+          })
+        );
+        
+        console.log('✅ Репост успешно удален');
+        
+      } else {
+        alert(data.error || 'Не удалось удалить репост');
+      }
+    } catch (e) {
+      console.error('❌ Ошибка удаления репоста:', e);
+      alert('Сетевая ошибка при удалении репоста');
+    } finally {
+      setSyncInProgress(false);
+    }
+  };
+
+  // ✅ ИСПРАВЛЕНО: УБРАНА ПРОВЕРКА ТОКЕНА - ЭНДПОИНТЫ ПУБЛИЧНЫЕ
+  const loadUsersData = useCallback(async () => {
+    if (!currentTrackId) return;
     
     setLoadingUsers(true);
     
     try {
-      // Загрузка пользователей, лайкнувших трек
       try {
         const likesResponse = await apiFetch(`/api/track/${currentTrackId}/likes/users/`);
         if (likesResponse.ok) {
@@ -330,7 +669,6 @@ const TrackPage = ({
         setUsersWhoLiked([]);
       }
       
-      // Загрузка пользователей, сделавших репост
       try {
         const repostsResponse = await apiFetch(`/api/track/${currentTrackId}/reposts/users/`);
         if (repostsResponse.ok) {
@@ -348,7 +686,526 @@ const TrackPage = ({
     } finally {
       setLoadingUsers(false);
     }
-  }, [currentTrackId, getAuthTokenForTrackPage]);
+  }, [currentTrackId]);
+
+  // ✅ Реальные треки автора для секции "More from"
+  const loadMoreFromTracks = useCallback(async () => {
+    if (!authorId) {
+      setMoreFromTracks([]);
+      setMoreFromTotalCount(0);
+      return;
+    }
+
+    setLoadingMoreFrom(true);
+
+    try {
+      const resp = await apiFetch(`/api/users/${authorId}/tracks/`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      const data = await resp.json();
+      const list = Array.isArray(data.tracks) ? data.tracks : [];
+
+      // общее число треков автора (можно вычесть текущий, чтобы не дублировался)
+      const hasCurrent = list.some(t => t?.id === currentTrackId);
+      const rawTotal = typeof data.count === 'number' ? data.count : list.length;
+      const totalWithoutCurrent = Math.max(0, rawTotal - (hasCurrent ? 1 : 0));
+      setMoreFromTotalCount(totalWithoutCurrent);
+
+      // топ-3 по play_count
+      const normalized = list
+        .filter(t => t && t.id !== currentTrackId)
+        .map(t => ({
+          id: t.id,
+          title: t.title || 'Untitled',
+          artist: t.artist || t.uploaded_by?.username || track?.artist || 'Unknown',
+          artistId: t.uploaded_by?.id || authorId,
+          cover: t.cover_url || t.cover || '',
+          play_count: typeof t.play_count === 'number' ? t.play_count : 0,
+          duration_seconds: t.duration_seconds || t.duration || 180,
+          uploaded_by: t.uploaded_by,
+          stats: t.stats || { plays: t.play_count || 0 },
+          comments_count: t.comments_count || t.comment_count || 0,
+          like_count: t.like_count || 0
+        }))
+        .sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+
+      setMoreFromTracks(normalized.slice(0, 3));
+    } catch (e) {
+      console.error('❌ TrackPage: Ошибка загрузки треков автора (More from):', e);
+      setMoreFromTracks([]);
+      setMoreFromTotalCount(0);
+    } finally {
+      setLoadingMoreFrom(false);
+    }
+  }, [authorId, currentTrackId, track]);
+
+  // ✅ Улучшенная загрузка related треков (как в SearchHub)
+  useEffect(() => {
+    const loadRelatedTracks = async () => {
+      if (!track?.id) return;
+
+      // ✅ Берём теги из правильного поля
+      const tags = (track.hashtags || [])
+        .map(t => String(t || '').replace('#', '').trim().toLowerCase())
+        .filter(Boolean);
+
+      if (!tags.length) {
+        setRelatedTracks([]);
+        setLoadingRelated(false);
+        return;
+      }
+
+      setLoadingRelated(true);
+      try {
+        // Берём первые 2 тега (достаточно для поиска)
+        const take = tags.slice(0, 2);
+
+        // Параллельно ищем по каждому тегу
+        const results = await Promise.all(
+          take.map(async (tag) => {
+            try {
+              const response = await apiFetch(`/api/search/?type=tracks&tag=${encodeURIComponent(tag)}`);
+              if (!response.ok) return [];
+              const data = await response.json();
+              return data?.tracks || [];
+            } catch (err) {
+              console.error(`Ошибка поиска по тегу #${tag}:`, err);
+              return [];
+            }
+          })
+        );
+
+        // Объединяем результаты и убираем дубли
+        const merged = [];
+        const seen = new Set();
+        
+        for (const arr of results) {
+          for (const tr of arr) {
+            if (!tr?.id) continue;
+            if (tr.id === track.id) continue; // исключаем текущий трек
+            if (seen.has(tr.id)) continue;
+            
+            seen.add(tr.id);
+            merged.push({
+              id: tr.id,
+              title: tr.title,
+              artist: tr.artist || tr.uploaded_by?.username || 'Unknown',
+              artistId: tr.artist_id || tr.uploaded_by?.id,
+              cover: tr.cover_url || tr.cover || '',
+              duration: tr.duration || '3:00',
+              duration_seconds: tr.duration_seconds || 180,
+              play_count: tr.play_count || tr.stats?.plays || 0,
+              hashtags: tr.hashtags || []
+            });
+          }
+        }
+
+        // Берём первые 3
+        setRelatedTracks(merged.slice(0, 3));
+      } catch (error) {
+        console.error('❌ Ошибка загрузки related треков:', error);
+        setRelatedTracks([]);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+
+    loadRelatedTracks();
+  }, [track?.id, track?.hashtags]);
+
+  // ✅ Загрузка плейлистов, в которых есть этот трек
+  useEffect(() => {
+    const loadTrackPlaylists = async () => {
+      if (!track?.id) return;
+
+      setLoadingInPlaylists(true);
+      try {
+        const response = await apiFetch(`/api/tracks/${track.id}/playlists/`);
+        if (!response.ok) {
+          setInPlaylists([]);
+          return;
+        }
+        const data = await response.json();
+        setInPlaylists(data?.playlists || []);
+      } catch (error) {
+        console.error('❌ Ошибка загрузки плейлистов трека:', error);
+        setInPlaylists([]);
+      } finally {
+        setLoadingInPlaylists(false);
+      }
+    };
+
+    loadTrackPlaylists();
+  }, [track?.id]);
+
+  // Вызов загрузки More from
+  useEffect(() => {
+    loadMoreFromTracks();
+  }, [loadMoreFromTracks]);
+
+  const authorAvatarUrl = useMemo(() => {
+    if (!track) return null;
+
+    const avatar = track.uploaded_by?.avatar_url
+                 || track.uploaded_by?.avatar
+                 || null;
+
+    if (avatar && !avatar.startsWith('http')) {
+      const baseUrl = window.location.origin.includes('localhost') 
+        ? 'http://localhost:8000'
+        : window.location.origin;
+      return `${baseUrl}${avatar}`;
+    }
+    return avatar;
+  }, [track]);
+
+  // 🔥 УЛУЧШЕННЫЙ АНАЛИЗ ДОМИНАНТНОГО ЦВЕТА ОБЛОЖКИ (как в PlaylistPage)
+  const analyzeImageColor = useCallback((imageUrl) => {
+    if (!imageUrl) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+
+    const rgbToHsv = (r, g, b) => {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const d = max - min;
+      let h = 0;
+      if (d !== 0) {
+        if (max === r) h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h *= 60;
+        if (h < 0) h += 360;
+      }
+      const s = max === 0 ? 0 : d / max;
+      const v = max;
+      return { h, s, v };
+    };
+
+    const hsvToRgb = (h, s, v) => {
+      const c = v * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = v - c;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) [r, g, b] = [c, x, 0];
+      else if (h < 120) [r, g, b] = [x, c, 0];
+      else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c];
+      else if (h < 300) [r, g, b] = [x, 0, c];
+      else [r, g, b] = [c, 0, x];
+      return {
+        r: Math.round((r + m) * 255),
+        g: Math.round((g + m) * 255),
+        b: Math.round((b + m) * 255)
+      };
+    };
+
+    const toHex = (r, g, b) => {
+      const h = (n) => n.toString(16).padStart(2, '0');
+      return `#${h(r)}${h(g)}${h(b)}`;
+    };
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+
+        const w = (canvas.width = 96);
+        const h = (canvas.height = 96);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const { data } = ctx.getImageData(0, 0, w, h);
+
+        const bucket = new Map();
+
+        // квантование 16 уровней -> лучше группирует
+        const add = (r, g, b) => {
+          const rQ = r >> 4;
+          const gQ = g >> 4;
+          const bQ = b >> 4;
+          const key = (rQ << 8) | (gQ << 4) | bQ;
+          bucket.set(key, (bucket.get(key) || 0) + 1);
+        };
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+          if (a < 220) continue;
+
+          // жестко выкидываем почти черный/белый
+          if (r < 20 && g < 20 && b < 20) continue;
+          if (r > 245 && g > 245 && b > 245) continue;
+
+          add(r, g, b);
+        }
+
+        if (!bucket.size) return;
+
+        // выбираем не "самый частый", а "самый жирный по насыщенности/яркости"
+        let bestKey = null;
+        let bestScore = -1;
+
+        for (const [k, count] of bucket.entries()) {
+          const rQ = (k >> 8) & 15;
+          const gQ = (k >> 4) & 15;
+          const bQ = k & 15;
+
+          const r = rQ * 16 + 8;
+          const g = gQ * 16 + 8;
+          const b = bQ * 16 + 8;
+
+          const { s, v } = rgbToHsv(r, g, b);
+
+          // score: частота * насыщенность * яркость
+          const score = count * (0.6 + s * 1.7) * (0.25 + v * 0.75);
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestKey = k;
+          }
+        }
+
+        const rQ = (bestKey >> 8) & 15;
+        const gQ = (bestKey >> 4) & 15;
+        const bQ = bestKey & 15;
+
+        const domR = rQ * 16 + 8;
+        const domG = gQ * 16 + 8;
+        const domB = bQ * 16 + 8;
+
+        // сохраняем тон, просто "поднимаем" яркость
+        const { h: H, s: S, v: V } = rgbToHsv(domR, domG, domB);
+
+        const scanRGB  = hsvToRgb(H, Math.min(1, S * 1.05), Math.min(1, V * 1.15 + 0.06));
+        const linesRGB = hsvToRgb(H, Math.min(1, S * 1.10), Math.min(1, V * 1.30 + 0.10));
+
+        // ✅ важно: отдаём HEX (самый стабильный формат для GridScan)
+        setGridScanColor(toHex(scanRGB.r, scanRGB.g, scanRGB.b));
+        setGridLinesColor(toHex(linesRGB.r, linesRGB.g, linesRGB.b));
+
+        const bg = `radial-gradient(1200px 700px at 50% 30%,
+          rgba(${domR}, ${domG}, ${domB}, 0.34) 0%,
+          rgba(11, 10, 25, 0.92) 55%,
+          rgba(8, 7, 18, 0.96) 100%
+        )`;
+        setBackgroundColor(bg);
+
+        console.log('🎨 TrackPage: доминантный цвет:', { 
+          scan: toHex(scanRGB.r, scanRGB.g, scanRGB.b), 
+          lines: toHex(linesRGB.r, linesRGB.g, linesRGB.b), 
+          bestScore, 
+          domR, domG, domB 
+        });
+      } catch (e) {
+        console.warn('🎨 TrackPage: dominant failed', e);
+      }
+    };
+
+    img.onerror = () => console.warn('🎨 TrackPage: image load failed', imageUrl);
+  }, []);
+
+  const loadTrack = useCallback(async () => {
+    if (!currentTrackId) return;
+    
+    setIsLoading(true);
+    console.log(`🔄 TrackPage: Загрузка трека ${currentTrackId} с сервера...`);
+    
+    try {
+      const response = await apiFetch(`/api/track/${currentTrackId}/`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('📥 TrackPage: Данные с сервера:', {
+        id: data.id,
+        title: data.title,
+        play_count: data.play_count,
+        uploaded_by: data.uploaded_by,
+        hashtag_list: data.hashtag_list,
+        tag_list: data.tag_list
+      });
+      
+      // ✅ ФИКС: Правильно читаем теги из разных полей (приоритет: hashtag_list)
+      const rawData = data.track || data; // некоторые эндпоинты оборачивают в { track: ... }
+      const trackHashtags = rawData.hashtag_list || rawData.tag_list || rawData.tags || rawData.hashtags || [];
+      
+      const formattedTrack = {
+        id: rawData.id,
+        title: rawData.title,
+        artist: rawData.artist || 'Неизвестный артист',
+        artistId: rawData.artist_id || rawData.uploaded_by?.id || 1,
+        artistUsername: rawData.artist_username || rawData.uploaded_by?.username || 'unknown',
+        cover: rawData.cover || rawData.cover_url || '',
+        audio_url: rawData.audio_url || '',
+        duration: rawData.duration || '3:00',
+        duration_seconds: rawData.duration_seconds || 180,
+        hashtags: trackHashtags, // ← теперь правильно читает теги с бэкенда
+        uploaded_by: rawData.uploaded_by || {
+          id: rawData.artist_id || 1,
+          username: rawData.artist_username || rawData.uploaded_by?.username || 'unknown',
+          name: rawData.artist || 'Неизвестный артист',
+          followers: rawData.uploaded_by?.followers_count || rawData.uploaded_by?.followers || 0,
+          followers_count: rawData.uploaded_by?.followers_count || rawData.uploaded_by?.followers || 0,
+          tracks: rawData.uploaded_by?.tracks_count || 1,
+          avatar: rawData.uploaded_by?.avatar || rawData.uploaded_by?.avatar_url || null,
+          avatar_url: rawData.uploaded_by?.avatar_url || rawData.uploaded_by?.avatar || null
+        },
+        stats: {
+          reposts: rawData.repost_count || 0,
+          plays: rawData.play_count || 0,
+          likes: rawData.like_count || 0
+        },
+        play_count: rawData.play_count || 0,
+        is_reposted: rawData.is_reposted || false
+      };
+      
+      setTrack(formattedTrack);
+      setTrackLikesCount(rawData.like_count || 0);
+      setIsReposted(!!rawData.is_reposted);
+      
+      // 🔥 Анализируем цвет обложки для динамического GridScan
+      const coverForColor = rawData.cover_url || rawData.cover;
+      if (coverForColor) {
+        analyzeImageColor(coverForColor);
+      }
+      
+      try {
+        const waveformResponse = await apiFetch(`/api/track/${currentTrackId}/waveform/`);
+        if (waveformResponse.ok) {
+          const waveformData = await waveformResponse.json();
+          setWaveformData(waveformData.waveform || []);
+        }
+      } catch (error) {
+        setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
+      }
+      
+      await loadComments(currentTrackId);
+      await loadUsersData();
+      
+      console.log(`✅ TrackPage: Трек ${currentTrackId} успешно загружен, play_count: ${formattedTrack.play_count}, теги:`, trackHashtags);
+      console.log('📸 Avatar URL для автора:', authorAvatarUrl);
+      
+    } catch (error) {
+      console.error('❌ TrackPage: Ошибка загрузки трека:', error);
+      
+      const demoData = {
+        1: {
+          id: 1,
+          title: "hard drive (slowed & muffled)",
+          artist: "griffinilla",
+          artistId: 101,
+          artistUsername: "griffinilla",
+          cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
+          audio_url: "/tracks/track1.mp3",
+          duration: "3:20",
+          duration_seconds: 200,
+          hashtags: ["slowed", "lofi", "electronic"],
+          uploaded_by: {
+            id: 101,
+            username: "griffinilla",
+            name: "griffinilla",
+            followers: "125k",
+            tracks: 42,
+            avatar: "https://i.pravatar.cc/150?img=1",
+            avatar_url: "https://i.pravatar.cc/150?img=1"
+          },
+          stats: {
+            reposts: 3241,
+            plays: 254789,
+            likes: 56
+          },
+          is_reposted: false
+        },
+        2: {
+          id: 2,
+          title: "Deutschland",
+          artist: "Rammstein",
+          artistId: 102,
+          artistUsername: "rammstein",
+          cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
+          audio_url: "/tracks/track2.mp3",
+          duration: "5:22",
+          duration_seconds: 322,
+          hashtags: ["industrial", "metal", "german"],
+          uploaded_by: {
+            id: 102,
+            username: "rammstein",
+            name: "Rammstein",
+            followers: "2.4M",
+            tracks: 156,
+            avatar: "https://i.pravatar.cc/150?img=2",
+            avatar_url: "https://i.pravatar.cc/150?img=2"
+          },
+          stats: {
+            reposts: 89124,
+            plays: 12457896,
+            likes: 34
+          },
+          is_reposted: false
+        }
+      };
+      
+      const demoTrack = demoData[currentTrackId];
+      if (demoTrack) {
+        const formattedDemoTrack = {
+          ...demoTrack,
+          stats: {
+            ...demoTrack.stats,
+            plays: demoTrack.stats.plays
+          },
+          play_count: demoTrack.stats.plays
+        };
+        
+        setTrack(formattedDemoTrack);
+        setTrackLikesCount(demoTrack.stats.likes || 0);
+        setIsReposted(demoTrack.is_reposted || false);
+        
+        // 🔥 Анализируем цвет демо-обложки
+        if (demoTrack.cover) {
+          analyzeImageColor(demoTrack.cover);
+        }
+        
+        setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
+        setComments([]);
+        setUsersWhoLiked([]);
+        setUsersWhoReposted([]);
+        
+        console.log(`✅ TrackPage: Используем демо-данные, play_count: ${formattedDemoTrack.play_count}`);
+      } else {
+        setTrack(null);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentTrackId, loadUsersData, authorAvatarUrl, analyzeImageColor]);
+
+  const loadComments = async (trackId) => {
+    try {
+      const response = await apiFetch(`/api/track/${trackId}/comments/`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments || []);
+        
+        const likedCommentsSet = new Set();
+        data.comments?.forEach(comment => {
+          if (comment.user_liked) {
+            likedCommentsSet.add(comment.id);
+          }
+        });
+        setLikedComments(likedCommentsSet);
+      } else {
+        setComments([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки комментариев:', error);
+      setComments([]);
+    }
+  };
 
   const togglePlayPause = useCallback(() => {
     if (!track) return;
@@ -373,188 +1230,6 @@ const TrackPage = ({
     }
   }, [onToggleLoop]);
 
-  const demoData = {
-    1: {
-      id: 1,
-      title: "hard drive (slowed & muffled)",
-      artist: "griffinilla",
-      artistId: 101,
-      artistUsername: "griffinilla",
-      cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
-      audio_url: "/tracks/track1.mp3",
-      duration: "3:20",
-      hashtags: ["#slowed", "#lofi", "#electronic"],
-      uploaded_by: {
-        id: 101,
-        username: "griffinilla",
-        name: "griffinilla",
-        followers: "125k",
-        tracks: 42
-      },
-      stats: {
-        reposts: 3241,
-        plays: 254789,
-        likes: 56
-      }
-    },
-    2: {
-      id: 2,
-      title: "Deutschland",
-      artist: "Rammstein",
-      artistId: 102,
-      artistUsername: "rammstein",
-      cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-      audio_url: "/tracks/track2.mp3",
-      duration: "5:22",
-      hashtags: ["#industrial", "#metal", "#german"],
-      uploaded_by: {
-        id: 102,
-        username: "rammstein",
-        name: "Rammstein",
-        followers: "2.4M",
-        tracks: 156
-      },
-      stats: {
-        reposts: 89124,
-        plays: 12457896,
-        likes: 34
-      }
-    }
-  };
-
-  // ✅ Загрузка трека
-  const loadTrack = useCallback(async () => {
-    if (!currentTrackId) return;
-    
-    setIsLoading(true);
-    
-    try {
-      let trackDataItem = trackData[currentTrackId] || demoData[currentTrackId];
-      
-      if (trackDataItem) {
-        const formattedTrack = {
-          id: trackDataItem.id,
-          title: trackDataItem.title,
-          artist: trackDataItem.artist || 'Неизвестный артист',
-          artistId: trackDataItem.artistId || trackDataItem.artist_id || trackDataItem.uploaded_by?.id || 1,
-          artistUsername: trackDataItem.artistUsername || trackDataItem.artist_username || trackDataItem.uploaded_by?.username || 'unknown',
-          cover: trackDataItem.cover || trackDataItem.cover_url || '',
-          audio_url: trackDataItem.audio_url || '',
-          duration: trackDataItem.duration || '3:00',
-          hashtags: trackDataItem.hashtags || [],
-          uploaded_by: trackDataItem.uploaded_by || {
-            id: trackDataItem.artistId || 1,
-            username: trackDataItem.artistUsername || trackDataItem.artist || 'unknown',
-            name: trackDataItem.artist || 'Неизвестный артист',
-            followers: trackDataItem.uploaded_by?.followers_count || trackDataItem.uploaded_by?.followers || 0,
-            followers_count: trackDataItem.uploaded_by?.followers_count || trackDataItem.uploaded_by?.followers || 0,
-            tracks: 1
-          },
-          stats: {
-            reposts: trackDataItem.repost_count || trackDataItem.stats?.reposts || 0,
-            plays: trackDataItem.play_count || trackDataItem.stats?.plays || 0,
-            likes: trackDataItem.like_count || trackDataItem.stats?.likes || 0
-          }
-        };
-        
-        setTrack(formattedTrack);
-        setTrackLikesCount(formattedTrack.stats.likes || 0);
-        analyzeImageColor(formattedTrack.cover);
-        
-        try {
-          const waveformResponse = await apiFetch(`/api/track/${currentTrackId}/waveform/`);
-          if (waveformResponse.ok) {
-            const waveformData = await waveformResponse.json();
-            setWaveformData(waveformData.waveform || []);
-          }
-        } catch (error) {
-          setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
-        }
-        
-        await loadComments(currentTrackId);
-        await loadUsersData();
-        setIsLoading(false);
-        return;
-      }
-      
-      const response = await apiFetch(`/api/track/${currentTrackId}/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      const formattedTrack = {
-        id: data.id,
-        title: data.title,
-        artist: data.artist || 'Неизвестный артист',
-        artistId: data.artist_id || data.uploaded_by?.id || 1,
-        artistUsername: data.artist_username || data.uploaded_by?.username || 'unknown',
-        cover: data.cover || data.cover_url || '',
-        audio_url: data.audio_url || '',
-        duration: data.duration || '3:00',
-        hashtags: data.hashtags || [],
-        uploaded_by: data.uploaded_by || {
-          id: data.artist_id || 1,
-          username: data.artist_username || data.uploaded_by?.username || 'unknown',
-          name: data.artist || 'Неизвестный артист',
-          followers: data.uploaded_by?.followers_count || data.uploaded_by?.followers || 0,
-          followers_count: data.uploaded_by?.followers_count || data.uploaded_by?.followers || 0,
-          tracks: data.uploaded_by?.tracks_count || 1
-        },
-        stats: {
-          reposts: data.repost_count || 0,
-          plays: data.play_count || 0,
-          likes: data.like_count || 0
-        }
-      };
-      
-      setTrack(formattedTrack);
-      setTrackLikesCount(data.like_count || 0);
-      
-      if (data.cover) {
-        analyzeImageColor(data.cover);
-      }
-      
-      try {
-        const waveformResponse = await apiFetch(`/api/track/${currentTrackId}/waveform/`);
-        if (waveformResponse.ok) {
-          const waveformData = await waveformResponse.json();
-          setWaveformData(waveformData.waveform || []);
-        }
-      } catch (error) {
-        setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
-      }
-      
-      await loadComments(currentTrackId);
-      await loadUsersData();
-      
-    } catch (error) {
-      console.error('❌ Ошибка загрузки трека:', error);
-      
-      const demoTrack = demoData[currentTrackId];
-      if (demoTrack) {
-        setTrack(demoTrack);
-        setTrackLikesCount(demoTrack.stats.likes || 0);
-        analyzeImageColor(demoTrack.cover);
-        setWaveformData(Array(60).fill().map((_, i) => 20 + Math.sin(i * 0.2) * 40 + Math.random() * 15));
-        setComments([]);
-        setUsersWhoLiked([]);
-        setUsersWhoReposted([]);
-      } else {
-        setTrack(null);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentTrackId, trackData, loadUsersData]);
-
-  // 🔴 ЗАГРУЗКА СТАТУСА FOLLOW ПОСЛЕ ЗАГРУЗКИ ТРЕКА
   useEffect(() => {
     const loadFollowStatus = async () => {
       if (!track) return;
@@ -582,7 +1257,6 @@ const TrackPage = ({
     }
   }, [track, getAuthTokenForTrackPage, checkFollowStatus]);
 
-  // 🔴 СЛУШАТЕЛЬ ДЛЯ ОБНОВЛЕНИЯ СТАТУСА FOLLOW ИЗ ДРУГИХ КОМПОНЕНТОВ
   useEffect(() => {
     const handleFollowStatusChanged = (event) => {
       const { targetUserId, isFollowing: newFollowing } = event.detail;
@@ -591,7 +1265,6 @@ const TrackPage = ({
       if (targetUserId === authorId) {
         setIsFollowing(newFollowing);
         
-        // Обновляем количество подписчиков
         if (track?.uploaded_by) {
           const currentFollowers = parseInt(track.uploaded_by.followers_count || track.uploaded_by.followers || 0, 10) || 0;
           const newCount = newFollowing ? currentFollowers + 1 : Math.max(0, currentFollowers - 1);
@@ -614,6 +1287,62 @@ const TrackPage = ({
       window.removeEventListener('followStatusChanged', handleFollowStatusChanged);
     };
   }, [track]);
+
+  useEffect(() => {
+    const handleTrackReposted = (e) => {
+      const { trackId: eventTrackId, userId, repostCount, isReposted: newReposted } = e.detail || {};
+
+      if (eventTrackId === currentTrackId) {
+        if (typeof repostCount === 'number') {
+          setTrack(prev => ({
+            ...prev,
+            stats: {
+              ...prev.stats,
+              reposts: repostCount
+            }
+          }));
+        } else {
+          setTrack(prev => ({
+            ...prev,
+            stats: {
+              ...prev.stats,
+              reposts: newReposted
+                ? (prev.stats.reposts || 0) + 1
+                : Math.max(0, (prev.stats.reposts || 0) - 1)
+            }
+          }));
+        }
+
+        setIsReposted(!!newReposted);
+
+        if (userId && userId !== user?.id) {
+          setUsersWhoReposted(prev => {
+            if (!newReposted) {
+              return prev.filter(u => !(u.id === userId || u.username === user?.username));
+            }
+
+            const already = prev.some(u => u.id === userId || u.username === user?.username);
+            if (!already) {
+              return [
+                {
+                  id: userId,
+                  username: `user_${userId}`,
+                  avatar: '',
+                  avatar_url: '',
+                  name: `User ${userId}`
+                },
+                ...prev
+              ];
+            }
+            return prev;
+          });
+        }
+      }
+    };
+
+    window.addEventListener('trackReposted', handleTrackReposted);
+    return () => window.removeEventListener('trackReposted', handleTrackReposted);
+  }, [currentTrackId, user]);
 
   const syncLikesWithBackend = useCallback(async () => {
     const authToken = getAuthTokenForTrackPage();
@@ -662,10 +1391,35 @@ const TrackPage = ({
     return false;
   }, [currentTrackId, getAuthTokenForTrackPage, checkTrackLiked]);
 
+  // 🔥 Слушаем события обновления количества прослушиваний от App
   useEffect(() => {
+    const handlePlayCountUpdated = (event) => {
+      const { trackId: eventTrackId, playCount } = event.detail || {};
+      if (eventTrackId === currentTrackId && playCount !== undefined) {
+        setTrack((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            stats: { ...prev.stats, plays: playCount },
+            play_count: playCount,
+          };
+        });
+      }
+    };
+
+    window.addEventListener('playCountUpdated', handlePlayCountUpdated);
+    return () => window.removeEventListener('playCountUpdated', handlePlayCountUpdated);
+  }, [currentTrackId]);
+
+  useEffect(() => {
+    // 🔥 чистим старый баг, чтобы не тянулись фейковые просмотры
+    localStorage.removeItem('pendingPlays');
+
     loadTrack();
     setRepeatActive(loopEnabled || false);
-  }, [loadTrack, loopEnabled]);
+
+    console.log(`🎵 TrackPage: Компонент смонтирован для трека ${currentTrackId}`);
+  }, [loadTrack, loopEnabled, currentTrackId]);
 
   useEffect(() => {
     if (currentTrackId) {
@@ -709,7 +1463,6 @@ const TrackPage = ({
     };
   }, [currentTrackId, syncLikesWithBackend, getAuthTokenForTrackPage]);
 
-  // ✅ Лайк трека
   const handleTrackLike = async () => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -720,11 +1473,27 @@ const TrackPage = ({
     
     if (syncInProgress || loadingLikes) return;
     
-    const newLikedState = !isTrackLiked;
+    const currentIsLiked = isTrackLiked;
+    const newLikedState = !currentIsLiked;
+    const currentLikes = trackLikesCount || 0;
     
     setSyncInProgress(true);
     
     try {
+      setIsTrackLiked(newLikedState);
+      const newLikesCount = newLikedState ? currentLikes + 1 : Math.max(0, currentLikes - 1);
+      setTrackLikesCount(newLikesCount);
+      
+      if (track) {
+        setTrack(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            likes: newLikesCount
+          }
+        }));
+      }
+      
       const response = await apiFetch(`/api/track/${currentTrackId}/toggle-like/`, {
         method: 'POST',
         body: JSON.stringify({
@@ -735,12 +1504,18 @@ const TrackPage = ({
       const data = await response.json();
       
       if (response.ok && data.success) {
-        setIsTrackLiked(newLikedState);
-        
         if (data.like_count !== undefined) {
           setTrackLikesCount(data.like_count);
-        } else {
-          setTrackLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+          
+          if (track) {
+            setTrack(prev => ({
+              ...prev,
+              stats: {
+                ...prev.stats,
+                likes: data.like_count
+              }
+            }));
+          }
         }
         
         const likedTracksStorage = localStorage.getItem('likedTracks');
@@ -764,20 +1539,20 @@ const TrackPage = ({
           detail: { 
             trackId: currentTrackId, 
             liked: newLikedState,
-            count: data.like_count || trackLikesCount,
+            count: data.like_count || newLikesCount,
             fromTrackPage: true,
             user: user?.username,
             timestamp: Date.now()
           }
         }));
         
-        window.dispatchEvent(new CustomEvent('trackLikedServer', {
+        window.dispatchEvent(new CustomEvent('trackLikedFromApp', {
           detail: { 
             trackId: currentTrackId, 
-            liked: newLikedState, 
-            count: data.like_count || trackLikesCount,
-            success: true,
-            fromTrackPage: true
+            liked: newLikedState,
+            count: data.like_count || newLikesCount,
+            fromTrackPage: true,
+            timestamp: Date.now()
           }
         }));
         
@@ -789,7 +1564,6 @@ const TrackPage = ({
           }
         }
         
-        // ✅ Обновляем список пользователей после лайка
         if (newLikedState && user) {
           setUsersWhoLiked(prev => {
             const userAlreadyExists = prev.some(u => u.id === user.id || u.username === user.username);
@@ -799,6 +1573,7 @@ const TrackPage = ({
                   id: user.id || 'current-user',
                   username: user.username,
                   avatar: user.avatar || '',
+                  avatar_url: user.avatar_url || user.avatar || '',
                   name: user.name || user.username
                 },
                 ...prev
@@ -813,6 +1588,19 @@ const TrackPage = ({
         }
         
       } else {
+        setIsTrackLiked(currentIsLiked);
+        setTrackLikesCount(currentLikes);
+        
+        if (track) {
+          setTrack(prev => ({
+            ...prev,
+            stats: {
+              ...prev.stats,
+              likes: currentLikes
+            }
+          }));
+        }
+        
         if (data.error && data.error.includes('аутентификации')) {
           alert('Сессия истекла. Пожалуйста, войдите заново.');
           onLogout?.();
@@ -822,79 +1610,26 @@ const TrackPage = ({
       }
     } catch (error) {
       console.error('❌ Сетевая ошибка лайка трека:', error);
+      
+      setIsTrackLiked(currentIsLiked);
+      setTrackLikesCount(currentLikes);
+      
+      if (track) {
+        setTrack(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            likes: currentLikes
+          }
+        }));
+      }
+      
       alert('Сетевая ошибка при сохранении лайка');
     } finally {
       setSyncInProgress(false);
     }
   };
 
-  const analyzeImageColor = (imageUrl) => {
-    if (!imageUrl) return;
-    
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = imageUrl;
-    
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      let r = 0, g = 0, b = 0;
-      let count = 0;
-      
-      for (let i = 0; i < data.length; i += 40) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-        count++;
-      }
-      
-      r = Math.floor(r / count);
-      g = Math.floor(g / count);
-      b = Math.floor(b / count);
-      
-      const bgColor = `linear-gradient(135deg, 
-        rgba(${r}, ${g}, ${b}, 0.8) 0%,
-        rgba(${Math.max(0, r - 50)}, ${Math.max(0, g - 50)}, ${Math.max(0, b - 50)}, 0.6) 50%,
-        rgba(13, 12, 29, 0.9) 100%
-      )`;
-      
-      setBackgroundColor(bgColor);
-    };
-  };
-
-  // Загрузка комментариев
-  const loadComments = async (trackId) => {
-    try {
-      const response = await apiFetch(`/api/track/${trackId}/comments/`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments || []);
-        
-        const likedCommentsSet = new Set();
-        data.comments?.forEach(comment => {
-          if (comment.user_liked) {
-            likedCommentsSet.add(comment.id);
-          }
-        });
-        setLikedComments(likedCommentsSet);
-      } else {
-        setComments([]);
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки комментариев:', error);
-      setComments([]);
-    }
-  };
-
-  // Добавление комментария
   const handleAddComment = async () => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -929,7 +1664,6 @@ const TrackPage = ({
     }
   };
 
-  // Удаление комментария
   const handleDeleteComment = async (commentId) => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -972,7 +1706,6 @@ const TrackPage = ({
     }
   };
 
-  // Лайк комментария
   const handleLikeComment = async (commentId) => {
     const authToken = getAuthTokenForTrackPage();
     
@@ -1078,69 +1811,6 @@ const TrackPage = ({
     { label: 'Library', href: '#library' }
   ];
 
-  const actionIcons = [
-    { label: 'Upload', Icon: IconUpload },
-    { label: 'Notifications', Icon: IconBell },
-    { label: 'Messages', Icon: IconMessage }
-  ];
-  
-  const relatedTracks = [
-    {
-      id: 2,
-      title: "Deutschland",
-      artist: "Rammstein",
-      artistId: 102,
-      cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-      duration: "5:22"
-    },
-    {
-      id: 3,
-      title: "Sonne",
-      artist: "Rammstein",
-      artistId: 102,
-      cover: "https://i.ytimg.com/vi/i1M3qiX_GZo/maxresdefault.jpg",
-      duration: "4:05"
-    }
-  ];
-
-  const albums = [
-    {
-      id: 1,
-      title: "Greatest Hits",
-      artist: "griffinilla",
-      artistId: 101,
-      cover: "https://i.ytimg.com/vi/0NdrW43JJA8/maxresdefault.jpg",
-      trackCount: 12
-    },
-    {
-      id: 2,
-      title: "Mutter",
-      artist: "Rammstein",
-      artistId: 102,
-      cover: "https://upload.wikimedia.org/wikipedia/en/7/71/Mutter_%28Rammstein_album%29_cover.jpg",
-      trackCount: 11
-    }
-  ];
-
-  const playlists = [
-    {
-      id: 1,
-      title: "Industrial Metal Essentials",
-      creator: "MetalHead",
-      creatorId: 103,
-      cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-      trackCount: 25
-    },
-    {
-      id: 2,
-      title: "Lofi Study Mix",
-      creator: "StudyBeats",
-      creatorId: 104,
-      cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80",
-      trackCount: 18
-    }
-  ];
-
   const handleNavNavigate = (item, index) => {
     let page = 'home';
     if (item.label === 'Feed') {
@@ -1175,9 +1845,9 @@ const TrackPage = ({
           className="background-gridscan"
           sensitivity={0.65}
           lineThickness={1}
-          linesColor="#ffffff"
+          linesColor={gridLinesColor}
           gridScale={0.12}
-          scanColor="#8456ff"
+          scanColor={gridScanColor}
           scanOpacity={0.45}
         />
         <div className="loading-content">
@@ -1245,25 +1915,25 @@ const TrackPage = ({
     );
   }
 
+  const currentPlayCount = track?.stats?.plays || track?.play_count || 0;
+
   return (
     <div className="track-page" style={{ background: backgroundColor }}>
+      {/* 🔥 ДИНАМИЧЕСКИЙ GRIDSCAN С ЦВЕТОМ ИЗ ОБЛОЖКИ */}
       <GridScan
         className="background-gridscan"
         sensitivity={0.65}
         lineThickness={1}
-        linesColor="#ffffff"
+        linesColor={gridLinesColor}
         gridScale={0.12}
-        scanColor="#8456ff"
-        scanOpacity={0.2}
+        scanColor={gridScanColor}
+        scanOpacity={0.25}
       />
 
       <header className="site-header">
         <nav className="sound-nav">
           <div className="nav-left">
-            <button
-              className="brand"
-              onClick={() => navigate('/')}
-            >
+            <Link to="/" className="brand">
               <img src={logoMark} alt="Music platform logo" />
               <Shuffle
                 text="MUSIC"
@@ -1282,7 +1952,7 @@ const TrackPage = ({
                   fontFamily: "'Press Start 2P', sans-serif"
                 }}
               />
-            </button>
+            </Link>
             
             <GooeyNav
               items={primaryNav}
@@ -1290,6 +1960,7 @@ const TrackPage = ({
               particleDistances={[90, 20]}
               particleR={120}
               initialActiveIndex={0}
+              activeIndex={0}
               animationTime={600}
               timeVariance={300}
               colors={[1, 2, 3, 4, 5, 6]}
@@ -1304,15 +1975,29 @@ const TrackPage = ({
                 placeholder="Search for tracks, artists, playlists, and more..." 
                 aria-label="Search tracks" 
                 className="nav-search-input"
+                value={topSearch}
+                onChange={(e) => setTopSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitTopSearch();
+                }}
               />
-              <button type="button" aria-label="Search" className="nav-search-btn">
+              <button 
+                type="button" 
+                aria-label="Search" 
+                className="nav-search-btn"
+                onClick={submitTopSearch}
+              >
                 <IconSearch />
               </button>
             </div>
           </div>
 
           <div className="nav-right">
-            <button className="nav-pill" type="button">
+            <button 
+              className="nav-pill" 
+              type="button"
+              onClick={goToStudio}
+            >
               <Shuffle
                 text="For Artists"
                 shuffleDirection="right"
@@ -1342,6 +2027,15 @@ const TrackPage = ({
                   onClick={() => {
                     if (label === 'Upload') {
                       navigate('/upload');
+                      return;
+                    }
+                    if (label === 'Admin') {
+                      navigate('/admin');
+                      return;
+                    }
+                    if (label === 'Messages') {
+                      navigate('/messagehub');
+                      return;
                     }
                   }}
                 >
@@ -1357,11 +2051,12 @@ const TrackPage = ({
                 aria-label="User menu"
               >
                 <div className="user-avatar-circle">
-                  {user?.avatar ? (
+                  {getAvatarUrl(user) && !isBackendDefaultImage(getAvatarUrl(user)) ? (
                     <img 
-                      src={user.avatar} 
-                      alt={user.username}
+                      src={getAvatarUrl(user)} 
+                      alt={user?.username || 'User'} 
                       className="user-avatar-image"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   ) : (
                     <IconUserCircle />
@@ -1385,11 +2080,12 @@ const TrackPage = ({
                   
                   <div className="user-dropdown-header">
                     <div className="user-dropdown-avatar">
-                      {user?.avatar ? (
+                      {getAvatarUrl(user) && !isBackendDefaultImage(getAvatarUrl(user)) ? (
                         <img 
-                          src={user.avatar} 
-                          alt={user.username}
+                          src={getAvatarUrl(user)} 
+                          alt={user?.username || 'User'} 
                           className="user-dropdown-avatar-image"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       ) : (
                         <IconUserCircle />
@@ -1584,28 +2280,28 @@ const TrackPage = ({
               </span>
             </div>
             
+            {/* 🔥 КРАСИВЫЕ КЛИКАБЕЛЬНЫЕ ПИЛЮЛИ ДЛЯ ТЕГОВ */}
             <div className="track-hashtags">
-              {track.hashtags && track.hashtags.map((tag, index) => (
-                <Shuffle
-                  key={tag}
-                  text={tag}
-                  shuffleDirection={index % 2 === 0 ? 'right' : 'left'}
-                  duration={0.4 + index * 0.1}
-                  animationMode="random"
-                  shuffleTimes={1}
-                  ease="power2.out"
-                  stagger={0.02}
-                  threshold={0.1}
-                  triggerOnce={true}
-                  triggerOnHover={true}
-                  style={{ 
-                    fontSize: '0.9rem',
-                    fontFamily: "'Press Start 2P', sans-serif",
-                    color: '#94a3b8',
-                    marginRight: '10px'
-                  }}
-                />
-              ))}
+              {(track.hashtags || [])
+                .map(t => String(t || '').trim())
+                .filter(Boolean)
+                .slice(0, 12)
+                .map((rawTag) => {
+                  const tag = rawTag.startsWith('#') ? rawTag : `#${rawTag}`;
+                  const q = tag.replace(/^#/, '');
+
+                  return (
+                    <button
+                      key={tag}
+                      className="hashtag-pill"
+                      type="button"
+                      onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
+                      title={`Искать по тегу ${tag}`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
@@ -1674,32 +2370,20 @@ const TrackPage = ({
               <div className="track-stats track-stats-hero">
                 <div className="stat-item">
                   <IconHeart filled={isTrackLiked} />
-                  <span style={{ 
-                    fontSize: '0.9rem',
-                    fontFamily: "'Press Start 2P', sans-serif",
-                    color: isTrackLiked ? '#8456ff' : '#ffffff'
-                  }}>
+                  <span>
                     {trackLikesCount.toLocaleString()} likes
                   </span>
                 </div>
                 <div className="stat-item">
                   <IconShare />
-                  <span style={{ 
-                    fontSize: '0.9rem',
-                    fontFamily: "'Press Start 2P', sans-serif",
-                    color: '#ffffff'
-                  }}>
+                  <span>
                     {track.stats.reposts.toLocaleString()} reposts
                   </span>
                 </div>
                 <div className="stat-item">
                   <IconPlay />
-                  <span style={{ 
-                    fontSize: '0.9rem',
-                    fontFamily: "'Press Start 2P', sans-serif",
-                    color: '#ffffff'
-                  }}>
-                    {track.stats.plays.toLocaleString()} plays
+                  <span>
+                    {currentPlayCount.toLocaleString()} plays
                   </span>
                 </div>
               </div>
@@ -1715,6 +2399,16 @@ const TrackPage = ({
                   <span>
                     {syncInProgress ? '...' : loadingLikes ? '...' : isTrackLiked ? 'Liked' : 'Like'}
                   </span>
+                </button>
+                
+                <button
+                  className={`action-button repost-button ${isReposted ? 'reposted' : ''}`}
+                  onClick={isReposted ? handleUnrepost : handleRepost}
+                  disabled={syncInProgress}
+                  title={isReposted ? 'Отменить репост' : 'Репостнуть'}
+                >
+                  <IconShare />
+                  <span>{isReposted ? 'Reposted' : 'Repost'}</span>
                 </button>
                 
                 <button 
@@ -1744,39 +2438,82 @@ const TrackPage = ({
         <div className="track-body">
           <div className="track-body-left">
             <div className="artist-info-section">
-              <div className="artist-details">
+              <div className="track-artist">
                 <div className="artist-avatar">
-                  <IconUser />
+                  {authorAvatarUrl ? (
+                    <img
+                      src={authorAvatarUrl}
+                      alt={track.uploaded_by?.username ?? 'author avatar'}
+                      className="artist-avatar-img"
+                      onError={e => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <IconUser />
+                  )}
                 </div>
-                <div className="artist-info">
-                  <h4
-                    className="track-author-link"
-                    onClick={() => navigate(`/profile/${track.uploaded_by?.id || track.artistId}`)}
-                    title={`Перейти в профиль ${track.uploaded_by?.name || track.artist}`}
-                    style={{ cursor: 'pointer', color: '#ffffff' }}
+
+                <div className="artist-details">
+                  <h4 className="track-author-link"
+                      onClick={() =>
+                        navigate(
+                          `/profile/${track.uploaded_by?.id || track.artistId}`
+                        )
+                      }
+                      title={`Перейти в профиль ${track.artist}`}
+                      style={{
+                        cursor: 'pointer',
+                        color: '#c084fc',
+                      }}
                   >
                     {track.uploaded_by?.name || track.artist}
                   </h4>
+
                   <div className="artist-stats">
-                    <span>{track.uploaded_by?.followers_count || track.uploaded_by?.followers || 0} followers</span>
+                    <span>
+                      {track.uploaded_by?.followers_count ||
+                       track.uploaded_by?.followers ||
+                       0}{' '}
+                      followers
+                    </span>
                     <span className="stat-separator">•</span>
-                    <span>{track.uploaded_by?.tracks || 1} tracks</span>
+                    <span>
+                      {authorTracksCount} tracks
+                    </span>
                   </div>
                 </div>
+
                 <div className="artist-actions">
-                  {/* 🔴 ИСПРАВЛЕННАЯ КНОПКА FOLLOW */}
-                  <button 
-                    className={`follow-button ${isFollowing ? 'following' : ''} ${followLoading ? 'loading' : ''}`}
+                  <button
+                    className={`follow-button ${
+                      isFollowing ? 'following' : ''
+                    } ${followLoading ? 'loading' : ''}`}
                     onClick={handleFollowToggle}
                     disabled={followLoading || !getAuthTokenForTrackPage()}
-                    title={!getAuthTokenForTrackPage() ? "Войдите в систему, чтобы подписаться" : ""}
+                    title={
+                      !getAuthTokenForTrackPage()
+                        ? 'Войдите в систему, чтобы подписаться'
+                        : ''
+                    }
                   >
-                    {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+                    {followLoading
+                      ? '...'
+                      : isFollowing
+                      ? 'Following'
+                      : 'Follow'}
                   </button>
-                  
-                  <button className="repost-button">
+
+                  <button
+                    className={`repost-button ${
+                      isReposted ? 'reposted' : ''
+                    }`}
+                    onClick={isReposted ? handleUnrepost : handleRepost}
+                    disabled={syncInProgress}
+                    title={isReposted ? 'Отменить репост' : 'Репостнуть'}
+                  >
                     <IconShare />
-                    <span>Repost</span>
+                    <span>{isReposted ? 'Reposted' : 'Repost'}</span>
                   </button>
                 </div>
               </div>
@@ -1877,135 +2614,240 @@ const TrackPage = ({
           </div>
 
           <div className="track-body-right">
+            {/* 🔥 RELATED TRACKS - ТЕПЕРЬ С ТОЧНО ТАКОЙ ЖЕ РАЗМЕТКОЙ КАК MORE FROM */}
             <div className="related-section">
               <h3>Related Tracks</h3>
-              <div className="related-tracks-grid">
-                {relatedTracks.map(relatedTrack => (
-                  <div 
-                    key={relatedTrack.id} 
-                    className="related-track-card"
-                    onClick={() => {
-                      navigate(`/track/${relatedTrack.id}`);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="related-track-cover">
-                      <img src={relatedTrack.cover} alt={relatedTrack.title} />
-                      <button 
-                        className="related-play-button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPlayPause();
-                        }}
+
+              {loadingRelated ? (
+                <div className="related-empty">Loading…</div>
+              ) : relatedTracks.length === 0 ? (
+                <div className="related-empty">No related tracks yet</div>
+              ) : (
+                <div className="albums-grid morefrom-grid">
+                  {relatedTracks.map((t) => {
+                    const isThisCurrent = currentTrack === t.id;
+                    const isThisPlaying = isThisCurrent && isPlaying;
+
+                    const coverSrc =
+                      t.cover ||
+                      t.cover_url ||
+                      t.coverUrl ||
+                      'https://via.placeholder.com/220x220?text=No+Cover';
+
+                    const artistName =
+                      t.uploaded_by?.username ||
+                      t.artist ||
+                      'Unknown';
+
+                    const artistId =
+                      t.uploaded_by?.id ||
+                      t.artistId ||
+                      null;
+
+                    const durationLabel =
+                      t.duration ||
+                      (t.duration_seconds ? `${Math.floor(t.duration_seconds / 60)}:${String(t.duration_seconds % 60).padStart(2, '0')}` : '0:00');
+
+                    const playsLabel = Number(t.play_count ?? t.plays ?? 0).toLocaleString();
+
+                    const commentsCount = t.comments_count ?? t.comment_count ?? 0;
+
+                    // ✅ Like/Repost state — как в More From
+                    const liked = isLikedGlobal?.(t.id) ?? false;
+                    const reposted = isRepostedGlobal?.(t.id) ?? false;
+
+                    const likeCount =
+                      typeof getLikeCount === 'function'
+                        ? (getLikeCount(t.id) ?? 0)
+                        : (t.like_count ?? 0);
+
+                    const repostCount =
+                      typeof getRepostCount === 'function'
+                        ? (getRepostCount(t.id) ?? 0)
+                        : (t.repost_count ?? 0);
+
+                    return (
+                      <div
+                        key={t.id}
+                        className="morefrom-card"
+                        onClick={() => navigate(`/track/${t.id}`)}
+                        role="button"
+                        tabIndex={0}
                       >
-                        <IconPlay />
-                      </button>
-                    </div>
-                    <div className="related-track-info">
-                      <div 
-                        className="related-track-title"
-                        style={{
-                          cursor: 'pointer',
-                          transition: 'color 0.2s ease',
-                          fontSize: '0.9rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#ffffff'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#8456ff'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#ffffff'}
-                      >
-                        {relatedTrack.title}
+                        <div className="morefrom-cover">
+                          <img src={coverSrc} alt={t.title} />
+
+                          <button
+                            className={`morefrom-play-button ${isThisPlaying ? 'playing' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+
+                              // если это текущий трек — пауза/плей
+                              if (isThisCurrent) {
+                                onPlayPause?.();
+                                return;
+                              }
+
+                              // иначе запускаем трек и переходим
+                              if (onPlayTrack) onPlayTrack(t);
+                              navigate(`/track/${t.id}`);
+                            }}
+                            aria-label={isThisPlaying ? 'Pause' : 'Play'}
+                            title={isThisPlaying ? 'Pause' : 'Play'}
+                          >
+                            {isThisPlaying ? <IconPause /> : <IconPlay />}
+                          </button>
+                        </div>
+
+                        <div className="morefrom-info">
+                          <div className="morefrom-title">{t.title}</div>
+
+                          <div
+                            className="morefrom-artist track-author-link"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (artistId) navigate(`/profile/${artistId}`);
+                            }}
+                            title={`Перейти в профиль ${artistName}`}
+                          >
+                            {artistName}
+                          </div>
+
+                          <div className="morefrom-meta">
+                            <span className="morefrom-meta-item">
+                              <IconClockMini /> {durationLabel}
+                            </span>
+                            <span className="morefrom-meta-item">
+                              <IconPlayCountMini /> {playsLabel}
+                            </span>
+                            <span className="morefrom-meta-item">
+                              <IconCommentMini /> {Number(commentsCount).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="morefrom-actions">
+                          <div className="morefrom-action-group">
+                            <button
+                              className={`morefrom-like-btn ${liked ? 'liked' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLikeGlobal(t.id);
+                              }}
+                              title={liked ? 'Unlike' : 'Like'}
+                              aria-label={liked ? 'Unlike' : 'Like'}
+                            >
+                              <IconHeart filled={liked} />
+                            </button>
+                            <span className="morefrom-action-count">
+                              {Number(likeCount).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="morefrom-action-group">
+                            <button
+                              className={`morefrom-repost-btn ${reposted ? 'reposted' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRepostGlobal(t.id);
+                              }}
+                              title={reposted ? 'Unrepost' : 'Repost'}
+                              aria-label={reposted ? 'Unrepost' : 'Repost'}
+                            >
+                              <IconRepost active={reposted} />
+                            </button>
+                            <span className="morefrom-action-count">
+                              {Number(repostCount).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div 
-                        className="related-track-artist track-author-link"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${relatedTrack.artistId}`);
-                        }}
-                        title={`Перейти в профиль ${relatedTrack.artist}`}
-                        style={{
-                          fontSize: '0.8rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {relatedTrack.artist}
-                      </div>
-                      <div 
-                        className="related-track-duration"
-                        style={{
-                          fontSize: '0.7rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#64748b'
-                        }}
-                      >
-                        {relatedTrack.duration}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="playlists-section">
+            {/* 🔥 СЕКЦИЯ "IN PLAYLISTS" - ТЕПЕРЬ С РЕАЛЬНЫМИ ДАННЫМИ И КЛИКАБЕЛЬНЫМ АВТОРОМ */}
+            <div className="inplaylists-section">
               <h3>In playlists</h3>
-              <div className="playlists-grid">
-                {playlists.map(playlist => (
-                  <div 
-                    key={playlist.id} 
-                    className="playlist-card"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      alert(`Будущая страница плейлиста: ${playlist.title}`);
-                    }}
-                  >
-                    <img src={playlist.cover} alt={playlist.title} />
-                    <div className="playlist-info">
-                      <div 
-                        className="playlist-title"
-                        style={{
-                          cursor: 'pointer',
-                          transition: 'color 0.2s ease',
-                          fontSize: '0.9rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#ffffff'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#8456ff'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#ffffff'}
+
+              {loadingInPlaylists ? (
+                <div className="related-empty">Loading playlists…</div>
+              ) : inPlaylists.length === 0 ? (
+                <div className="related-empty">Not in playlists yet</div>
+              ) : (
+                <div className="inplaylists-list">
+                  {inPlaylists.slice(0, 6).map((pl) => {
+                    // Определяем обложку
+                    const coverSrc = 
+                      pl.cover_url || 
+                      pl.cover || 
+                      'https://via.placeholder.com/64x64?text=Playlist';
+
+                    // Имя создателя
+                    const creatorName = 
+                      pl.created_by?.username || 
+                      pl.owner?.username || 
+                      'Unknown';
+
+                    // ID создателя
+                    const creatorId = pl.created_by?.id || pl.owner?.id;
+
+                    // Количество треков
+                    const tracksCount = 
+                      pl.tracks_count || 
+                      pl.items_count || 
+                      pl.track_count || 
+                      0;
+
+                    return (
+                      <div
+                        key={pl.id}
+                        className="inplaylists-card"
+                        onClick={() => navigate(`/playlist/${pl.id}`)}
+                        role="button"
+                        tabIndex={0}
                       >
-                        {playlist.title}
+                        <img
+                          className="inplaylists-cover"
+                          src={coverSrc}
+                          alt={pl.title}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/64x64?text=Playlist';
+                          }}
+                        />
+                        <div className="inplaylists-info">
+                          <div className="inplaylists-title">{pl.title}</div>
+                          <div
+                            className="inplaylists-author"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (creatorId) navigate(`/profile/${creatorId}`);
+                            }}
+                          >
+                            by {creatorName}
+                          </div>
+                          <div className="inplaylists-sub">
+                            {tracksCount} {tracksCount === 1 ? 'track' : 'tracks'}
+                          </div>
+                        </div>
                       </div>
-                      <div 
-                        className="playlist-creator track-author-link"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${playlist.creatorId}`);
-                        }}
-                        title={`Перейти в профиль ${playlist.creator}`}
-                        style={{
-                          fontSize: '0.8rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        by {playlist.creator}
-                      </div>
-                      <div 
-                        className="playlist-track-count"
-                        style={{
-                          fontSize: '0.7rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#64748b'
-                        }}
-                      >
-                        {playlist.trackCount} tracks
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+
+                  {/* Кнопка "View all" если плейлистов больше 6 */}
+                  {inPlaylists.length > 6 && (
+                    <button
+                      className="view-all-playlists-btn"
+                      onClick={() => navigate(`/track/${track.id}/playlists`)}
+                    >
+                      View all ({inPlaylists.length})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="users-section">
@@ -2023,14 +2865,18 @@ const TrackPage = ({
                   {usersWhoLiked.map(userItem => (
                     <div key={userItem.id || userItem.username} className="user-card">
                       <div className="user-avatar">
-                        {userItem.avatar ? (
+                        {(userItem.avatar_url || userItem.avatar) ? (
                           <img 
-                            src={userItem.avatar} 
+                            src={userItem.avatar_url || userItem.avatar} 
                             alt={userItem.username}
                             className="track-author-link"
                             onClick={() => navigate(`/profile/${userItem.id}`)}
                             style={{ cursor: 'pointer' }}
                             title={`Перейти в профиль ${userItem.username}`}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentNode.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M12 14c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6z" fill="currentColor"/></svg>';
+                            }}
                           />
                         ) : (
                           <IconUser />
@@ -2057,14 +2903,18 @@ const TrackPage = ({
                   {usersWhoReposted.map(userItem => (
                     <div key={userItem.id || userItem.username} className="user-card">
                       <div className="user-avatar">
-                        {userItem.avatar ? (
+                        {(userItem.avatar_url || userItem.avatar) ? (
                           <img 
-                            src={userItem.avatar} 
+                            src={userItem.avatar_url || userItem.avatar} 
                             alt={userItem.username}
                             className="track-author-link"
                             onClick={() => navigate(`/profile/${userItem.id}`)}
                             style={{ cursor: 'pointer' }}
                             title={`Перейти в профиль ${userItem.username}`}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentNode.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M12 14c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6z" fill="currentColor"/></svg>';
+                            }}
                           />
                         ) : (
                           <IconUser />
@@ -2076,64 +2926,153 @@ const TrackPage = ({
               )}
             </div>
 
+            {/* ✅ РЕАЛЬНЫЙ БЛОК "MORE FROM" — КРАСИВЫЙ КАК В SIDEBAR */}
             <div className="albums-section">
-              <h3>More from {track.artist}</h3>
-              <div className="albums-grid">
-                {albums.map(album => (
-                  <div 
-                    key={album.id} 
-                    className="album-card"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      alert(`Будущая страница альбома: ${album.title}`);
-                    }}
-                  >
-                    <img src={album.cover} alt={album.title} />
-                    <div className="album-info">
-                      <div 
-                        className="album-title"
-                        style={{
-                          cursor: 'pointer',
-                          transition: 'color 0.2s ease',
-                          fontSize: '0.9rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#ffffff'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#8456ff'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#ffffff'}
-                      >
-                        {album.title}
-                      </div>
-                      <div 
-                        className="album-artist track-author-link"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${album.artistId}`);
-                        }}
-                        title={`Перейти в профиль ${album.artist}`}
-                        style={{
-                          fontSize: '0.8rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#94a3b8',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {album.artist}
-                      </div>
-                      <div 
-                        className="album-track-count"
-                        style={{
-                          fontSize: '0.7rem',
-                          fontFamily: "'Press Start 2P', sans-serif",
-                          color: '#64748b'
-                        }}
-                      >
-                        {album.trackCount} tracks
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="albums-header">
+                <h3>More from {track.artist}</h3>
+
+                <button
+                  className="view-all-button"
+                  type="button"
+                  onClick={() => authorId && navigate(`/profile/${authorId}`)}
+                  disabled={!authorId}
+                  title="Открыть профиль автора и посмотреть все треки"
+                >
+                  View all{moreFromTotalCount ? ` (${moreFromTotalCount})` : ''}
+                </button>
               </div>
+
+              {loadingMoreFrom ? (
+                <div className="loading-users"><p>Loading tracks...</p></div>
+              ) : moreFromTracks.length === 0 ? (
+                <div className="no-users"><p>No other tracks yet</p></div>
+              ) : (
+                <div className="albums-grid morefrom-grid">
+                  {moreFromTracks.map((t) => {
+                    const isThisCurrent = currentTrack === t.id;
+                    const isThisPlaying = isThisCurrent && isPlaying;
+
+                    const coverSrc = t.cover_url || t.cover || logoMark;
+                    const artistName = t.uploaded_by?.username || t.artist || track.artist;
+                    const artistId = t.uploaded_by?.id || t.artistId || track?.uploaded_by?.id;
+
+                    const durationLabel = formatDurationCompact(t.duration_seconds ?? t.duration);
+                    const playsLabel = formatPlaysNumber(t.play_count ?? t?.stats?.plays);
+                    
+                    // ✅ Состояния лайка/репоста из SocialContext
+                    const liked = isLikedGlobal?.(t.id);
+                    const reposted = isRepostedGlobal?.(t.id);
+                    const repostCount = getRepostCount?.(t.id) || 0;
+                    
+                    // ✅ Like count как в Sidebar: если SocialContext уже знает — берём оттуда, иначе из трека
+                    const likeCount = likeCounts?.[t.id] !== undefined
+                      ? (getLikeCount?.(t.id) ?? 0)
+                      : (t.like_count ?? 0);
+                    
+                    // ✅ Comments count (бэк отдаёт comments_count в CompactTrackSerializer)
+                    const commentsCount = t.comments_count ?? t.comment_count ?? 0;
+
+                    return (
+                      <div
+                        key={t.id}
+                        className="morefrom-card"
+                        onClick={() => navigate(`/track/${t.id}`)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="morefrom-cover">
+                          <img src={coverSrc} alt={t.title} />
+
+                          <button
+                            className={`morefrom-play-button ${isThisPlaying ? 'playing' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+
+                              // Если это текущий трек — просто пауза/плей
+                              if (isThisCurrent) {
+                                onPlayPause?.();
+                                return;
+                              }
+
+                              // Иначе: запускаем трек (если есть playTrack) и переходим на его страницу
+                              if (onPlayTrack) onPlayTrack(t);
+                              navigate(`/track/${t.id}`);
+                            }}
+                            aria-label={isThisPlaying ? 'Pause' : 'Play'}
+                            title={isThisPlaying ? 'Pause' : 'Play'}
+                          >
+                            {isThisPlaying ? <IconPause /> : <IconPlay />}
+                          </button>
+                        </div>
+
+                        <div className="morefrom-info">
+                          <div className="morefrom-title">{t.title}</div>
+
+                          <div
+                            className="morefrom-artist track-author-link"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (artistId) navigate(`/profile/${artistId}`);
+                            }}
+                            title={`Перейти в профиль ${artistName}`}
+                          >
+                            {artistName}
+                          </div>
+
+                          <div className="morefrom-meta">
+                            <span className="morefrom-meta-item">
+                              <IconClockMini /> {durationLabel}
+                            </span>
+                            <span className="morefrom-meta-item">
+                              <IconPlayCountMini /> {playsLabel}
+                            </span>
+                            <span className="morefrom-meta-item">
+                              <IconCommentMini /> {Number(commentsCount).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* ✅ Кнопки лайка/репоста как в Sidebar (кнопка + число) */}
+                        <div className="morefrom-actions">
+                          <div className="morefrom-action-group">
+                            <button
+                              className={`morefrom-like-btn ${liked ? 'liked' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLikeGlobal(t.id);
+                              }}
+                              title={liked ? 'Unlike' : 'Like'}
+                              aria-label={liked ? 'Unlike' : 'Like'}
+                            >
+                              <IconHeart filled={liked} />
+                            </button>
+                            <span className="morefrom-action-count">
+                              {Number(likeCount).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="morefrom-action-group">
+                            <button
+                              className={`morefrom-repost-btn ${reposted ? 'reposted' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRepostGlobal(t.id);
+                              }}
+                              title={reposted ? 'Unrepost' : 'Repost'}
+                              aria-label={reposted ? 'Unrepost' : 'Repost'}
+                            >
+                              <IconRepost active={reposted} />
+                            </button>
+                            <span className="morefrom-action-count">
+                              {Number(repostCount).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2156,9 +3095,12 @@ const TrackPage = ({
         onToggleLoop={handleToggleLoop}
         isLoading={false}
         onTrackClick={(trackId) => navigate(`/track/${trackId}`)}
-        showInFooter={true}
         trackInfo={track}
         getAuthToken={getAuthTokenForTrackPage}
+        isReposted={isReposted}
+        onToggleRepost={isReposted ? handleUnrepost : handleRepost}
+        isFollowing={isFollowing}
+        onToggleFollow={handleFollowToggle}
       />
     </div>
   );

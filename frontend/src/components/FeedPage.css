@@ -1,15 +1,27 @@
+/* FeedPage.css */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.cdnfonts.com/css/monocraft');
 
+/* ===== FEED LAYOUT ===== */
 .feed-page {
+  width: 100%;
   min-height: 100vh;
   padding: 30px 20px;
   position: relative;
   overflow-x: hidden;
 }
 
+.feed-container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 18px 18px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .feed-header {
-  max-width: 1200px;
+  max-width: 980px;
   margin: 0 auto 40px;
   display: flex;
   justify-content: space-between;
@@ -48,341 +60,290 @@
     0 0 15px rgba(132, 86, 255, 0.2);
 }
 
-.glass-btn {
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  font-family: 'Monocraft', monospace;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 999px;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  box-shadow: 
-    0 2px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.glass-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.25),
-    0 0 15px rgba(255, 159, 252, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.reposts-toggle {
-  composes: glass-btn;
-}
-
-.reposts-toggle.active {
-  background: linear-gradient(135deg, rgba(132, 86, 255, 0.15), rgba(255, 159, 252, 0.15));
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(132, 86, 255, 0.3);
-  box-shadow: 
-    0 2px 20px rgba(132, 86, 255, 0.2),
-    0 0 20px rgba(255, 159, 252, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.reposts-toggle svg {
-  width: 16px;
-  height: 16px;
-}
-
 .feed-content {
-  max-width: 1200px;
+  max-width: 980px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 20px;
-  padding: 24px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/* ===== CARD ===== */
+.feed-card {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  margin-bottom: 16px;
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+.feed-card:hover {
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-4px);
   box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.25),
+    0 12px 40px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.feed-track-card {
-  composes: glass-card;
+/* NEW badge */
+.feed-badge-new {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(132, 86, 255, 0.25);
+  border: 1px solid rgba(132, 86, 255, 0.55);
+  color: rgba(255,255,255,0.92);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.feed-track-card.playing {
-  border-color: rgba(255, 159, 252, 0.25);
-  box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 159, 252, 0.15),
-    0 0 30px rgba(255, 159, 252, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+/* Header */
+.feed-card-header {
+  padding: 14px 14px 0 14px;
 }
 
-.feed-track-header {
+.feed-author {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+  min-width: 0;
 }
 
-.glass-avatar {
-  width: 48px;
-  height: 48px;
+.feed-avatar {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(132, 86, 255, 0.2), rgba(255, 159, 252, 0.2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0,0,0,0.2);
   box-shadow: 
     0 2px 12px rgba(132, 86, 255, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
 }
 
-.avatar-circle {
-  composes: glass-avatar;
-}
-
-.avatar-circle img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.9);
-}
-
-.avatar-initials {
-  font-family: 'Monocraft', monospace;
-  font-size: 1rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.4),
-    0 0 8px rgba(132, 86, 255, 0.3);
-}
-
-.user-info {
+.feed-author-meta {
+  min-width: 0;
   flex: 1;
 }
 
-.username-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
-}
-
-.username {
-  font-family: 'Monocraft', monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: white;
-  text-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.5),
-    0 0 10px rgba(132, 86, 255, 0.2);
-  letter-spacing: 0.3px;
-}
-
-.user-action {
-  font-family: 'Monocraft', monospace;
+.feed-author-name {
+  font-family: 'Press Start 2P', sans-serif;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 
-    0 1px 1px rgba(0, 0, 0, 0.4),
-    0 0 6px rgba(255, 159, 252, 0.1);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 520px;
+  transition: color 0.2s ease;
 }
 
-.post-time {
+.feed-author-name:hover {
+  color: #8456ff;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.5);
+}
+
+.feed-time {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.55);
   font-family: 'Monocraft', monospace;
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-shadow: 
-    0 1px 1px rgba(0, 0, 0, 0.4),
-    0 0 4px rgba(132, 86, 255, 0.08);
 }
 
-.feed-track-content {
+/* Body */
+.feed-card-body {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 32px;
+  grid-template-columns: 86px 1fr;
+  gap: 12px;
+  padding: 14px;
+  cursor: pointer;
 }
 
-.track-card-left {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.glass-cover {
-  position: relative;
-  width: 200px;
-  height: 200px;
+.feed-cover-wrap {
+  width: 86px;
+  height: 86px;
   border-radius: 14px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+    0 4px 16px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.track-cover {
-  composes: glass-cover;
-}
-
-.track-cover img {
+.feed-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   filter: brightness(0.85);
 }
 
-.feed-track-card:hover .track-cover img {
+.feed-card:hover .feed-cover {
   transform: scale(1.04);
   filter: brightness(0.95);
 }
 
-.glass-play-btn {
+.feed-cover-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.9);
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, rgba(255, 159, 252, 0.25), rgba(132, 86, 255, 0.25));
-  color: rgba(255, 255, 255, 0.95);
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
-  box-shadow: 
-    0 4px 24px rgba(0, 0, 0, 0.3),
-    0 0 25px rgba(255, 159, 252, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 2;
+  transition: opacity 0.2s ease;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
-.play-button {
-  composes: glass-play-btn;
-}
-
-.feed-track-card:hover .play-button,
-.play-button:hover {
+.feed-card:hover .feed-cover-overlay {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
 }
 
-.play-button:hover {
-  transform: translate(-50%, -50%) scale(1.05);
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 217, 61, 0.3));
-  box-shadow: 
-    0 6px 30px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(255, 107, 107, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+.feed-play-hint {
+  font-family: 'Press Start 2P', sans-serif;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.9rem;
+  text-shadow: 
+    0 2px 8px rgba(0,0,0,0.5),
+    0 0 15px rgba(132, 86, 255, 0.6);
 }
 
-.play-button svg {
-  width: 20px;
-  height: 20px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-.track-card-right {
+/* Info */
+.feed-info {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
-.glass-waveform {
-  height: 100px; /* УВЕЛИЧИВАЕМ КОНТЕЙНЕР */
-  background: rgba(0, 0, 0, 0.25); /* ДЕЛАЕМ ФОН ТЕМНЕЕ */
-  border-radius: 12px;
+/* ===== ИСПРАВЛЕНИЕ HOVER ДЛЯ НАЗВАНИЯ ТРЕКА ===== */
+.feed-track-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
   overflow: hidden;
-  padding: 25px 20px; /* УВЕЛИЧИВАЕМ PADDING */
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 
-    inset 0 1px 3px rgba(0, 0, 0, 0.35),
-    0 2px 0 rgba(255, 255, 255, 0.05);
-  position: relative;
+  text-overflow: ellipsis;
+  text-shadow: 
+    0 1px 3px rgba(0,0,0,0.5),
+    0 0 15px rgba(132, 86, 255, 0.2);
+  margin-bottom: 4px;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+  cursor: pointer;
 }
 
-.track-waveform-container {
-  composes: glass-waveform;
+.feed-track-title:hover {
+  color: #8456ff !important;
+  text-shadow: 0 0 8px rgba(132, 86, 255, 0.4);
 }
 
+/* Усиленный селектор для вложенных элементов */
+.feed-track-title:hover,
+.feed-track-title:hover span {
+  color: #8456ff !important;
+}
+/* ================================================ */
+
+.feed-subtitle {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Monocraft', monospace;
+}
+
+.feed-stats {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.feed-stat {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 4px 0;
+}
+
+.feed-stat:hover {
+  color: rgba(255,255,255,0.95);
+}
+
+.feed-stat svg {
+  width: 14px;
+  height: 14px;
+  transition: all 0.2s ease;
+}
+
+.feed-stat span {
+  color: rgba(255,255,255,0.95);
+}
+
+.feed-waveform-wrapper {
+  margin-top: 14px;
+  width: 100%;
+}
+
+/* ===== WAVEFORM STYLES ===== */
 .waveform-container {
   width: 100%;
-  height: 100%;
+  height: 50px;
   display: flex;
   align-items: center;
   position: relative;
   cursor: pointer;
   padding: 0 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* УВЕЛИЧИВАЕМ ПАЛОЧКИ В ШИРИНЕ И ДЕЛАЕМ ИХ ТОЛЩЕ */
 .waveform {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   width: 100%;
-  height: 50px;
-  gap: 0.3px;
+  height: 40px;
+  gap: 2px;
   position: relative;
   z-index: 2;
 }
 
-/* УВЕЛИЧИВАЕМ ШИРИНУ ПАЛОЧЕК */
 .waveform-bar {
   flex: 1;
-  min-width: 7px; /* УВЕЛИЧИВАЕМ ШИРИНУ */
-  max-width: 8px; /* УВЕЛИЧИВАЕМ МАКСИМАЛЬНУЮ ШИРИНУ */
+  min-width: 3px;
+  max-width: 5px;
   height: var(--height, 30%);
-  background: rgba(255, 255, 255, 0.25); /* ЯРЧЕ ПАЛОЧКИ */
-  border-radius: 1.2px; /* УВЕЛИЧИВАЕМ СКРУГЛЕНИЕ */
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.5px;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
+  margin: 0 0.5px;
 }
 
 .waveform-bar::before {
@@ -396,7 +357,6 @@
   transition: background 0.2s ease;
 }
 
-/* ЗАПОЛНЕННАЯ палочка */
 .waveform-bar.filled {
   background: linear-gradient(to top, #8456ff, #ff9ffc) !important;
   box-shadow: 
@@ -408,7 +368,6 @@
   background: rgba(132, 86, 255, 0.6) !important;
 }
 
-/* ПРИ НАВЕДЕНИИ */
 .waveform-bar.hovered {
   background: rgba(132, 86, 255, 0.8) !important;
   box-shadow: 
@@ -420,7 +379,6 @@
   background: rgba(132, 86, 255, 0.5) !important;
 }
 
-/* КОГДА ПАЛОЧКА И НАВЕДЕНА И ЗАПОЛНЕНА */
 .waveform-bar.filled.hovered {
   background: linear-gradient(to top, #ff9ffc, #8456ff) !important;
   box-shadow: 
@@ -428,11 +386,27 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-/* Фон прогресса */
+.waveform-bar:hover {
+  transform: scaleY(1.05);
+  box-shadow: 
+    0 0 6px rgba(255, 255, 255, 0.4),
+    inset 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes barClick {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(1.15); }
+  100% { transform: scaleY(1); }
+}
+
+.waveform-bar:active {
+  animation: barClick 0.2s ease;
+}
+
 .waveform-progress-overlay {
   position: absolute;
-  top: 25px; /* ПОДСТРАИВАЕМ ПОД НОВЫЙ PADDING */
-  left: 10px; /* ПОДСТРАИВАЕМ ПОД НОВЫЙ PADDING */
+  top: 0;
+  left: 10px;
   height: 50px;
   background: rgba(132, 86, 255, 0.15);
   border-radius: 8px 0 0 8px;
@@ -442,10 +416,9 @@
   opacity: 0.8;
 }
 
-/* Фон при наведении */
 .waveform-hover-overlay {
   position: absolute;
-  top: 25px;
+  top: 0;
   left: 10px;
   height: 50px;
   background: rgba(132, 86, 255, 0.25);
@@ -455,10 +428,9 @@
   pointer-events: none;
 }
 
-/* Индикатор времени - ОСТАВЛЯЕМ -35px */
 .waveform-time-tooltip {
   position: absolute;
-  top: -25px; /* ОСТАВЛЯЕМ -35px */
+  top: -35px;
   background: rgba(0, 0, 0, 0.95);
   color: white;
   padding: 6px 10px;
@@ -466,7 +438,7 @@
   font-family: 'Monocraft', monospace;
   font-size: 0.7rem;
   white-space: nowrap;
-  z-index: 25; /* ВЫСОКИЙ Z-INDEX */
+  z-index: 25;
   pointer-events: none;
   border: 1px solid rgba(132, 86, 255, 0.4);
   box-shadow: 
@@ -492,129 +464,27 @@
   border-top: 5px solid rgba(0, 0, 0, 0.95);
 }
 
-@keyframes waveformClick {
-  0% { 
-    transform: scaleY(1);
-    background: linear-gradient(to top, #8456ff, #ff9ffc);
-  }
-  50% { 
-    transform: scaleY(1.15);
-    background: linear-gradient(to top, #ff9ffc, #8456ff);
-    box-shadow: 
-      0 0 12px rgba(132, 86, 255, 0.8),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  }
-  100% { 
-    transform: scaleY(1);
-    background: linear-gradient(to top, #8456ff, #ff9ffc);
-  }
-}
-
-.waveform-bar.clicked {
-  animation: waveformClick 0.3s ease;
-}
-
-/* Подсказка при наведении на весь контейнер */
 .waveform-container:hover::before {
   content: 'Click to seek';
   position: absolute;
-  top: -30px;
+  top: -40px;
   left: 15px;
   font-family: 'Monocraft', monospace;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(0, 0, 0, 0.85);
-  padding: 4px 8px;
-  border-radius: 5px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 5px 10px;
+  border-radius: 6px;
   z-index: 20;
   pointer-events: none;
   animation: fadeIn 0.2s ease;
-  border: 1px solid rgba(132, 86, 255, 0.3);
+  border: 1px solid rgba(132, 86, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.track-info {
-  margin-top: 12px;
-}
-
-.track-title {
-  font-family: 'Monocraft', monospace;
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-  text-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(132, 86, 255, 0.2);
-  letter-spacing: 0.2px;
-}
-
-.track-artist {
-  font-family: 'Monocraft', monospace;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0 0 8px 0;
-  text-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 0 10px rgba(255, 159, 252, 0.15);
-}
-
-.track-duration {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'Monocraft', monospace;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.track-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: auto;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  composes: glass-btn;
-  padding: 8px 16px;
-  font-size: 0.65rem;
-  border-radius: 10px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
-}
-
-.action-btn svg {
-  width: 12px;
-  height: 12px;
-}
-
-.like-btn.liked {
-  background: rgba(132, 86, 255, 0.15);
-  border-color: rgba(132, 86, 255, 0.3);
-  color: rgba(132, 86, 255, 0.95);
-  text-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 0 8px rgba(132, 86, 255, 0.3);
-  box-shadow: 
-    0 2px 16px rgba(132, 86, 255, 0.15),
-    0 0 18px rgba(132, 86, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.like-btn.liked:hover {
-  background: rgba(132, 86, 255, 0.2);
-  box-shadow: 
-    0 4px 20px rgba(132, 86, 255, 0.2),
-    0 0 22px rgba(132, 86, 255, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.more-btn {
-  margin-left: auto;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .waveform-loading {
@@ -630,17 +500,18 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 1px;
-  height: 50px;
+  gap: 2px;
+  height: 40px;
   width: 100%;
 }
 
 .waveform-bar.loading {
-  width: 3px; /* ТОЛЩЕ ДЛЯ ЗАГРУЗКИ */
+  width: 3px;
   min-width: 3px;
   background: rgba(132, 86, 255, 0.4);
-  border-radius: 1.5px;
+  border-radius: 2px;
   animation: loadingPulse 1.5s ease-in-out infinite;
+  margin: 0 0.5px;
 }
 
 @keyframes loadingPulse {
@@ -654,223 +525,7 @@
   }
 }
 
-.track-cover-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 2;
-}
-
-.track-cover-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #8456ff, #ff9ffc);
-  transition: width 0.1s linear;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 1024px) {
-  .feed-track-content {
-    grid-template-columns: 180px 1fr;
-    gap: 28px;
-  }
-  
-  .glass-cover {
-    width: 180px;
-    height: 180px;
-  }
-}
-
-@media (max-width: 768px) {
-  .feed-page {
-    padding: 20px 15px;
-  }
-  
-  .feed-header {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .reposts-toggle {
-    align-self: flex-start;
-  }
-  
-  .feed-track-content {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .track-card-left {
-    align-items: center;
-  }
-  
-  .glass-cover {
-    width: 160px;
-    height: 160px;
-  }
-  
-  .glass-play-btn {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .play-button svg {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .track-actions {
-    justify-content: space-between;
-  }
-  
-  .more-btn {
-    margin-left: 0;
-  }
-  
-  .feed-title {
-    font-size: 1.1rem;
-  }
-  
-  .glass-header {
-    padding: 16px 20px;
-  }
-  
-  .feed-track-card {
-    padding: 20px;
-  }
-  
-  .glass-waveform {
-    height: 90px;
-    padding: 20px 15px;
-  }
-  
-  .waveform {
-    height: 45px;
-  }
-  
-  .waveform-progress-overlay,
-  .waveform-hover-overlay {
-    height: 45px;
-    top: 20px;
-    left: 15px;
-  }
-  
-  .waveform-bar {
-    min-width: 2.5px;
-    max-width: 3.5px;
-  }
-  
-  .waveform-time-tooltip {
-    top: -30px;
-    font-size: 0.65rem;
-    padding: 5px 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .feed-title {
-    font-size: 0.9rem;
-  }
-  
-  .avatar-circle {
-    width: 42px;
-    height: 42px;
-  }
-  
-  .avatar-initials {
-    font-size: 0.9rem;
-  }
-  
-  .username {
-    font-size: 0.75rem;
-  }
-  
-  .user-action {
-    font-size: 0.65rem;
-  }
-  
-  .glass-cover {
-    width: 140px;
-    height: 140px;
-  }
-  
-  .track-title {
-    font-size: 0.9rem;
-  }
-  
-  .track-artist {
-    font-size: 0.75rem;
-  }
-  
-  .action-btn {
-    padding: 6px 12px;
-    font-size: 0.6rem;
-  }
-  
-  .action-btn svg {
-    width: 10px;
-    height: 10px;
-  }
-  
-  .glass-card {
-    padding: 16px;
-  }
-  
-  .feed-track-header {
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-  }
-  
-  .glass-waveform {
-    height: 80px;
-    padding: 18px 12px;
-  }
-  
-  .waveform {
-    height: 40px;
-  }
-  
-  .waveform-progress-overlay,
-  .waveform-hover-overlay {
-    height: 40px;
-    top: 18px;
-    left: 12px;
-  }
-  
-  .waveform-bar {
-    min-width: 2px;
-    max-width: 3px;
-  }
-  
-  .waveform-time-tooltip {
-    top: -28px;
-    font-size: 0.6rem;
-    padding: 4px 7px;
-  }
-}
-
-/* Стили для кликабельного автора в FeedPage */
-.track-artist.clickable-artist {
-  cursor: pointer;
-  transition: color 0.2s ease !important;
-}
-
-.track-artist.clickable-artist:hover {
-  color: #8456ff !important;
-}
-
-/* Убираем hover на карточке для автора */
-.feed-track-card:hover .track-artist.clickable-artist:not(:hover) {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
+/* ===== EMPTY STATE ===== */
 .feed-empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -911,7 +566,7 @@
   font-weight: 700;
   text-align: center;
   width: 100%;
-  font-family: "'Monocraft', monospace";
+  font-family: 'Monocraft', monospace;
 }
 
 .empty-state-submessage {
@@ -919,7 +574,701 @@
   color: rgba(255, 255, 255, 0.4);
   text-align: center;
   width: 100%;
-  font-family: "'Monocraft', monospace";
+  font-family: 'Monocraft', monospace;
   max-width: 400px;
   line-height: 1.5;
+}
+
+/* ===== LOADING & ERROR ===== */
+.feed-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Monocraft', monospace;
+  gap: 20px;
+}
+
+.feed-loading svg {
+  width: 40px;
+  height: 40px;
+  color: rgba(132, 86, 255, 0.8);
+}
+
+.feed-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 100, 100, 0.9);
+  font-family: 'Monocraft', monospace;
+  gap: 20px;
+  background: rgba(255, 0, 0, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.feed-error button {
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-family: 'Monocraft', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feed-error button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .feed-container,
+  .feed-header,
+  .feed-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .feed-page {
+    padding: 20px 15px;
+  }
+  
+  .feed-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .feed-title {
+    font-size: 1.1rem;
+  }
+  
+  .glass-header {
+    padding: 16px 20px;
+  }
+  
+  .feed-card-body {
+    grid-template-columns: 76px 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+  
+  .feed-cover-wrap {
+    width: 76px;
+    height: 76px;
+  }
+  
+  .feed-track-title {
+    font-size: 0.8rem;
+  }
+  
+  .feed-subtitle {
+    font-size: 0.7rem;
+  }
+  
+  .feed-stat {
+    font-size: 0.5rem;
+    gap: 4px;
+  }
+  
+  .feed-stat svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .waveform-container {
+    height: 45px;
+    padding: 0 8px;
+  }
+  
+  .waveform {
+    height: 35px;
+    gap: 1.5px;
+  }
+  
+  .waveform-progress-overlay,
+  .waveform-hover-overlay {
+    height: 45px;
+    left: 8px;
+  }
+  
+  .waveform-bar {
+    min-width: 2.5px;
+    max-width: 4px;
+    margin: 0 0.3px;
+  }
+  
+  .waveform-time-tooltip {
+    top: -30px;
+    font-size: 0.65rem;
+    padding: 5px 8px;
+  }
+  
+  .waveform-container:hover::before {
+    top: -35px;
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feed-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .feed-author-name {
+    font-size: 0.6rem;
+  }
+  
+  .feed-time {
+    font-size: 0.6rem;
+  }
+  
+  .feed-card-body {
+    grid-template-columns: 66px 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .feed-cover-wrap {
+    width: 66px;
+    height: 66px;
+  }
+  
+  .feed-track-title {
+    font-size: 0.7rem;
+  }
+  
+  .feed-subtitle {
+    font-size: 0.65rem;
+    margin-top: 4px;
+  }
+  
+  .feed-stats {
+    gap: 8px;
+    margin-top: 8px;
+  }
+  
+  .feed-stat {
+    font-size: 0.45rem;
+    gap: 3px;
+  }
+  
+  .feed-stat svg {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .feed-waveform-wrapper {
+    margin-top: 10px;
+  }
+  
+  .waveform-container {
+    height: 40px;
+    padding: 0 6px;
+  }
+  
+  .waveform {
+    height: 30px;
+    gap: 1.2px;
+  }
+  
+  .waveform-progress-overlay,
+  .waveform-hover-overlay {
+    height: 40px;
+    left: 6px;
+  }
+  
+  .waveform-bar {
+    min-width: 2px;
+    max-width: 3px;
+    margin: 0 0.25px;
+  }
+  
+  .waveform-bar.loading {
+    width: 2px;
+    min-width: 2px;
+    margin: 0 0.25px;
+  }
+  
+  .waveform-time-tooltip {
+    top: -28px;
+    font-size: 0.6rem;
+    padding: 4px 7px;
+    min-width: 45px;
+  }
+  
+  .waveform-container:hover::before {
+    top: -32px;
+    font-size: 0.6rem;
+    padding: 3px 6px;
+  }
+  
+  .empty-state-message {
+    font-size: 0.9rem;
+  }
+  
+  .empty-state-submessage {
+    font-size: 0.7rem;
+  }
+}
+
+/* ===== FALLBACKS ДЛЯ КАРТИНОК - БЕЗ 404 ===== */
+.feed-avatar-container {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.feed-avatar-fallback {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(132,86,255,0.8), rgba(255,159,252,0.8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 1.2rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 2px 12px rgba(132,86,255,0.3);
+}
+
+.feed-cover-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(132,86,255,0.3), rgba(0,0,0,0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.cover-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(132,86,255,0.3), rgba(0,0,0,0.5));
+}
+
+/* ===== СТИЛИ ДЛЯ ЛАЙКА И РЕПОСТА ===== */
+.feed-stat {
+  cursor: pointer !important;
+  transition: all 0.2s ease;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.feed-stat:hover {
+  color: rgba(255,255,255,0.95);
+  transform: scale(1.05);
+}
+
+.feed-stat.liked {
+  color: #8456ff;
+}
+
+.feed-stat.reposted {
+  color: #8456ff;
+}
+
+.feed-stat svg {
+  transition: all 0.2s ease;
+}
+
+.feed-stat:active svg {
+  transform: scale(1.2);
+}
+
+.feed-stat span {
+  pointer-events: none;
+}
+
+/* ===== АНИМАЦИЯ ДЛЯ КНОПОК ===== */
+@keyframes likePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.feed-stat.liked svg {
+  animation: likePop 0.3s ease;
+}
+
+.feed-stat.reposted svg {
+  animation: likePop 0.3s ease;
+}
+
+.feed-track-title {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.feed-track-title:hover,
+.feed-track-title:hover span {
+  color: #8456ff !important;
+}
+
+.feed-track-card .feed-track-title:hover,
+.feed-track-card .feed-track-title:hover * {
+  color: #8456ff !important;
+}
+
+/* Hover для названия трека и автора в карточке Feed */
+.feed-title,
+.feed-subtitle {
+  cursor: pointer;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.feed-title:hover,
+.feed-subtitle:hover {
+  color: #8456ff !important;
+  text-shadow: 0 0 8px rgba(132, 86, 255, 0.45);
+}
+
+/* Если где-то перебивают цвет более сильными правилами */
+.feed-card-body .feed-title:hover,
+.feed-card-body .feed-subtitle:hover {
+  color: #8456ff !important;
+}
+
+/* ===== FEED PLAYLISTS SECTION ===== */
+.feed-playlists-section {
+  margin: 18px 0 26px 0;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.feed-subtitle {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 14px;
+  color: white;
+  margin: 0 0 14px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.feed-playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feed-playlist-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.feed-playlist-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.feed-playlist-card.is-new {
+  border-color: rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.04);
+}
+
+.feed-playlist-card.is-new:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.feed-pl-cover-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.feed-pl-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.feed-playlist-card:hover .feed-pl-cover {
+  transform: scale(1.05);
+}
+
+.feed-pl-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: 0.15s ease;
+  color: #fff;
+  font-size: 18px;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.feed-pl-cover-wrap:hover .feed-pl-play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.feed-pl-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 9px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.85);
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.feed-pl-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-pl-title {
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: 0.15s ease;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 4px;
+}
+
+.feed-pl-title:hover {
+  color: #a855f7;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+.feed-pl-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+  font-family: 'Monocraft', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-pl-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.feed-pl-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.18s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.feed-pl-btn span {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.feed-pl-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.feed-pl-btn:hover {
+  border-color: rgba(168, 85, 247, 0.75);
+  color: #a855f7;
+  transform: scale(1.05);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.feed-pl-btn:active {
+  transform: scale(0.98);
+}
+
+.feed-pl-btn.active {
+  border-color: rgba(168, 85, 247, 0.95);
+  color: #a855f7;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.1);
+}
+
+/* ===== LOADING STATE FOR PLAYLISTS ===== */
+.feed-playlists-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Monocraft', monospace;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 20px;
+}
+
+.feed-playlists-loading svg {
+  width: 40px;
+  height: 40px;
+  color: rgba(168, 85, 247, 0.8);
+}
+
+/* ===== RESPONSIVE FOR PLAYLISTS ===== */
+@media (max-width: 768px) {
+  .feed-playlists-section {
+    margin: 14px 0 20px 0;
+  }
+  
+  .feed-subtitle {
+    font-size: 12px;
+    margin: 0 0 12px 0;
+  }
+  
+  .feed-playlist-card {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  
+  .feed-pl-cover-wrap {
+    width: 52px;
+    height: 52px;
+  }
+  
+  .feed-pl-title {
+    font-size: 0.8rem;
+  }
+  
+  .feed-pl-sub {
+    font-size: 10px;
+  }
+  
+  .feed-pl-btn {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  
+  .feed-pl-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .feed-pl-btn span {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feed-playlists-section {
+    margin: 12px 0 16px 0;
+  }
+  
+  .feed-playlist-card {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  
+  .feed-pl-cover-wrap {
+    width: 46px;
+    height: 46px;
+  }
+  
+  .feed-pl-title {
+    font-size: 0.7rem;
+  }
+  
+  .feed-pl-sub {
+    font-size: 9px;
+    margin-top: 2px;
+  }
+  
+  .feed-pl-actions {
+    gap: 6px;
+  }
+  
+  .feed-pl-btn {
+    padding: 6px 8px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  
+  .feed-pl-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .feed-pl-btn span {
+    font-size: 10px;
+  }
+  
+  .feed-pl-badge {
+    font-size: 7px;
+    padding: 3px 4px;
+    top: 4px;
+    left: 4px;
+  }
 }

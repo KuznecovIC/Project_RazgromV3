@@ -1,0 +1,326 @@
+.studioTracksPage{
+  width: min(1400px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 26px 0 140px;
+}
+
+.studioTracksHead{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.studioTracksMeta{
+  opacity: 0.85;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+}
+
+.studioTracksState{
+  opacity: 0.85;
+  padding: 18px 4px;
+}
+
+/* ✅ СТАРЫЙ ГРИД — УЖЕ НЕ ИСПОЛЬЗУЕТСЯ, НО МОЖНО ОСТАВИТЬ ДЛЯ СОВМЕСТИМОСТИ */
+.studioTracksGrid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.studioTrackCard{
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 12px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.28);
+  backdrop-filter: blur(18px);
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.studioTrackCard:hover{
+  transform: translateY(-2px);
+  border-color: rgba(132, 86, 255, 0.65);
+  background: rgba(132, 86, 255, 0.18);
+}
+
+.studioTrackCover{
+  width: 86px;
+  height: 86px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+}
+
+.studioTrackCover img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.studioTrackTitle{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studioTrackSub{
+  opacity: 0.85;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.studioTrackStats{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  opacity: 0.95;
+}
+
+.studioTrackStats .s{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.studioTrackStats svg{
+  width: 16px;
+  height: 16px;
+}
+
+/* ✅ НОВЫЙ LIST СТИЛЬ */
+.studioTracksList{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ===== FULL WIDTH TRACK ROW ===== */
+
+.studioTrackRow{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 14px;
+  align-items: center;
+
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 14px;
+  color: #fff;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.28);
+  backdrop-filter: blur(18px);
+}
+
+.studioTrackRow:hover{
+  border-color: rgba(132, 86, 255, 0.55);
+  background: rgba(132, 86, 255, 0.12);
+}
+
+.studioTrackCoverBtn{
+  width: 92px;
+  height: 92px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  cursor: pointer;
+  padding: 0;
+}
+
+.studioTrackCoverImg{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* чтобы текст не вылезал */
+.studioTrackMain{
+  min-width: 0;
+}
+
+.studioTrackTitleLink{
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0;
+
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  color: #fff;
+  cursor: pointer;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ✅ hover фиолетовый */
+.studioTrackTitleLink:hover{
+  color: #8456ff;
+}
+
+.studioTrackSubRow{
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.85;
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.studioTrackAuthor{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.studioTrackDot{
+  opacity: 0.35;
+}
+
+.studioTrackMetaRow{
+  margin-top: 10px;
+  display: flex;
+  gap: 14px;
+  opacity: 0.9;
+}
+
+.studioMeta{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.studioMeta svg{
+  width: 16px;
+  height: 16px;
+}
+
+/* actions справа */
+.studioTrackActions{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.studioActionBtn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  border-radius: 14px;
+  padding: 10px 12px;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.20);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+}
+
+.studioActionBtn svg{
+  width: 16px;
+  height: 16px;
+}
+
+.studioActionBtn:hover{
+  border-color: rgba(132, 86, 255, 0.55);
+}
+
+.studioActionBtn.active{
+  border-color: rgba(132, 86, 255, 0.9);
+  background: rgba(132, 86, 255, 0.22);
+  box-shadow: 0 0 16px rgba(132, 86, 255, 0.25);
+}
+
+/* Follow отдельная кнопка */
+.studioActionBtn.follow{
+  background: rgba(132, 86, 255, 0.18);
+  border-color: rgba(132, 86, 255, 0.55);
+}
+
+.studioActionBtn.follow.active{
+  background: rgba(132, 86, 255, 0.30);
+  border-color: rgba(132, 86, 255, 0.95);
+}
+
+.studioTracksPager{
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.studioPagerBtn{
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  cursor: pointer;
+}
+
+.studioPagerBtn:disabled{
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.studioPagerInfo{
+  opacity: 0.85;
+}
+
+@media (max-width: 1100px){
+  .studioTracksGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px){
+  .studioTrackRow{
+    grid-template-columns: 92px 1fr;
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+
+  .studioTrackActions{
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .studioTrackAuthor{ max-width: 160px; }
+}
+
+@media (max-width: 820px){
+  .studioTracksGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .studioTrackCard{ grid-template-columns: 1fr; }
+  .studioTrackCover{ width: 100%; height: 160px; }
+}
+
+@media (max-width: 520px){
+  .studioTracksGrid{ grid-template-columns: 1fr; }
+}

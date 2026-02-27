@@ -1,3 +1,4 @@
+/* LibraryPage.css - ПОЛНЫЙ ФАЙЛ С ПРЕФИКСОМ lib- */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.cdnfonts.com/css/monocraft');
 
@@ -103,7 +104,6 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 4px;
-  backdrop-filter: blur(10px);
 }
 
 .filter-btn {
@@ -134,9 +134,19 @@
   color: white;
 }
 
+.filter-btn.active svg {
+  color: #b478ff !important;
+}
+
 .filter-btn svg {
   width: 12px;
   height: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s ease;
+}
+
+.filter-btn:hover svg {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .library-tracks-grid {
@@ -165,101 +175,391 @@
   letter-spacing: 0.3px;
 }
 
+/* ===== LIBRARY-SPECIFIC USER CARDS (не конфликтуют с глобальными) ===== */
+
 .library-users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+  align-items: start;
 }
 
-.user-card {
+.lib-user-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 14px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  width: auto !important;
+  height: auto !important;
+}
+
+.lib-user-card:hover {
+  border-color: rgba(180, 120, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.lib-user-card-avatar-btn,
+.lib-user-card-name-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: block;
+}
+
+.lib-user-card-avatar-btn:focus-visible,
+.lib-user-card-name-btn:focus-visible {
+  outline: 2px solid rgba(180, 120, 255, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.lib-user-card-avatar--xl {
+  width: 140px !important;
+  height: 140px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(180, 120, 255, 0.35) !important;
+  box-shadow: 0 0 22px rgba(180, 120, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.lib-user-card-avatar--xl:hover {
+  transform: scale(1.05) !important;
+  border-color: rgba(180, 120, 255, 0.5) !important;
+}
+
+.lib-user-card-avatar--xl img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.lib-user-card-avatar-fallback {
+  opacity: 0.75;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.3s ease;
-  cursor: pointer;
+  justify-content: center;
 }
 
-.user-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
-  border-color: rgba(132, 86, 255, 0.2);
-}
-
-.user-card-avatar {
+.lib-user-card-avatar-fallback svg {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(132, 86, 255, 0.2), rgba(255, 159, 252, 0.2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.user-card-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.user-card-avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.user-card-avatar-fallback svg {
-  width: 24px;
-  height: 24px;
   color: rgba(255, 255, 255, 0.8);
 }
 
-.user-card-info {
+.lib-user-card-name-btn--center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.lib-user-card-username {
+  margin: 0;
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.lib-user-card-username--center {
+  text-align: center;
+}
+
+.lib-user-card-name-btn:hover .lib-user-card-username {
+  color: #b478ff !important;
+}
+
+.lib-user-card-followers {
+  margin: 0;
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.lib-user-card-followers--center {
+  text-align: center;
+}
+
+.lib-user-card-follow-under--xl {
+  width: 140px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  font-family: "Press Start 2P", sans-serif !important;
+  font-size: 0.58rem !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  background: rgba(140, 80, 255, 0.38) !important;
+  border: 1px solid rgba(210, 170, 255, 0.35) !important;
+  cursor: pointer !important;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease !important;
+  margin-top: 12px !important;
+}
+
+.lib-user-card-follow-under--xl:hover {
+  transform: translateY(-1px) !important;
+  background: rgba(140, 80, 255, 0.5) !important;
+}
+
+.lib-user-card-follow-under--xl.is-following {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.lib-user-card-follow-under--xl.is-following:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Стили для блоков Following */
+.library-following-block-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 20px 0;
+  font-weight: 700;
+}
+
+/* Стили для счетчика лайкнутых треков */
+.liked-tracks-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-block;
+}
+
+/* Стили для счетчика истории */
+.history-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-block;
+}
+
+/* Стили для поиска */
+.library-search-container {
+  margin-top: 15px;
+  max-width: 600px;
+}
+
+.library-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: all 0.3s ease;
+}
+
+.library-search-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(132, 86, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(132, 86, 255, 0.1);
+}
+
+.library-search-wrapper svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.library-search-input {
   flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.65rem;
+  padding: 0;
+  outline: none;
   min-width: 0;
 }
 
-.user-card-username {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 2px;
+.library-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
   font-family: 'Press Start 2P', sans-serif;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
 }
 
-.user-card-followers {
+.library-search-clear {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.library-search-clear:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.library-search-hint {
+  margin-top: 8px;
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.5);
   font-family: 'Press Start 2P', sans-serif;
+  padding-left: 4px;
 }
 
-.user-card-follow-btn {
-  padding: 6px 12px;
-  background: rgba(132, 86, 255, 0.15);
-  border: 1px solid rgba(132, 86, 255, 0.3);
-  border-radius: 999px;
-  color: white;
+.search-query {
+  color: #b478ff;
+  font-weight: bold;
+}
+
+/* Стили для информации о результатах поиска */
+.library-search-results-info {
+  margin-bottom: 20px;
+}
+
+.search-results-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
   font-family: 'Press Start 2P', sans-serif;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-block;
+}
+
+/* Стили для заголовка лайкнутых треков */
+.liked-tracks-header {
+  margin-bottom: 25px;
+}
+
+.search-filtered {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Стили для пустых результатов поиска */
+.no-search-results {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.no-search-results p {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  margin-bottom: 10px;
+}
+
+.no-search-results .search-suggestions {
   font-size: 0.6rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* Стили для истории прослушивания */
+.history-currently-playing {
+  color: #b478ff;
+  font-weight: bold;
+}
+
+.library-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 150px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.library-loading-state p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+/* Стили для кликабельного автора в LibraryPage */
+.history-track-artist.clickable-artist {
   cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+  transition: color 0.2s ease !important;
 }
 
-.user-card-follow-btn:hover {
-  background: rgba(132, 86, 255, 0.25);
+.history-track-artist.clickable-artist:hover {
+  color: #b478ff !important;
 }
 
-/* History стили */
+/* Убираем hover на карточке для автора */
+.history-item:hover .history-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Стили для кликабельного автора в CompactTrackCard (уже в App.css) */
+.compact-track-artist.clickable-artist {
+  cursor: pointer;
+  transition: color 0.2s ease !important;
+}
+
+.compact-track-artist.clickable-artist:hover {
+  color: #b478ff !important;
+}
+
+/* Убираем hover на карточке для автора */
+.compact-track-card:hover .compact-track-artist.clickable-artist:not(:hover) {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Стили для счетчика загруженных треков */
+.uploaded-tracks-count {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background: rgba(132, 86, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(132, 86, 255, 0.15);
+  display: inline-block;
+}
+
+/* History стили (старый формат) */
 .history-timeline {
   display: flex;
   flex-direction: column;
@@ -312,6 +612,10 @@
   text-overflow: ellipsis;
 }
 
+.history-track-title:hover {
+  color: #b478ff;
+}
+
 .history-track-artist {
   font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.6);
@@ -329,13 +633,247 @@
   text-align: right;
 }
 
+/* History Track Card Styles (новый формат) */
+.history-tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.history-track-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.history-track-card:hover {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: rgba(180, 120, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.history-track-card:hover .history-title {
+  color: #b478ff;
+}
+
+.history-cover {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid rgba(180, 120, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.history-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.history-cover:hover .history-cover-img {
+  transform: scale(1.05);
+}
+
+.history-cover-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(180, 120, 255, 0.2), rgba(100, 80, 255, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 2rem;
+}
+
+.history-cover-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.history-cover:hover .history-cover-overlay {
+  opacity: 1;
+}
+
+.history-play-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.95);
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-play-btn:hover {
+  background: rgba(180, 120, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+  color: #b478ff;
+}
+
+.history-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-title {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+}
+
+.history-played-at {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
+.history-artist {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.history-action-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-action-btn svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+}
+
+.history-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.history-action-btn:hover svg {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Активное состояние (лайкнут/репостнут) - ИКОНКИ ФИОЛЕТОВЫЕ */
+.history-action-btn.is-active {
+  border-color: rgba(180, 120, 255, 0.45);
+  background: rgba(180, 120, 255, 0.18);
+}
+
+.history-action-btn.is-active svg {
+  color: #b478ff !important;
+  filter: drop-shadow(0 0 2px rgba(180, 120, 255, 0.5));
+}
+
+.history-action-btn.is-active:hover {
+  background: rgba(180, 120, 255, 0.25);
+  border-color: rgba(180, 120, 255, 0.6);
+}
+
+.history-action-btn.is-active:hover svg {
+  color: #c89cff !important;
+  filter: drop-shadow(0 0 3px rgba(180, 120, 255, 0.7));
+}
+
+.share-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Адаптивные стили для новых карточек */
 @media (max-width: 1024px) {
   .library-tracks-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
   
   .library-users-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  
+  .lib-user-card-avatar--xl {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  .lib-user-card-follow-under--xl {
+    width: 120px !important;
+  }
+  
+  .history-cover {
+    width: 76px;
+    height: 76px;
+  }
+  
+  .history-play-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 0.7rem;
+  }
+  
+  .history-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .history-action-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -371,7 +909,24 @@
   }
   
   .library-users-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;
+  }
+  
+  .lib-user-card-avatar--xl {
+    width: 100px !important;
+    height: 100px !important;
+  }
+  
+  .lib-user-card-follow-under--xl {
+    width: 100px !important;
+    height: 32px !important;
+    font-size: 0.55rem !important;
+  }
+  
+  .lib-user-card-avatar-fallback svg {
+    width: 36px;
+    height: 36px;
   }
   
   .history-track {
@@ -384,6 +939,72 @@
     text-align: left;
     min-width: auto;
   }
+  
+  .library-search-container {
+    max-width: 100%;
+  }
+  
+  .library-search-input {
+    font-size: 0.6rem;
+  }
+  
+  .library-search-hint {
+    font-size: 0.55rem;
+  }
+  
+  .history-currently-playing {
+    display: block;
+    margin-top: 5px;
+  }
+  
+  .history-track-artist.clickable-artist {
+    font-size: 0.7rem;
+  }
+  
+  .compact-track-artist.clickable-artist {
+    font-size: 0.6rem;
+  }
+  
+  .library-following-block-title {
+    font-size: 0.8rem;
+  }
+  
+  .lib-user-card-username {
+    font-size: 0.75rem;
+  }
+  
+  .lib-user-card-followers {
+    font-size: 0.55rem;
+  }
+  
+  .history-cover {
+    width: 66px;
+    height: 66px;
+  }
+  
+  .history-play-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.65rem;
+  }
+  
+  .history-action-btn {
+    width: 34px;
+    height: 34px;
+  }
+  
+  .history-action-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  
+  .history-title {
+    font-size: 0.7rem;
+  }
+  
+  .history-artist {
+    font-size: 0.55rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -392,18 +1013,29 @@
     gap: 12px;
   }
   
-  .user-card {
-    padding: 12px;
+  .library-users-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
   }
   
-  .user-card-avatar {
-    width: 40px;
-    height: 40px;
+  .lib-user-card {
+    padding: 16px 12px;
   }
   
-  .user-card-avatar-fallback svg {
-    width: 20px;
-    height: 20px;
+  .lib-user-card-avatar--xl {
+    width: 90px !important;
+    height: 90px !important;
+  }
+  
+  .lib-user-card-avatar-fallback svg {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .lib-user-card-follow-under--xl {
+    width: 90px !important;
+    height: 30px !important;
+    font-size: 0.5rem !important;
   }
   
   .filter-btn {
@@ -415,290 +1047,452 @@
     width: 10px;
     height: 10px;
   }
-}
-
-/* Стиль для счетчика лайкнутых треков */
-.liked-tracks-count {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Press Start 2P', sans-serif;
-    margin-bottom: 15px;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    display: inline-block;
-  }
-  
-  /* Стиль для счетчика истории */
-  .history-count {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Press Start 2P', sans-serif;
-    margin-bottom: 20px;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    display: inline-block;
-  }
-
-/* Добавьте эти стили в конец существующего файла */
-
-/* Стили для поиска */
-.library-search-container {
-    margin-top: 15px;
-    max-width: 600px;
-  }
   
   .library-search-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 10px 14px;
-    transition: all 0.3s ease;
-  }
-  
-  .library-search-wrapper:focus-within {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(132, 86, 255, 0.3);
-    box-shadow: 0 0 0 2px rgba(132, 86, 255, 0.1);
+    padding: 8px 12px;
   }
   
   .library-search-wrapper svg {
-    width: 16px;
-    height: 16px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-right: 10px;
-    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
   }
   
   .library-search-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: white;
-    font-family: 'Press Start 2P', sans-serif;
-    font-size: 0.65rem;
-    padding: 0;
-    outline: none;
-    min-width: 0;
-  }
-  
-  .library-search-input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-    font-family: 'Press Start 2P', sans-serif;
-    letter-spacing: 0.3px;
-  }
-  
-  .library-search-clear {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0 4px;
-    margin-left: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease;
-  }
-  
-  .library-search-clear:hover {
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .library-search-hint {
-    margin-top: 8px;
-    font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Press Start 2P', sans-serif;
-    padding-left: 4px;
-  }
-  
-  .search-query {
-    color: #8456ff;
-    font-weight: bold;
-  }
-  
-  /* Стили для информации о результатах поиска */
-  .library-search-results-info {
-    margin-bottom: 20px;
+    font-size: 0.55rem;
   }
   
   .search-results-count {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Press Start 2P', sans-serif;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    display: inline-block;
-  }
-  
-  /* Стили для заголовка лайкнутых треков */
-  .liked-tracks-header {
-    margin-bottom: 25px;
-  }
-  
-  .search-filtered {
-    color: rgba(255, 255, 255, 0.7);
-  }
-  
-  /* Стили для пустых результатов поиска */
-  .no-search-results {
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-    text-align: center;
-  }
-  
-  .no-search-results p {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Press Start 2P', sans-serif;
-    margin-bottom: 10px;
-  }
-  
-  .no-search-results .search-suggestions {
     font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-style: italic;
+    padding: 6px 10px;
   }
   
-  /* Стили для истории прослушивания */
-  .history-currently-playing {
-    color: #8456ff;
-    font-weight: bold;
-  }
-  
-  .library-loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    text-align: center;
-    min-height: 150px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-  }
-  
-  .library-loading-state p {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-family: 'Press Start 2P', sans-serif;
-    letter-spacing: 0.3px;
-  }
-  
-  /* Адаптивные стили */
-  @media (max-width: 768px) {
-    .library-search-container {
-      max-width: 100%;
-    }
-    
-    .library-search-input {
-      font-size: 0.6rem;
-    }
-    
-    .library-search-hint {
-      font-size: 0.55rem;
-    }
-    
-    .history-currently-playing {
-      display: block;
-      margin-top: 5px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .library-search-wrapper {
-      padding: 8px 12px;
-    }
-    
-    .library-search-wrapper svg {
-      width: 14px;
-      height: 14px;
-    }
-    
-    .library-search-input {
-      font-size: 0.55rem;
-    }
-    
-    .search-results-count {
-      font-size: 0.6rem;
-      padding: 6px 10px;
-    }
-  }
-
-/* Стили для кликабельного автора в LibraryPage */
-.history-track-artist.clickable-artist {
-  cursor: pointer;
-  transition: color 0.2s ease !important;
-}
-
-.history-track-artist.clickable-artist:hover {
-  color: #8456ff !important;
-}
-
-/* Убираем hover на карточке для автора */
-.history-item:hover .history-track-artist.clickable-artist:not(:hover) {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
-/* Стили для кликабельного автора в CompactTrackCard (уже в App.css) */
-.compact-track-artist.clickable-artist {
-  cursor: pointer;
-  transition: color 0.2s ease !important;
-}
-
-.compact-track-artist.clickable-artist:hover {
-  color: #8456ff !important;
-}
-
-/* Убираем hover на карточке для автора */
-.compact-track-card:hover .compact-track-artist.clickable-artist:not(:hover) {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-/* Стили для счетчика загруженных треков */
-.uploaded-tracks-count {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-family: 'Press Start 2P', sans-serif;
-  margin-bottom: 15px;
-  padding: 8px 12px;
-  background: rgba(132, 86, 255, 0.08);
-  border-radius: 8px;
-  border: 1px solid rgba(132, 86, 255, 0.15);
-  display: inline-block;
-}
-
-/* Стили для мобильных устройств */
-@media (max-width: 768px) {
-  .history-track-artist.clickable-artist {
-    font-size: 0.7rem;
-  }
-  
-  .compact-track-artist.clickable-artist {
-    font-size: 0.6rem;
-  }
-}
-
-@media (max-width: 480px) {
   .history-track-artist.clickable-artist {
     font-size: 0.65rem;
   }
   
   .compact-track-artist.clickable-artist {
     font-size: 0.55rem;
+  }
+  
+  .lib-user-card-username {
+    font-size: 0.7rem;
+  }
+  
+  .lib-user-card-followers {
+    font-size: 0.5rem;
+  }
+  
+  .library-following-block-title {
+    font-size: 0.75rem;
+  }
+  
+  .history-track-card {
+    padding: 10px;
+    gap: 12px;
+  }
+  
+  .history-cover {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+  }
+  
+  .history-play-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.6rem;
+  }
+  
+  .history-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  
+  .history-action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .history-title {
+    font-size: 0.65rem;
+  }
+  
+  .history-artist {
+    font-size: 0.5rem;
+  }
+  
+  .history-played-at {
+    font-size: 0.5rem;
+  }
+}
+
+/* Анимации для плавных переходов */
+.lib-user-card,
+.history-item,
+.history-track-card,
+.compact-track-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Эффект нажатия для интерактивных элементов */
+.lib-user-card:active,
+.lib-user-card-follow-under--xl:active,
+.filter-btn:active,
+.history-action-btn:active,
+.history-play-btn:active {
+  transform: scale(0.98);
+}
+
+/* Стили для скроллбара */
+.library-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.library-content::-webkit-scrollbar-thumb {
+  background: rgba(132, 86, 255, 0.3);
+  border-radius: 3px;
+}
+
+.library-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(132, 86, 255, 0.5);
+}
+
+/* clickable link style in history (like sidebar) */
+.history-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 120ms ease;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.history-link:hover {
+  color: #8456ff !important;
+}
+
+.history-title.history-link {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.history-artist.history-link {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Стили для заголовка с кнопками фильтрации */
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.playlist-filter {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.playlist-filter button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.playlist-filter button:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-filter button.active {
+  background: rgba(132, 86, 255, 0.15);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  color: white;
+}
+
+/* Стили для карточек плейлистов (grid версия) */
+.library-playlists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.library-playlist-card {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  transition: 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.library-playlist-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(132, 86, 255, 0.3);
+}
+
+.library-playlist-card img {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+}
+
+.playlist-title {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* Стили для списка плейлистов (row версия) */
+.library-playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 4px;
+}
+
+.library-playlist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.library-playlist-row:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.library-playlist-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.library-playlist-cover {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.library-playlist-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.library-playlist-title {
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  color: white;
+}
+
+.library-playlist-sub {
+  opacity: 0.75;
+  font-size: 12px;
+  font-family: 'Press Start 2P', sans-serif;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* --- Playlist row: actions справа --- */
+.playlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- clickable title --- */
+.library-playlist-title.clickable {
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+.library-playlist-title.clickable:hover {
+  color: #a855f7;
+}
+
+/* --- cover wrap + overlay play --- */
+.playlist-cover-wrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.playlist-cover-wrap .library-playlist-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+
+.playlist-cover-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: scale(0.96);
+  transition: 0.15s ease;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.playlist-cover-wrap:hover .playlist-cover-play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --- action buttons --- */
+.pl-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  min-width: 60px;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.pl-action-btn span {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pl-action-btn::first-letter {
+  font-size: 18px;
+}
+
+.pl-action-btn:hover {
+  border-color: rgba(168, 85, 247, 0.8);
+  color: #a855f7;
+  transform: translateY(-2px);
+}
+
+.pl-action-btn.active {
+  border-color: rgba(168, 85, 247, 0.95);
+  color: #a855f7;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+  .pl-action-btn {
+    padding: 8px 12px;
+    font-size: 15px;
+    gap: 6px;
+    min-width: 55px;
+  }
+  
+  .pl-action-btn span {
+    font-size: 14px;
+  }
+  
+  .pl-action-btn::first-letter {
+    font-size: 17px;
+  }
+  
+  .playlist-cover-play {
+    font-size: 22px;
+  }
+  
+  .playlist-actions {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .library-playlist-row {
+    padding: 10px 12px;
+  }
+  
+  .pl-action-btn {
+    padding: 6px 10px;
+    font-size: 14px;
+    min-width: 50px;
+  }
+  
+  .pl-action-btn span {
+    font-size: 13px;
+  }
+  
+  .pl-action-btn::first-letter {
+    font-size: 16px;
+  }
+  
+  .playlist-cover-play {
+    font-size: 20px;
+  }
+  
+  .playlist-actions {
+    gap: 6px;
   }
 }

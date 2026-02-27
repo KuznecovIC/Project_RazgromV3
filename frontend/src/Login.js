@@ -230,9 +230,29 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная функция входа
+  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильная функция входа с очисткой localStorage
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 🔥 если пытаемся залогиниться — чистим прошлую сессию, чтобы не возвращало на старый аккаунт
+    console.log('🧹 Login: Очищаем старые токены перед входом');
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('likedTracks');
+    localStorage.removeItem('pendingPlays');
+    
+    // 🔥 Удаляем все старые ключи лайков
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('likedTrackIds:')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (_) {}
     
     if (!formData.email || !formData.password) {
       setError('Email и пароль обязательны');

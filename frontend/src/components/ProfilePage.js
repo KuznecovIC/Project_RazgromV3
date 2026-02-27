@@ -8,8 +8,10 @@ import Sidebar from '../components/Sidebar';
 import GlassMusicPlayer from '../components/GlassMusicPlayer';
 import logoMark from '../logo1.ico';
 import './ProfilePage.css';
+import { apiFetch } from '../api/apiFetch';
+import { useSocial } from '../context/SocialContext';
 
-// Иконки (без изменений)
+// Иконки (исправленный IconLogout)
 const IconSearch = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" fill="none" />
@@ -55,10 +57,15 @@ const IconDots = () => (
   </svg>
 );
 
+// 🔥 ИСПРАВЛЕННЫЙ IconLogout (без ошибки arc flag)
 const IconLogout = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path
-      d="M14.08 15.59L16.67 13H7v-2h9.67l-2.59-2.59L15.5 7l5 5-5 5-1.42-1.41zM19 3a2 2 0 012 2v4h-2V5H5v14h14v-4h2v4a2 2 0 01-2 2H5a2 2 0 01-2-2h14z"
+      d="M10 17l1.4-1.4-2.6-2.6H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5z"
+      fill="currentColor"
+    />
+    <path
+      d="M4 4h8v2H6v12h6v2H4V4z"
       fill="currentColor"
     />
   </svg>
@@ -82,10 +89,91 @@ const IconHeart = ({ filled = false }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" style={{ transition: 'fill 0.2s ease' }}>
     <path
       d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-      fill={filled ? "#8456ff" : "currentColor"}
-      stroke={filled ? "#8456ff" : "currentColor"}
+      fill={filled ? "#ff4757" : "currentColor"}
+      stroke={filled ? "#ff4757" : "currentColor"}
       strokeWidth="0.5"
     />
+  </svg>
+);
+
+const IconPlay = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5v14l11-7z" fill="currentColor" />
+  </svg>
+);
+
+const IconPause = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" />
+  </svg>
+);
+
+const IconShare = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="share-icon">
+    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+  </svg>
+);
+
+const IconMore = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
+  </svg>
+);
+
+const IconEye = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16">
+    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="currentColor"/>
+  </svg>
+);
+
+const IconComment = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16">
+    <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" fill="currentColor"/>
+  </svg>
+);
+
+// 🔥 Иконки для плейлистов
+const IconHeartOutline = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16">
+    <path
+      d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+const IconHeartFilled = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16">
+    <path
+      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+      fill="#8456ff"
+    />
+  </svg>
+);
+
+const IconRepostOutline = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16">
+    <path
+      d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+const IconRepostFilled = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16">
+    <path
+      d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
+      fill="#8456ff"
+    />
+  </svg>
+);
+
+// 🗑️ Иконка мусорки для удаления треков
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9 3h6l1 2h4v2H4V5h4l1-2z" fill="currentColor" />
+    <path d="M7 9h2v10H7V9zm4 0h2v10h-2V9zm4 0h2v10h-2V9z" fill="currentColor" />
   </svg>
 );
 
@@ -131,18 +219,15 @@ const extractDominantColor = async (imageUrl) => {
     const pixels = imageData.data;
     const colorMap = new Map();
     
-    // Анализ цветов с пропуском слишком светлых/тёмных
     for (let i = 0; i < pixels.length; i += 16) {
       const r = pixels[i];
       const g = pixels[i + 1];
       const b = pixels[i + 2];
       
-      // Пропускаем слишком светлые (блики) и слишком тёмные (тени)
       if ((r > 230 && g > 230 && b > 230) || (r < 30 && g < 30 && b < 30)) {
         continue;
       }
       
-      // Квантование для группировки похожих цветов
       const quantized = `${Math.floor(r / 16) * 16},${Math.floor(g / 16) * 16},${Math.floor(b / 16) * 16}`;
       
       if (colorMap.has(quantized)) {
@@ -152,7 +237,6 @@ const extractDominantColor = async (imageUrl) => {
       }
     }
     
-    // Находим самый частый цвет
     let maxCount = 0;
     let dominantColor = '#003196';
     
@@ -164,7 +248,6 @@ const extractDominantColor = async (imageUrl) => {
       }
     }
     
-    // Создаем акцентный цвет (осветлённый доминантный)
     const accentColor = brightenColor(dominantColor, 0.3);
     
     return {
@@ -181,6 +264,33 @@ const extractDominantColor = async (imageUrl) => {
   }
 };
 
+// 🔥 Waveform функция (ВАЖНО: не удалять!)
+const getWaveformData = (trackOrTrackId) => {
+  // Если передали ID трека
+  if (typeof trackOrTrackId === 'number' || typeof trackOrTrackId === 'string') {
+    return null;
+  }
+  
+  // Если передали объект трека
+  if (trackOrTrackId && typeof trackOrTrackId === 'object') {
+    const fromTrack = 
+      trackOrTrackId.waveform ||
+      trackOrTrackId.waveform_data ||
+      trackOrTrackId.waveform_array;
+    
+    if (Array.isArray(fromTrack) && fromTrack.length > 0) {
+      return fromTrack.map(val => {
+        const num = Number(val);
+        return isNaN(num) ? 30 : Math.max(10, Math.min(100, num));
+      });
+    }
+    
+    return null;
+  }
+  
+  return null;
+};
+
 // 🔥 API функции
 const getAuthToken = () => {
   return localStorage.getItem('access');
@@ -193,11 +303,7 @@ const api = {
       'Content-Type': 'application/json'
     };
     
-    // ✅ КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Для публичных профилей токен НЕ нужен!
-    // Токен нужен только для /users/me/ и других защищенных эндпоинтов
-    if (token && url !== '/users/me/') {
-      // Добавляем токен только если он есть и это не публичный профиль
-      // (но на самом деле публичные профили работают и без токена)
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
@@ -284,29 +390,63 @@ const ProfilePage = ({
   currentTime,
   duration,
   onSeek,
+  playTrack,
   volume,
   onVolumeChange,
   onNext,
   onPrevious,
   loopEnabled,
   onToggleLoop,
-  onToggleLike,
-  likedTracks,
-  checkTrackLiked,
   trackData,
-  updateUser
+  onRecordPlay,
+  updateUser,
+  setPlaybackQueue,
+  playQueueIds
 }) => {
   const navigate = useNavigate();
-  const { id } = useParams(); // ✅ Получаем ID из URL
+  const { id: rawId } = useParams(); // Извлекаем ID из URL
   
-  console.log('👤 ProfilePage render:', { 
-    userIdFromParams: id,
-    currentUserId: currentUserProp?.id,
-    isMyProfile: !id || (currentUserProp && id.toString() === currentUserProp.id?.toString())
-  });
+  // 🔥 Добавляем ref для currentUserProp (чтобы не зависеть от объекта в эффектах)
+  const currentUserPropRef = useRef(currentUserProp);
+  useEffect(() => {
+    currentUserPropRef.current = currentUserProp;
+  }, [currentUserProp]);
+  
+  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: защита от undefined
+  const id = rawId && rawId !== 'undefined' ? rawId : null;
+  
+  // ✅ ИСПОЛЬЗУЕМ SocialContext - ВСЕ НУЖНЫЕ ФУНКЦИИ
+  const {
+    // ✅ треки
+    toggleLike,
+    toggleRepost,
+    toggleFollow,
+    isLiked,
+    isReposted,
+    isFollowing: isFollowingContext,
+    getLikeCount,
+    getRepostCount,
+    getFollowerCount,
+    setFollowStatus,
+    followsLoaded,
+    reposts,
+    likedTrackIds,
+    loadMyReposts,
+
+    // ✅ плейлисты
+    togglePlaylistLike,
+    togglePlaylistRepost,
+    isPlaylistLiked,
+    isPlaylistReposted,
+    getPlaylistLikeCount,
+    getPlaylistRepostCount,
+    playlistLikes,      // 🔥 объект { [id]: true/false }
+    playlistReposts,    // 🔥 объект { [id]: true/false }
+  } = useSocial();
   
   // Состояния
   const [user, setUser] = useState(null);
+  
   const [gridScanColors, setGridScanColors] = useState({
     gridBgColor: '#0b1020',
     linesColor: '#003196',
@@ -316,32 +456,286 @@ const ProfilePage = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  // ✅ Плейлист как очередь (как в LibraryPage)
+  const [playingPlaylistId, setPlayingPlaylistId] = useState(null);
+  const [playlistQueueCache, setPlaylistQueueCache] = useState({});
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
+  // ✅ Presence статуса (online/afk/offline/dnd/sleep)
+  const [profilePresence, setProfilePresence] = useState('offline');
+  
   const [userTracks, setUserTracks] = useState([]);
   const [extractingColor, setExtractingColor] = useState(false);
   const [isMyProfile, setIsMyProfile] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState(null);
-
-  // 🔴 СОСТОЯНИЯ ДЛЯ FOLLOW СИСТЕМЫ (синхронизировано с TrackPage)
-  const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-
-  // 🔴 ОТДЕЛЬНОЕ СОСТОЯНИЕ ДЛЯ МОИХ FOLLOW STATS (чтобы не зависеть от currentUserProp)
-  const [myFollowStats, setMyFollowStats] = useState({
-    followers: 0,
-    following: 0
-  });
+  const [userReposts, setUserReposts] = useState([]);
+  const [loadingReposts, setLoadingReposts] = useState(false);
+  
+  // 🔥 НОВОЕ: лайкнутые треки пользователя (публичные)
+  const [userLikedTracks, setUserLikedTracks] = useState([]);
+  const [userLikedPlaylists, setUserLikedPlaylists] = useState([]);
+  
+  // 🔥 НОВОЕ: репостнутые плейлисты пользователя (публичные)
+  const [userRepostedPlaylists, setUserRepostedPlaylists] = useState([]);
+  const [loadingRepostedPlaylists, setLoadingRepostedPlaylists] = useState(false);
+  
+  const [loadingLikes, setLoadingLikes] = useState(false);
+  
+  // 🔥 НОВОЕ: локальный кэш "дотянутых" треков для All
+  const [allExtraTracks, setAllExtraTracks] = useState([]);
+  
+  // 🔥 НОВОЕ: кэш "дотянутых" плейлистов для Repost
+  const [repostExtraPlaylists, setRepostExtraPlaylists] = useState([]);
+  
+  // 🔥 НОВОЕ: плейлисты автора
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editBio, setEditBio] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editCountryError, setEditCountryError] = useState('');
+  const [hoveredTrackId, setHoveredTrackId] = useState(null);
+  const [syncInProgress, setSyncInProgress] = useState(false);
+  
+  // 🔥 Waveform-кеш
+  const waveformsByIdRef = useRef({});
+  const [waveformsVersion, setWaveformsVersion] = useState(0);
+  
+  // 🔥 Флаги для предотвращения повторных запросов
+  const isFetchingWaveformsRef = useRef(false);
+  const fetchedTrackIdsRef = useRef(new Set());
+  const isInitialLoadRef = useRef(false);
   
   const userMenuRef = useRef(null);
   const headerFileInputRef = useRef(null);
   const avatarFileInputRef = useRef(null);
+
+  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ
+  const getImageUrl = useCallback((imageValue) => {
+    if (!imageValue || 
+        imageValue === 'null' || 
+        imageValue === 'undefined' ||
+        imageValue.trim() === '') {
+      return null;
+    }
+    
+    if (imageValue.startsWith('/') && !imageValue.startsWith('//')) {
+      return `http://localhost:8000${imageValue}`;
+    }
+    
+    return imageValue;
+  }, []);
   
-  // ✅ ОПРЕДЕЛЯЕМ, ЧЕЙ ПРОФИЛЬ
+  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ HEADER IMAGE
+  const getHeaderImageUrl = useCallback((usr) => {
+    if (!usr) return null;
+    
+    const headerValue = 
+      usr.header_image ||
+      usr.header_image_url ||
+      usr.header ||
+      null;
+    
+    return getImageUrl(headerValue);
+  }, [getImageUrl]);
+  
+  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ АВАТАРА
+  const getAvatarUrl = useCallback((usr) => {
+    if (!usr) return null;
+    
+    const avatarValue = 
+      usr.avatar ||
+      usr.avatar_url ||
+      usr.profile_image ||
+      null;
+    
+    return getImageUrl(avatarValue);
+  }, [getImageUrl]);
+
   const profileUserId = useMemo(() => {
     return id || currentUserProp?.id;
   }, [id, currentUserProp?.id]);
+
+  // ✅ URLs для шапки и аватарки (без падений)
+  const headerImageUrl = useMemo(() => {
+    return getHeaderImageUrl(user || currentUserProp);
+  }, [getHeaderImageUrl, user, currentUserProp]);
+
+  const avatarUrl = useMemo(() => {
+    return getAvatarUrl(user || currentUserProp);
+  }, [getAvatarUrl, user, currentUserProp]);
+
+  // ✅ Конфиг для GridScan (переменная нужна ниже в JSX)
+  const gridScanConfig = useMemo(() => ({
+    gridBgColor: gridScanColors.gridBgColor,
+    linesColor: gridScanColors.linesColor,
+    scanColor: gridScanColors.scanColor,
+    gridBgOpacity: 0.55,
+    scanOpacity: 0.6,
+    gridScale: 0.12,
+    scanGlow: 1.2,
+    bloomIntensity: 0.5
+  }), [gridScanColors]);
+
+  // ✅ Подгружаем presence профиля (как в MessageHub)
+  const loadProfilePresence = useCallback(async () => {
+    if (!profileUserId) return;
+
+    try {
+      const res = await apiFetch(`/api/users/${profileUserId}/presence/`);
+      if (!res.ok) {
+        setProfilePresence('offline');
+        return;
+      }
+      const data = await res.json();
+
+      // нормализуем значения (на всякий)
+      const raw = (data?.presence || 'offline').toString().toLowerCase();
+      const normalized =
+        raw === 'do_not_disturb' ? 'dnd' :
+        raw === 'sleeping' ? 'sleep' :
+        raw;
+
+      setProfilePresence(normalized);
+    } catch {
+      setProfilePresence('offline');
+    }
+  }, [profileUserId]);
   
+  // ✅ ЗАГРУЗКА ДАННЫХ ПРОФИЛЯ
+  const loadProfileData = useCallback(async () => {
+    console.log('🔄 loadProfileData вызван', { id, profileUserId });
+    
+    if (!profileUserId) {
+      console.log('❌ Нет profileUserId для загрузки');
+      return;
+    }
+    
+    setIsLoading(true);
+    setProfileLoadError(null);
+    
+    try {
+      let profileData;
+      
+      if (id) {
+        console.log(`🔍 Загружаем чужой профиль по ID: ${id}`);
+        profileData = await api.get(`/users/${id}/`);
+      } else {
+        console.log('🔍 Загружаем свой профиль');
+        profileData = await api.get('/users/me/');
+        
+        if (profileData.user) {
+          setEditBio(profileData.user.bio || '');
+          setEditCountry(profileData.user.country || '');
+        }
+      }
+      
+      const userData = profileData.user || profileData;
+      
+      if (userData) {
+        setUser(userData);
+        
+        // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Синхронизируем SocialContext с сервером
+        if (userData.id) {
+          const followFromServer =
+            typeof userData.is_following === 'boolean'
+              ? userData.is_following
+              : (typeof userData.is_followed_by_me === 'boolean' ? userData.is_followed_by_me : null);
+
+          if (followFromServer !== null) {
+            console.log('✅ ProfilePage: Синхронизируем follow-статус из сервера:', {
+              userId: userData.id,
+              followStatus: followFromServer
+            });
+            
+            setFollowStatus(
+              userData.id,
+              followFromServer,
+              userData.followers_count ?? 0
+            );
+          }
+        }
+        
+        if (!id && updateUser && typeof updateUser === 'function') {
+          updateUser(userData);
+        }
+      }
+
+      // Загрузка треков пользователя
+      try {
+        let tracksEndpoint;
+        
+        if (id) {
+          tracksEndpoint = `/users/${id}/tracks/`;
+        } else {
+          tracksEndpoint = '/my-tracks/';
+        }
+        
+        console.log(`🔍 Загрузка треков по эндпоинту: ${tracksEndpoint}`);
+        const tracksData = await api.get(tracksEndpoint);
+        
+        if (tracksData.success && tracksData.tracks) {
+          setUserTracks(tracksData.tracks);
+        } else if (tracksData.tracks) {
+          setUserTracks(tracksData.tracks);
+        } else if (tracksData.results) {
+          setUserTracks(tracksData.results);
+        } else {
+          setUserTracks([]);
+        }
+        
+        // Сбрасываем кэш waveform при загрузке новых треков
+        fetchedTrackIdsRef.current = new Set();
+        
+      } catch (trackError) {
+        console.log('⚠️ Не удалось загрузить треки:', trackError);
+        setUserTracks([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка загрузки профиля:', error);
+      setProfileLoadError(error.message || 'Profile not found');
+      
+      // 🔥 ИСПРАВЛЕНИЕ: используем ref вместо currentUserProp
+      if (!id && currentUserPropRef.current) {
+        setUser(currentUserPropRef.current);
+      }
+    } finally {
+      setIsLoading(false);
+      console.log('✅ Загрузка профиля завершена');
+    }
+  }, [id, profileUserId, updateUser, setFollowStatus]);
+
+  // ✅ 🔥 ИСПРАВЛЕННЫЙ ЭФФЕКТ: ЗАГРУЗКА ДАННЫХ ПРИ СМЕНЕ ID (зависим только от profileUserId)
+  useEffect(() => {
+    console.log(`🎯 ProfilePage эффект: profileUserId = ${profileUserId}`);
+    
+    if (!profileUserId) {
+      setIsLoading(false);
+      return;
+    }
+    
+    // Сбрасываем флаг начальной загрузки при смене пользователя
+    isInitialLoadRef.current = false;
+    
+    // Загружаем данные профиля
+    loadProfileData();
+    
+    return () => {
+      console.log('🧹 Cleanup effect для профиля', profileUserId);
+    };
+  }, [profileUserId, loadProfileData]);
+
+  // ✅ Presence: обновляем только статус кружочка
+  useEffect(() => {
+    if (!profileUserId) return;
+    loadProfilePresence();
+    const t = setInterval(loadProfilePresence, 30000);
+    return () => clearInterval(t);
+  }, [profileUserId, loadProfilePresence]);
+
   // ✅ ОПРЕДЕЛЯЕМ, ЭТО МОЙ ПРОФИЛЬ ИЛИ НЕТ
   useEffect(() => {
     const check = () => {
@@ -362,284 +756,219 @@ const ProfilePage = ({
     check();
   }, [id, currentUserProp]);
 
-  // ✅ ОТДЕЛЬНАЯ ЗАГРУЗКА FOLLOW-STATS ДЛЯ СВОЕГО ПРОФИЛЯ
-  useEffect(() => {
-    // Работаем только для своего профиля и если знаем свой ID
-    if (!isMyProfile || !profileUserId) return;
-
-    const loadMyFollowStats = async () => {
-      try {
-        const statsResponse = await api.get(`/users/${profileUserId}/follow-stats/`);
-        const stats = statsResponse?.stats || {};
-        const followers = Number(stats.followers ?? 0);
-        const following = Number(stats.following ?? 0);
-
-        setMyFollowStats({ followers, following });
-        console.log('✅ [MY FOLLOW STATS] Загружены данные:', { followers, following });
-      } catch (error) {
-        console.error('❌ [MY FOLLOW STATS] Ошибка загрузки:', error);
-      }
-    };
-
-    loadMyFollowStats();
-  }, [isMyProfile, profileUserId]);
-
-  // 🔴 ФУНКЦИЯ ДЛЯ ПРОВЕРКИ СТАТУСА FOLLOW
-  const checkFollowStatus = useCallback(async (targetUserId) => {
-    const authToken = getAuthToken();
-    if (!authToken) return false;
-
+  // ✅ ФУНКЦИЯ ЗАГРУЗКИ РЕПОСТОВ (ПУБЛИЧНАЯ)
+  const loadUserReposts = useCallback(async () => {
+    if (!profileUserId) return;
+    
+    setLoadingReposts(true);
+    
     try {
-      const data = await api.get(`/users/${targetUserId}/check-follow/`);
-      return data?.is_following || false;
-    } catch (error) {
-      console.error('❌ Ошибка проверки статуса подписки:', error);
-      return false;
-    }
-  }, []);
-
-  // 🔴 ФУНКЦИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ FOLLOW
-  const handleFollowToggle = useCallback(async () => {
-    const authToken = getAuthToken();
-
-    if (!authToken) {
-      alert('Войдите в систему, чтобы подписываться на пользователей');
-      return;
-    }
-
-    if (followLoading) return;
-
-    const targetUserId = user?.id || currentUserProp?.id;
-    if (!targetUserId) return;
-    if (isMyProfile) return;
-
-    setFollowLoading(true);
-
-    try {
-      const method = isFollowing ? 'DELETE' : 'POST';
-      const response = await fetch(`http://localhost:8000/api/users/${targetUserId}/follow/`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      let data = {};
-      try {
-        data = await response.json();
-      } catch (e) {
-        data = {};
-      }
-
+      const response = await apiFetch(`/api/users/${profileUserId}/reposts/`);
+      
       if (response.ok) {
-        const newFollowingState = !isFollowing;
-        setIsFollowing(newFollowingState);
-
-        // 🔴 ОБНОВЛЯЕМ КОЛИЧЕСТВО ПОДПИСЧИКОВ В РЕАЛЬНОМ ВРЕМЕНИ
-        setUser(prev => {
-          if (!prev) return prev;
-          const currentFollowers =
-            parseInt(prev.followers_count ?? prev.followers ?? prev.followersCount ?? 0, 10) || 0;
-          const newCount = isFollowing ? Math.max(0, currentFollowers - 1) : currentFollowers + 1;
-          return {
-            ...prev,
-            followers_count: newCount,
-            followers: newCount
-          };
-        });
-
-        // 🔴 ДИСПАТЧИМ СОБЫТИЕ ДЛЯ ОБНОВЛЕНИЯ В ДРУГИХ КОМПОНЕНТАХ
-        // ✅ Получаем ID текущего пользователя (кто подписывается)
-        let currentUserId = currentUserProp?.id || null;
-        if (!currentUserId) {
-          try {
-            const userData = localStorage.getItem('user');
-            if (userData) {
-              const parsed = JSON.parse(userData);
-              currentUserId = parsed?.id || null;
-            }
-          } catch (e) {
-            console.warn('Не удалось получить currentUserId из localStorage');
-          }
-        }
-        
-        // ✅ Если все еще не получили ID, пытаемся через API
-        if (!currentUserId && authToken) {
-          try {
-            const meResponse = await fetch('http://localhost:8000/api/users/me/', {
-              headers: {
-                'Authorization': `Bearer ${authToken}`
-              }
-            });
-            if (meResponse.ok) {
-              const meData = await meResponse.json();
-              currentUserId = meData?.user?.id || meData?.id || null;
-            }
-          } catch (e) {
-            console.warn('Не удалось получить currentUserId через API');
-          }
-        }
-        
-        console.log('📤 Отправляю событие followStatusChanged:', {
-          targetUserId,
-          currentUserId,
-          isFollowing: newFollowingState
-        });
-        
-        window.dispatchEvent(new CustomEvent('followStatusChanged', {
-          detail: {
-            targetUserId,
-            currentUserId, // ✅ КТО подписался
-            isFollowing: newFollowingState,
-            timestamp: Date.now()
-          }
-        }));
-        
-        // ✅ ДОПОЛНИТЕЛЬНО: Всегда обновляем данные текущего пользователя после подписки
-        // Это гарантирует обновление счетчика Following в его профиле
-        if (currentUserId) {
-          console.log('🔄 [ПОДПИСКА] Обновляю данные текущего пользователя после подписки, currentUserId:', currentUserId);
-          setTimeout(async () => {
-            try {
-              const followStatsResponse = await api.get(`/users/${currentUserId}/follow-stats/`);
-              console.log('📡 [ПОДПИСКА] Ответ от follow-stats:', followStatsResponse);
-              const stats = followStatsResponse?.stats || {};
-              const actualFollowing = Number(stats.following ?? 0);
-              const actualFollowers = Number(stats.followers ?? 0);
-              
-              console.log('📊 [ПОДПИСКА] Актуальная статистика текущего пользователя:', { 
-                actualFollowing, 
-                actualFollowers,
-                currentUserId,
-                profileUserId,
-                isMyProfile,
-                id
-              });
-              
-              // ✅ Обновляем состояние user если это профиль текущего пользователя
-              const isCurrentUserProfile = !id || String(id) === String(currentUserId);
-              console.log('🔍 [ПОДПИСКА] Это профиль текущего пользователя?', isCurrentUserProfile);
-              
-              if (isCurrentUserProfile) {
-                console.log('✅ [ПОДПИСКА] Обновляю состояние user');
-                setUser(prev => {
-                  if (!prev) {
-                    console.warn('⚠️ [ПОДПИСКА] prev user is null');
-                    return prev;
-                  }
-                  const updated = {
-                    ...prev,
-                    following_count: actualFollowing,
-                    following: actualFollowing,
-                    followers_count: actualFollowers,
-                    followers: actualFollowers
-                  };
-                  console.log('🔄 [ПОДПИСКА] Обновленное состояние user:', updated);
-                  return updated;
-                });
-              } else {
-                console.log('⏭️ [ПОДПИСКА] Это не профиль текущего пользователя, обновляю только через updateUser');
-              }
-              
-              // ✅ Всегда обновляем currentUserProp если есть функция updateUser
-              if (updateUser && typeof updateUser === 'function') {
-                const currentUserData = currentUserProp || user;
-                if (currentUserData) {
-                  const updatedUserData = {
-                    ...currentUserData,
-                    following_count: actualFollowing,
-                    following: actualFollowing,
-                    followers_count: actualFollowers,
-                    followers: actualFollowers
-                  };
-                  console.log('🔄 [ПОДПИСКА] Обновляю currentUserProp через updateUser:', updatedUserData);
-                  updateUser(updatedUserData);
-                } else {
-                  console.warn('⚠️ [ПОДПИСКА] currentUserData is null, не могу обновить через updateUser');
-                }
-              } else {
-                console.warn('⚠️ [ПОДПИСКА] updateUser функция не доступна');
-              }
-            } catch (error) {
-              console.error('❌ [ПОДПИСКА] Не удалось обновить данные после подписки:', error);
-            }
-          }, 300);
-        } else {
-          console.warn('⚠️ [ПОДПИСКА] currentUserId не определен, не могу обновить данные');
-        }
+        const data = await response.json();
+        setUserReposts(data.reposts || []);
       } else {
-        alert(data?.error || 'Ошибка при изменении подписки');
-        console.error('❌ Ошибка API подписки:', data?.error);
+        setUserReposts([]);
       }
     } catch (error) {
-      console.error('❌ Сетевая ошибка подписки:', error);
-      alert('Сетевая ошибка при изменении подписки');
+      console.error('❌ Ошибка загрузки репостов:', error);
+      setUserReposts([]);
     } finally {
-      setFollowLoading(false);
+      setLoadingReposts(false);
     }
-  }, [followLoading, isFollowing, isMyProfile, user?.id, currentUserProp?.id]);
-  
-  // 🔥 Оптимизированная конфигурация GridScan
-  const gridScanConfig = useMemo(() => ({
-    gridBgColor: gridScanColors.gridBgColor,
-    linesColor: gridScanColors.linesColor,
-    scanColor: gridScanColors.scanColor,
-    gridBgOpacity: 0.55,
-    scanOpacity: 0.6,
-    gridScale: 0.12,
-    scanGlow: 1.2,
-    bloomIntensity: 0.5
-  }), [gridScanColors.gridBgColor, gridScanColors.linesColor, gridScanColors.scanColor]);
-  
-  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ
-  const getImageUrl = useCallback((imageValue) => {
-    if (!imageValue || 
-        imageValue === 'null' || 
-        imageValue === 'undefined' ||
-        imageValue.trim() === '') {
-      return null;
-    }
+  }, [profileUserId]);
+
+  // 🔥 НОВОЕ: ЗАГРУЗКА ЛАЙКНУТЫХ ТРЕКОВ ПОЛЬЗОВАТЕЛЯ (ПУБЛИЧНАЯ)
+  const loadUserLikedTracks = useCallback(async () => {
+    if (!profileUserId) return;
     
-    // Если это относительный путь, добавляем базовый URL
-    if (imageValue.startsWith('/') && !imageValue.startsWith('//')) {
-      return `http://localhost:8000${imageValue}`;
-    }
+    setLoadingLikes(true);
     
-    return imageValue;
+    try {
+      const response = await apiFetch(`/api/users/${profileUserId}/liked-tracks/`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Поддерживаем разные форматы ответа
+        const tracks = data.liked_tracks || data.tracks || [];
+        setUserLikedTracks(tracks);
+      } else {
+        setUserLikedTracks([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки лайкнутых треков:', error);
+      setUserLikedTracks([]);
+    } finally {
+      setLoadingLikes(false);
+    }
+  }, [profileUserId]);
+
+  // 🔥 НОВОЕ: ЗАГРУЗКА ЛАЙКНУТЫХ ПЛЕЙЛИСТОВ (публичная)
+  const loadUserLikedPlaylists = useCallback(async () => {
+    if (!profileUserId) return;
+
+    try {
+      const response = await apiFetch(`/api/users/${profileUserId}/liked-playlists/`);
+      if (response.ok) {
+        const data = await response.json();
+        const playlists = data.playlists || data.liked_playlists || [];
+        setUserLikedPlaylists(playlists);
+      } else {
+        setUserLikedPlaylists([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки лайкнутых плейлистов:', error);
+      setUserLikedPlaylists([]);
+    }
+  }, [profileUserId]);
+
+  // 🔥 НОВОЕ: ЗАГРУЗКА РЕПОСТНУТЫХ ПЛЕЙЛИСТОВ (публичная)
+  const loadUserRepostedPlaylists = useCallback(async () => {
+    if (!profileUserId) return;
+
+    setLoadingRepostedPlaylists(true);
+    try {
+      const response = await apiFetch(`/api/users/${profileUserId}/reposted-playlists/`);
+      if (response.ok) {
+        const data = await response.json();
+        const playlists = data.playlists || data.reposted_playlists || [];
+        setUserRepostedPlaylists(playlists);
+      } else {
+        setUserRepostedPlaylists([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки репостнутых плейлистов:', error);
+      setUserRepostedPlaylists([]);
+    } finally {
+      setLoadingRepostedPlaylists(false);
+    }
+  }, [profileUserId]);
+
+  // 🔥 НОВОЕ: ЗАГРУЗКА ПЛЕЙЛИСТОВ АВТОРА
+  const loadUserPlaylists = useCallback(async () => {
+    if (!profileUserId) return;
+
+    try {
+      const response = await apiFetch(`/api/users/${profileUserId}/playlists/`);
+      if (response.ok) {
+        const data = await response.json();
+        const playlists = data.playlists || data.results || [];
+        setUserPlaylists(Array.isArray(playlists) ? playlists : []);
+      } else {
+        setUserPlaylists([]);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки плейлистов автора:', error);
+      setUserPlaylists([]);
+    }
+  }, [profileUserId]);
+
+  
+  // ✅ ОБРАБОТЧИК ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
+  const handleTabChange = useCallback((item) => {
+    setActiveTab(item.label);
+    
+    if (item.label === 'Repost') {
+      loadUserReposts();
+      loadUserRepostedPlaylists(); // ✅ Загружаем и репостнутые плейлисты
+    }
+
+    if (item.label === 'Playlists') {
+      loadUserPlaylists();
+    }
+  }, [loadUserReposts, loadUserRepostedPlaylists, loadUserPlaylists]);
+  
+  // 🔥 ЭФФЕКТ: Загружаем репосты и лайки при загрузке профиля
+  useEffect(() => {
+    if (profileUserId) {
+      loadUserReposts();
+      loadUserLikedTracks();
+      loadUserLikedPlaylists();
+      loadUserRepostedPlaylists(); // ✅ добавили загрузку репостнутых плейлистов
+      loadUserPlaylists();
+    }
+  }, [profileUserId, loadUserReposts, loadUserLikedTracks, loadUserLikedPlaylists, loadUserRepostedPlaylists, loadUserPlaylists]);
+
+  // ✅ 🔥 ИСПРАВЛЕННЫЙ ЭФФЕКТ: загружать репосты при переключении на вкладку "Repost" (без проверки isMyProfile)
+  useEffect(() => {
+    if (activeTab === 'Repost') {
+      loadUserReposts();
+    }
+  }, [activeTab, loadUserReposts]);
+
+  // 🔥 🔥 🔥 НОВЫЙ ЭФФЕКТ: дотягиваем недостающие плейлисты для вкладки Repost
+  useEffect(() => {
+    // важно: это нужно только на МОЁМ профиле и только во вкладке Repost
+    if (!isMyProfile) return;
+    if (activeTab !== 'Repost') return;
+
+    const repostedIds = Object.keys(playlistReposts || {})
+      .map((x) => Number(x))
+      .filter((id) => id && (playlistReposts?.[id] ?? false));
+
+    if (repostedIds.length === 0) return;
+
+    const haveIds = new Set([
+      ...(userRepostedPlaylists || []).map(p => p?.id).filter(Boolean),
+      ...(repostExtraPlaylists || []).map(p => p?.id).filter(Boolean),
+    ]);
+
+    const needIds = repostedIds.filter((id) => !haveIds.has(id));
+    if (needIds.length === 0) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        for (const id of needIds) {
+          const resp = await apiFetch(`/api/playlists/${id}/`);
+          if (!resp.ok) continue;
+
+          const data = await resp.json();
+          const playlist = data.playlist || data;
+          if (!playlist?.id) continue;
+
+          if (!cancelled) {
+            setRepostExtraPlaylists((prev) => {
+              if (prev.some(p => p?.id === playlist.id)) return prev;
+              return [...prev, playlist];
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('ProfilePage: cannot fetch missing repost playlists', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isMyProfile, activeTab, playlistReposts, userRepostedPlaylists, repostExtraPlaylists]);
+
+  // 🔥 ВЫЧИСЛЯЕМ ПЛЕЙЛИСТЫ ДЛЯ ВКЛАДКИ REPOST (через SocialContext)
+  const repostTabPlaylists = useMemo(() => {
+    // база: что пришло с сервера + то, что мы дотянули сами
+    const merged = new Map();
+    [...(userRepostedPlaylists || []), ...(repostExtraPlaylists || [])].forEach((p) => {
+      if (p?.id) merged.set(p.id, p);
+    });
+
+    // если это МОЙ профиль — фильтруем по живому SocialContext
+    if (isMyProfile) {
+      return Array.from(merged.values()).filter((p) => p?.id && (playlistReposts?.[p.id] ?? false));
+    }
+
+    // чужой профиль: сервер уже дал репостнутые — просто показываем
+    return Array.from(merged.values());
+  }, [userRepostedPlaylists, repostExtraPlaylists, isMyProfile, playlistReposts]);
+
+  // 🔥 Waveform для треков в профиле (фолбэк)
+  const generateWaveformData = useCallback(() => {
+    return Array(60).fill().map((_, i) => {
+      const baseHeight = 30 + Math.sin(i * 0.3) * 20;
+      const randomFactor = 10 + Math.random() * 15;
+      return baseHeight + randomFactor;
+    });
   }, []);
-  
-  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ HEADER IMAGE
-  const getHeaderImageUrl = useCallback(() => {
-    if (!user) return null;
-    
-    // 🔥 ВАЖНО: Проверяем ВСЕ возможные названия полей
-    const headerValue = 
-      user.header_image ||      // Публичный профиль (новый формат)
-      user.header_image_url ||  // Свой профиль (старый формат)
-      user.header ||            // Резервное поле
-      null;
-    
-    return getImageUrl(headerValue);
-  }, [user, getImageUrl]);
-  
-  // 🔥 УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ АВАТАРА
-  const getAvatarUrl = useCallback(() => {
-    if (!user) return null;
-    
-    // 🔥 ВАЖНО: Проверяем ВСЕ возможные названия полей
-    const avatarValue = 
-      user.avatar ||            // Основное поле (все профили)
-      user.avatar_url ||        // Резервное поле
-      user.profile_image ||     // Дополнительное поле
-      null;
-    
-    return getImageUrl(avatarValue);
-  }, [user, getImageUrl]);
-  
-  // 🔥 Мемоизированные URL изображений
-  const headerImageUrl = useMemo(() => getHeaderImageUrl(), [getHeaderImageUrl]);
-  const avatarUrl = useMemo(() => getAvatarUrl(), [getAvatarUrl]);
   
   // 🔥 Извлечение цветов из header image
   const extractColorsFromHeader = useCallback(async () => {
@@ -658,7 +987,6 @@ const ProfilePage = ({
       
     } catch (error) {
       console.error('Ошибка извлечения цвета:', error);
-      // Используем gridscan_color из профиля, если есть
       if (user?.gridscan_color && 
           user.gridscan_color !== 'null' && 
           user.gridscan_color !== 'undefined' &&
@@ -674,284 +1002,220 @@ const ProfilePage = ({
     }
   }, [user, headerImageUrl]);
   
-  // ✅ ЗАГРУЗКА ДАННЫХ ПРОФИЛЯ - ИСПРАВЛЕННАЯ ВЕРСИЯ
-  const loadProfileData = useCallback(async () => {
-    console.log('🔄 loadProfileData вызван', { id, profileUserId });
-    
-    if (!profileUserId) {
-      console.log('❌ Нет profileUserId для загрузки');
-      return;
-    }
-    
-    setIsLoading(true);
-    setProfileLoadError(null);
-    
-    try {
-      let profileData;
-      
-      if (id) {
-        // ✅ Загружаем ЧУЖОЙ профиль по ID
-        // Эндпоинт должен быть: GET /api/users/<id>/
-        console.log(`🔍 Загружаем чужой профиль по ID: ${id}`);
-        profileData = await api.get(`/users/${id}/`);
-        console.log('✅ Данные чужого профиля загружены:', profileData);
-      } else {
-        // ✅ Загружаем СВОЙ профиль
-        console.log('🔍 Загружаем свой профиль');
-        profileData = await api.get('/users/me/');
-        console.log('✅ Данные своего профиля загружены:', profileData);
+  // 🔥 Загрузка реальной Waveform‑данных для треков профиля
+  const loadWaveformForTrack = useCallback(
+    async (trackId) => {
+      if (fetchedTrackIdsRef.current.has(trackId)) {
+        return waveformsByIdRef.current[trackId] || null;
       }
       
-      // 🔥 ДЕБАГГИНГ: Что пришло от сервера
-      console.log('📊 Полученные данные пользователя:', {
-        id: profileData.user?.id,
-        username: profileData.user?.username,
-        hasAvatar: !!profileData.user?.avatar,
-        hasAvatarUrl: !!profileData.user?.avatar_url,
-        hasHeaderImage: !!profileData.user?.header_image,
-        hasHeaderImageUrl: !!profileData.user?.header_image_url,
-        hasGridscanColor: !!profileData.user?.gridscan_color,
-        allKeys: profileData.user ? Object.keys(profileData.user) : []
-      });
-      
-      if (profileData.user) {
-        setUser(profileData.user);
-        
-        // Обновляем текущего пользователя, если это его профиль
-        if (!id && updateUser && typeof updateUser === 'function') {
-          updateUser(profileData.user);
-        }
-        
-        // 🔥 НЕМЕДЛЕННО обновляем URL изображений
-        console.log('🖼️ Извлеченные URL:', {
-          headerImageUrl: getHeaderImageUrl(),
-          avatarUrl: getAvatarUrl()
-        });
-      } else {
-        setUser(profileData);
+      if (isFetchingWaveformsRef.current) {
+        return null;
       }
-
-      // ✅ ДОПОЛНИТЕЛЬНО: подтягиваем актуальную статистику подписок/подписчиков
+      
+      isFetchingWaveformsRef.current = true;
+      fetchedTrackIdsRef.current.add(trackId);
+      
       try {
-        if (profileUserId) {
-          const followStatsResponse = await api.get(`/users/${profileUserId}/follow-stats/`);
-          const stats = followStatsResponse?.stats || {};
-
-          setUser(prev => {
-            if (!prev) return prev;
-            const followersCount = Number(stats.followers ?? prev.followers_count ?? prev.followers ?? 0);
-            const followingCount = Number(stats.following ?? prev.following_count ?? prev.following ?? 0);
-
-            return {
-              ...prev,
-              followers_count: followersCount,
-              followers: followersCount,
-              following_count: followingCount,
-              following: followingCount
-            };
-          });
+        const resp = await apiFetch(`/api/track/${trackId}/waveform/`);
+        if (!resp.ok) {
+          return null;
         }
-      } catch (statsError) {
-        console.warn('⚠️ Не удалось загрузить follow-stats:', statsError);
+        const data = await resp.json();
+        const wf = data?.waveform ?? [];
+        
+        waveformsByIdRef.current[trackId] = wf;
+        setWaveformsVersion(v => v + 1);
+        
+        return wf;
+      } catch (e) {
+        console.error('⚠️ Waveform load error', trackId, e);
+        return null;
+      } finally {
+        isFetchingWaveformsRef.current = false;
       }
-      
-      // Загрузка треков пользователя
-      try {
-        let tracksEndpoint;
-        
-        if (id) {
-          // Для чужого профиля
-          tracksEndpoint = `/users/${id}/tracks/`;
-        } else {
-          // Для своего профиля
-          tracksEndpoint = '/my-tracks/';
-        }
-        
-        console.log(`🔍 Загрузка треков по эндпоинту: ${tracksEndpoint}`);
-        const tracksData = await api.get(tracksEndpoint);
-        
-        if (tracksData.success && tracksData.tracks) {
-          setUserTracks(tracksData.tracks);
-        } else if (tracksData.tracks) {
-          setUserTracks(tracksData.tracks);
-        } else if (tracksData.results) {
-          setUserTracks(tracksData.results);
-        } else {
-          setUserTracks([]);
-        }
-        
-        console.log(`✅ Загружено треков: ${userTracks.length}`);
-        
-      } catch (trackError) {
-        console.log('⚠️ Не удалось загрузить треки:', trackError);
-        setUserTracks([]);
-      }
-      
-    } catch (error) {
-      console.error('❌ Ошибка загрузки профиля:', error);
-      setProfileLoadError(error.message || 'Profile not found');
-      
-      // Если не удалось загрузить чужой профиль, но есть данные текущего пользователя
-      if (!id && currentUserProp) {
-        console.log('Используем данные текущего пользователя как fallback');
-        setUser(currentUserProp);
-      }
-    } finally {
-      setIsLoading(false);
-      console.log('✅ Загрузка профиля завершена');
-    }
-  }, [id, currentUserProp, updateUser, profileUserId, getHeaderImageUrl, getAvatarUrl]);
+    },
+    []
+  );
   
-  // ✅ ЭФФЕКТ ДЛЯ ЗАГРУЗКИ ДАННЫХ - ТОЛЬКО ПРИ ИЗМЕНЕНИИ ID
+  // ✅ ИСПРАВЛЕННЫЙ ЭФФЕКТ: подгружаем waveform для ВСЕХ треков (uploads + reposts + likes)
   useEffect(() => {
-    console.log(`🎯 Effect triggered with id: ${id}, currentUserProp:`, currentUserProp?.id);
-    
-    // Если нет ID и нет текущего пользователя - ничего не загружаем
-    if (!id && !currentUserProp) {
-      console.log('Нет данных для загрузки - показываем пустой экран');
-      setIsLoading(false);
-      return;
-    }
-    
-    // Загружаем данные профиля
-    loadProfileData();
-    
-    // Очистка не требуется, так как нет подписок
-    return () => {
-      console.log('🧹 Cleanup effect');
-    };
-  }, [id, currentUserProp?.id]); // ✅ ТОЛЬКО при изменении ID или currentUserProp.id!
+    const fetchWaveformsForAllTracks = async () => {
+      // 1. Собираем все возможные треки
+      const uploaded = userTracks.length > 0 ? userTracks : (trackData ? Object.values(trackData) : []);
+      const combinedRaw = [...uploaded, ...(userReposts || []), ...(userLikedTracks || []), ...(allExtraTracks || [])];
 
-  // ✅ Инициализация follow-статуса для чужого профиля + синхронизация через window event
-  useEffect(() => {
-    let isMounted = true;
-    const targetUserId = user?.id;
+      // 2. Убираем дубликаты по ID
+      const seen = new Set();
+      const combined = [];
+      for (const t of combinedRaw) {
+        if (!t?.id) continue;
+        if (seen.has(t.id)) continue;
+        seen.add(t.id);
+        combined.push(t);
+      }
 
-    const init = async () => {
-      if (!targetUserId || isMyProfile) return;
-      const status = await checkFollowStatus(targetUserId);
-      if (isMounted) setIsFollowing(status);
-    };
+      if (combined.length === 0) return;
 
-    init();
+      // 3. Отбираем треки без waveform и без запроса в процессе
+      const tracksWithoutWaveform = combined.filter(track => {
+        const trackId = track?.id;
+        if (!trackId) return false;
 
-    const onFollowChanged = (e) => {
-      const detail = e?.detail;
-      if (!detail || !targetUserId) return;
-      if (String(detail.targetUserId) !== String(targetUserId)) return;
-      setIsFollowing(!!detail.isFollowing);
-    };
+        const hasWaveform = waveformsByIdRef.current[trackId];
+        const wasFetched = fetchedTrackIdsRef.current.has(trackId);
 
-    window.addEventListener('followStatusChanged', onFollowChanged);
-    return () => {
-      isMounted = false;
-      window.removeEventListener('followStatusChanged', onFollowChanged);
-    };
-  }, [user?.id, isMyProfile, checkFollowStatus]);
+        return !hasWaveform && !wasFetched;
+      });
 
-  // ✅ Синхронизация счётчика FOLLOWING на МОЁМ профиле
-  useEffect(() => {
-    if (!isMyProfile) return;
-
-    const handleMyFollowingChange = async (e) => {
-      const detail = e?.detail;
-      console.log('🔔 [МОЙ ПРОФИЛЬ] Событие followStatusChanged получено:', detail);
-      
-      if (!detail) return;
-      
-      // ✅ Получаем мой ID
-      const myId = currentUserProp?.id || user?.id || profileUserId;
-      console.log('👤 [МОЙ ПРОФИЛЬ] Мой ID:', myId, 'currentUserId из события:', detail.currentUserId);
-      
-      // ✅ Если currentUserId передан и это не я - игнорируем
-      if (detail.currentUserId && myId && String(detail.currentUserId) !== String(myId)) {
-        console.log('⏭️ [МОЙ ПРОФИЛЬ] Это не я подписался, игнорируем');
+      if (tracksWithoutWaveform.length === 0) {
         return;
       }
 
-      // ✅ Если это мой профиль - ВСЕГДА обновляем данные с сервера
-      console.log('✅ [МОЙ ПРОФИЛЬ] Обновляю Following - перезагружаю данные с сервера');
-      
-      // ✅ ПРИНУДИТЕЛЬНО перезагружаем ВСЕ данные профиля с сервера
-      try {
-        // Сначала получаем актуальную статистику подписок
-        const followStatsResponse = await api.get(`/users/${myId}/follow-stats/`);
-        const stats = followStatsResponse?.stats || {};
-        const actualFollowing = Number(stats.following ?? 0);
-        const actualFollowers = Number(stats.followers ?? 0);
-        
-        console.log('📊 [МОЙ ПРОФИЛЬ] Актуальная статистика с сервера:', { actualFollowing, actualFollowers });
-        
-        // Обновляем состояние user
-        setUser(prev => {
-          if (!prev) return prev;
-          const updated = {
-            ...prev,
-            following_count: actualFollowing,
-            following: actualFollowing,
-            followers_count: actualFollowers,
-            followers: actualFollowers
-          };
-          console.log('🔄 [МОЙ ПРОФИЛЬ] Обновляю состояние user:', updated);
-          return updated;
-        });
-        
-        // ✅ Также обновляем currentUserProp если есть функция updateUser
-        if (updateUser && typeof updateUser === 'function') {
-          const updatedUserData = {
-            ...user,
-            following_count: actualFollowing,
-            following: actualFollowing,
-            followers_count: actualFollowers,
-            followers: actualFollowers
-          };
-          console.log('🔄 [МОЙ ПРОФИЛЬ] Обновляю currentUserProp через updateUser');
-          updateUser(updatedUserData);
-        }
-        
-        // ✅ Дополнительно: перезагружаем весь профиль через loadProfileData
-        // Но только если это действительно мой профиль (без id в URL)
-        if (!id && loadProfileData) {
-          console.log('🔄 [МОЙ ПРОФИЛЬ] Перезагружаю весь профиль через loadProfileData');
-          setTimeout(() => {
-            loadProfileData();
-          }, 500); // Небольшая задержка, чтобы бэкенд успел обновить данные
-        }
-      } catch (error) {
-        console.error('❌ [МОЙ ПРОФИЛЬ] Не удалось обновить follow-stats:', error);
-        // Fallback: обновляем локально
-        if (typeof detail.isFollowing === 'boolean') {
-          setUser(prev => {
-            if (!prev) return prev;
-            const current = parseInt(prev.following_count ?? prev.following ?? 0, 10) || 0;
-            const newCount = detail.isFollowing
-              ? current + 1
-              : Math.max(0, current - 1);
-            console.log('🔄 [МОЙ ПРОФИЛЬ] Fallback обновление:', current, '→', newCount);
-            return {
-              ...prev,
-              following_count: newCount,
-              following: newCount
-            };
-          });
-        }
+      // 4. Грузим waveform (первые 15 для производительности)
+      const toFetch = tracksWithoutWaveform.slice(0, 15);
+      for (const track of toFetch) {
+        await loadWaveformForTrack(track.id);
       }
     };
+    
+    const timer = setTimeout(() => {
+      fetchWaveformsForAllTracks();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [
+    userTracks.length, 
+    userReposts.length, 
+    userLikedTracks.length, 
+    allExtraTracks.length,
+    waveformsVersion, 
+    trackData, 
+    loadWaveformForTrack
+  ]);
 
-    console.log('🎧 [МОЙ ПРОФИЛЬ] Регистрирую слушатель события followStatusChanged');
-    window.addEventListener('followStatusChanged', handleMyFollowingChange);
-    return () => {
-      console.log('🧹 [МОЙ ПРОФИЛЬ] Удаляю слушатель события');
-      window.removeEventListener('followStatusChanged', handleMyFollowingChange);
-    };
-  }, [isMyProfile, currentUserProp?.id, user?.id, profileUserId, updateUser, id, loadProfileData]);
+  const displayTracks = userTracks.length > 0 ? userTracks : (trackData ? Object.values(trackData) : []);
   
-  // ✅ ЭФФЕКТ ДЛЯ ИЗВЛЕЧЕНИЯ ЦВЕТОВ (запускается при изменении user или headerImageUrl)
+  // 🔥 All треки: показываем только где СЕЙЧАС true и лайк и репост (из SocialContext)
+  const allActivityTracks = useMemo(() => {
+    const merged = new Map();
+
+    // 1) то, что пришло с сервера (стартовая база)
+    [...(userLikedTracks || []), ...(userReposts || []), ...(allExtraTracks || [])].forEach((t) => {
+      if (t?.id) merged.set(t.id, t);
+    });
+
+    // 2) если мы лайк+репост сделали прямо сейчас — статусы есть в SocialContext,
+    //    но объекта трека может не быть в списках -> пробуем взять из trackData
+    (likedTrackIds || []).forEach((id) => {
+      if (!id) return;
+      if (!(reposts?.[id] ?? false)) return;
+
+      if (!merged.has(id)) {
+        const fromMap = trackData?.[id] || trackData?.[String(id)];
+        if (fromMap) merged.set(id, fromMap);
+      }
+    });
+
+    // 3) финальный фильтр: показываем только где СЕЙЧАС true и лайк и репост
+    return Array.from(merged.values()).filter((t) => {
+      if (!t?.id) return false;
+      return isLiked(t.id) && isReposted(t.id);
+    });
+  }, [
+    userLikedTracks,
+    userReposts,
+    allExtraTracks,
+    likedTrackIds,
+    reposts,
+    trackData,
+    isLiked,
+    isReposted
+  ]);
+
+  // 🔥 Плейлисты для All: показываем только те, где сейчас true и лайк и репост (из SocialContext)
+  const allActivityPlaylists = useMemo(() => {
+    const merged = new Map();
+
+    [...(userLikedPlaylists || []), ...(userRepostedPlaylists || [])].forEach((p) => {
+      if (p?.id) merged.set(p.id, p);
+    });
+
+    return Array.from(merged.values()).filter((p) => {
+      if (!p?.id) return false;
+      return isPlaylistLiked(p.id) && isPlaylistReposted(p.id);
+    });
+    // ✅ ВАЖНО: зависим от playlistLikes/playlistReposts, чтобы обновлялось мгновенно
+  }, [userLikedPlaylists, userRepostedPlaylists, playlistLikes, playlistReposts, isPlaylistLiked, isPlaylistReposted]);
+
+  
+  const sortedForPopular = useMemo(() => {
+    if (activeTab !== 'Popular tracks') return displayTracks;
+
+    const authorPlayMap = {};
+    displayTracks.forEach((t) => {
+      const authorId = t.uploaded_by?.id || t.user?.id;
+      if (authorId) {
+        authorPlayMap[authorId] = (authorPlayMap[authorId] || 0) + (t.play_count || 0);
+      }
+    });
+
+    const tracksCopy = [...displayTracks];
+    tracksCopy.sort((a, b) => {
+      const aAuthorId = a.uploaded_by?.id || a.user?.id;
+      const bAuthorId = b.uploaded_by?.id || b.user?.id;
+      const aAuthorPlays = authorPlayMap[aAuthorId] ?? 0;
+      const bAuthorPlays = authorPlayMap[bAuthorId] ?? 0;
+
+      if (bAuthorPlays !== aAuthorPlays) {
+        return bAuthorPlays - aAuthorPlays;
+      }
+      return (b.play_count ?? 0) - (a.play_count ?? 0);
+    });
+
+    return tracksCopy;
+  }, [displayTracks, activeTab]);
+  
+  // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ #2: правильное отображение вкладок
+  const tracksToShow = (() => {
+    if (activeTab === 'Popular tracks') return sortedForPopular;
+    if (activeTab === 'All')            return allActivityTracks;   // ✅ ТОЛЬКО активность (лайки + репосты)
+    if (activeTab === 'Tracks')         return displayTracks;       // ✅ Только загруженные треки
+    if (activeTab === 'Repost')         return userReposts;         // ✅ Только репосты
+    return displayTracks; // fallback
+  })();
+  
+  const trackCount = tracksToShow.length;
+  
+  // ✅ ФУНКЦИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ FOLLOW
+  const handleFollowToggle = useCallback(async () => {
+    if (followLoading) return;
+
+    const targetUserId = user?.id || currentUserProp?.id;
+    if (!targetUserId) return;
+    if (isMyProfile) return;
+
+    setFollowLoading(true);
+
+    try {
+      const success = await toggleFollow(targetUserId);
+      
+      if (!success) {
+        alert('Error changing follow status');
+      }
+    } catch (error) {
+      console.error('❌ Сетевая ошибка подписки:', error);
+      alert('Network error when changing follow status');
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [followLoading, isMyProfile, user?.id, currentUserProp?.id, toggleFollow]);
+  
+  
   useEffect(() => {
     if (user && headerImageUrl) {
       extractColorsFromHeader();
     } else if (user && user.gridscan_color) {
-      // Если нет header image, используем gridscan_color
       const color = user.gridscan_color;
       if (color && color !== 'null' && color !== 'undefined' && color.trim() !== '') {
         setGridScanColors({
@@ -971,7 +1235,7 @@ const ProfilePage = ({
     const maxSize = 5 * 1024 * 1024;
     
     if (!allowedTypes.includes(file.type) || file.size > maxSize) {
-      alert(allowedTypes.includes(file.type) ? 'Файл слишком большой. Максимум 5MB' : 'Неподдерживаемый формат изображения');
+      alert(allowedTypes.includes(file.type) ? 'File is too large. Maximum 5MB' : 'Unsupported image format');
       return;
     }
     
@@ -984,11 +1248,11 @@ const ProfilePage = ({
       await api.patch('/users/me/header/', formData);
       await loadProfileData();
       
-      alert('Header image успешно загружен!');
+      alert('Header image uploaded successfully!');
       
     } catch (error) {
       console.error('Ошибка загрузки header image:', error);
-      alert(`Ошибка загрузки: ${error.message}`);
+      alert(`Upload error: ${error.message}`);
     } finally {
       setUploadingHeader(false);
       if (headerFileInputRef.current) {
@@ -997,23 +1261,21 @@ const ProfilePage = ({
     }
   };
   
-  // 🔥 Удаление header image (только для своего профиля)
   const handleRemoveHeader = async () => {
-    if (!isMyProfile || !window.confirm('Удалить header image?')) return;
+    if (!isMyProfile || !window.confirm('Delete header image?')) return;
     
     try {
       await api.delete('/users/me/header/delete/');
       await loadProfileData();
       
-      alert('Header image удален!');
+      alert('Header image deleted!');
       
     } catch (error) {
       console.error('Ошибка удаления header:', error);
-      alert(`Ошибка удаления: ${error.message}`);
+      alert(`Delete error: ${error.message}`);
     }
   };
   
-  // 🔥 Загрузка аватара (только для своего профиля)
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !isMyProfile) return;
@@ -1022,7 +1284,7 @@ const ProfilePage = ({
     const maxSize = 10 * 1024 * 1024;
     
     if (!allowedTypes.includes(file.type) || file.size > maxSize) {
-      alert(allowedTypes.includes(file.type) ? 'Файл слишком большой. Максимум 10MB' : 'Неподдерживаемый формат изображения');
+      alert(allowedTypes.includes(file.type) ? 'File is too large. Maximum 10MB' : 'Unsupported image format');
       return;
     }
     
@@ -1036,14 +1298,14 @@ const ProfilePage = ({
       
       if (response.success) {
         await loadProfileData();
-        alert('Аватар успешно загружен!');
+        alert('Avatar uploaded successfully!');
       } else {
-        throw new Error(response.error || 'Ошибка загрузки аватара');
+        throw new Error(response.error || 'Avatar upload error');
       }
       
     } catch (error) {
       console.error('Ошибка загрузки аватара:', error);
-      alert(`Ошибка загрузки: ${error.message}`);
+      alert(`Upload error: ${error.message}`);
     } finally {
       setUploadingAvatar(false);
       if (avatarFileInputRef.current) {
@@ -1052,30 +1314,28 @@ const ProfilePage = ({
     }
   };
   
-  // 🔥 Удаление аватара (только для своего профиля)
   const handleRemoveAvatar = async () => {
-    if (!isMyProfile || !window.confirm('Удалить аватар?')) return;
+    if (!isMyProfile || !window.confirm('Delete avatar?')) return;
     
     try {
       const response = await api.delete('/users/me/avatar/remove/');
       
       if (response.success) {
         await loadProfileData();
-        alert('Аватар успешно удален!');
+        alert('Avatar deleted successfully!');
       } else {
-        throw new Error(response.error || 'Ошибка удаления аватара');
+        throw new Error(response.error || 'Avatar delete error');
       }
       
     } catch (error) {
       console.error('Ошибка удаления аватара:', error);
-      alert(`Ошибка удаления: ${error.message}`);
+      alert(`Delete error: ${error.message}`);
     }
   };
   
-  // 🔥 UI обработчики
   const handleHeaderUploadClick = () => {
     if (!isMyProfile) {
-      alert('Вы можете загружать header только для своего профиля');
+      alert('You can only upload header for your own profile');
       return;
     }
     headerFileInputRef.current?.click();
@@ -1083,7 +1343,7 @@ const ProfilePage = ({
   
   const handleAvatarUploadClick = () => {
     if (!isMyProfile) {
-      alert('Вы можете загружать аватар только в своем профиле');
+      alert('You can only upload avatar in your own profile');
       return;
     }
     avatarFileInputRef.current?.click();
@@ -1105,6 +1365,660 @@ const ProfilePage = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [handleClickOutside]);
+
+  // 🔥 ЭФФЕКТ: дотягиваем недостающие треки для All
+  useEffect(() => {
+    if (!isMyProfile) return;
+    if (activeTab !== 'All') return;
+
+    const mergedIds = new Set([
+      ...(userLikedTracks || []).map(t => t?.id).filter(Boolean),
+      ...(userReposts || []).map(t => t?.id).filter(Boolean),
+      ...(allExtraTracks || []).map(t => t?.id).filter(Boolean),
+    ]);
+
+    const needIds = (likedTrackIds || [])
+      .filter((id) => id && (reposts?.[id] ?? false))
+      .filter((id) => !mergedIds.has(id));
+
+    if (needIds.length === 0) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // тянем по одному, чтобы не сломать бэк
+        for (const id of needIds) {
+          const resp = await apiFetch(`/api/tracks/${id}/`);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const track = data.track || data; // на всякий случай
+          if (!track?.id) continue;
+
+          if (!cancelled) {
+            setAllExtraTracks(prev => {
+              if (prev.some(t => t?.id === track.id)) return prev;
+              return [...prev, track];
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('ProfilePage: cannot fetch missing all tracks', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [
+    isMyProfile,
+    activeTab,
+    likedTrackIds,
+    reposts,
+    userLikedTracks,
+    userReposts,
+    allExtraTracks
+  ]);
+
+  // 🗑️ ОБРАБОТЧИК УДАЛЕНИЯ ТРЕКА
+  const handleDeleteMyTrack = useCallback(async (trackId) => {
+    if (!window.confirm('Удалить трек навсегда?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/track/${trackId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        alert('Не удалось удалить трек: ' + text);
+        return;
+      }
+
+      // ✅ убираем из списка сразу (без перезагрузки)
+      setUserTracks(prev => prev.filter(t => t.id !== trackId));
+
+      // ✅ поправим счетчик в шапке локально
+      setUser(prev => {
+        if (!prev) return prev;
+        const nextCount = Math.max(0, (prev.tracks_count ?? 0) - 1);
+        return { ...prev, tracks_count: nextCount };
+      });
+
+    } catch (e) {
+      alert('Ошибка удаления: ' + (e?.message || e));
+    }
+  }, []);
+
+  // ==================== ОБРАБОТЧИКИ ДЛЯ ТРЕКОВ ====================
+  const handleWaveformClick = useCallback(
+    (e, track) => {
+      e.stopPropagation();
+      const trackId = track.id;
+      
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, clickX / rect.width));
+      
+      if (trackId === currentTrack) {
+        if (onSeek && duration) {
+          const safePercent = Math.min(percent, 0.999);
+          const newTime = Math.min(safePercent * duration, duration - 0.05);
+          onSeek(newTime);
+        }
+      } else {
+        if (typeof playTrack === 'function') {
+          playTrack(track);
+          
+          setTimeout(() => {
+            if (onSeek && duration) {
+              const safePercent = Math.min(percent, 0.999);
+              const newTime = Math.min(safePercent * duration, duration - 0.05);
+              onSeek(newTime);
+            }
+          }, 100);
+        } else {
+          window.dispatchEvent(new CustomEvent('playTrackRequest', {
+            detail: {
+              trackId,
+              track,
+              source: 'profile_waveform',
+              seekToPercent: percent
+            }
+          }));
+        }
+      }
+    },
+    [currentTrack, onSeek, playTrack, duration]
+  );
+  
+  const handleTrackPlayPause = useCallback((trackId, track) => {
+    console.log('🎵 ProfilePage: Клик по play/pause', { trackId, track });
+    
+    if (trackId === currentTrack) {
+      if (onPlayPause) {
+        onPlayPause();
+      } else {
+        console.error('❌ onPlayPause не передан');
+      }
+    } else {
+      if (typeof playTrack === 'function') {
+        playTrack(track);
+      } else {
+        window.dispatchEvent(new CustomEvent('playTrackRequest', {
+          detail: {
+            trackId,
+            track,
+            source: 'profile_play_button'
+          }
+        }));
+      }
+    }
+  }, [currentTrack, onPlayPause, playTrack]);
+  
+  const handleTrackTitleClick = useCallback((trackId, e) => {
+    e.stopPropagation();
+    navigate(`/track/${trackId}`);
+  }, [navigate]);
+  
+  const handleArtistClick = useCallback((e, track) => {
+    e.stopPropagation();
+    
+    if (!track?.uploaded_by?.id && !track?.artistId) {
+      console.error("❌ ProfilePage: нет uploaded_by.id или artistId", track);
+      return;
+    }
+    
+    const artistId = track.uploaded_by?.id || track.artistId;
+    navigate(`/profile/${artistId}`);
+  }, [navigate]);
+
+  // 🔥 ОБНОВЛЕННАЯ СТАТИСТИКА ПРОФИЛЯ
+  const profileStats = useMemo(() => {
+    const userId = user?.id || currentUserProp?.id;
+    
+    return {
+      tracks: user?.tracks_count ?? userTracks.length ?? 0,
+      plays: userTracks.reduce((sum, t) => sum + (Number(t.play_count) || 0), 0),
+      followers: getFollowerCount(userId) ?? 
+                 user?.followers_count ?? 
+                 user?.followers ?? 
+                 0,
+      following: user?.following_count ?? 
+                 user?.following ?? 
+                 0
+    };
+  }, [user, currentUserProp, userTracks, getFollowerCount]);
+
+  // 🔥 ПРОВЕРЯЕМ followsLoaded ПЕРЕД isFollowing
+  const isFollowingArtist = useMemo(() => {
+    if (!followsLoaded || !user?.id) {
+      return null;
+    }
+    return isFollowingContext(user.id);
+  }, [followsLoaded, user?.id, isFollowingContext]);
+
+  // 🔥 РЕНДЕР УНИФИЦИРОВАННОЙ КАРТОЧКИ ТРЕКА
+  const renderTrackCard = (track, isRepost = false) => {
+    // ✅ ИСПОЛЬЗУЕМ SocialContext
+    const isTrackLiked = isLiked(track.id);
+    const isTrackReposted = isReposted(track.id) || isRepost;
+    const isCurrent = track.id === currentTrack;
+    const isTrackPlaying = isCurrent && isPlaying;
+    
+    // 🗑️ Проверка: можно ли удалить этот трек (только свои, не репосты)
+    const canDeleteThisTrack = isMyProfile && !isRepost && (
+      track?.uploaded_by?.id ? track.uploaded_by.id === profileUserId : true
+    );
+    
+    // =============== 🔥 WAVEFORM ИЗ КЕША ===============
+    const trackId = track?.id;
+    const cachedWaveform =
+      trackId && waveformsByIdRef.current ? waveformsByIdRef.current[trackId] : null;
+
+    const waveformData =
+      (Array.isArray(cachedWaveform) && cachedWaveform.length > 0
+        ? cachedWaveform
+        : (getWaveformData(track) || generateWaveformData()));
+    
+    // ✅ Прогресс только для текущего трека
+    const progressForThisTrack = isCurrent && duration > 0
+      ? Math.min(1, Math.max(0, currentTime / duration))
+      : 0;
+    
+    // ✅ чтобы толстые палочки не "вылезали" за контейнер на очень длинных waveform
+    const maxBarsForUI = 180;
+    const waveformBarsForUI = waveformData.length > maxBarsForUI
+      ? waveformData.filter((_, i) => i % Math.ceil(waveformData.length / maxBarsForUI) === 0)
+      : waveformData;
+    
+    const playedBarsCount = Math.floor(progressForThisTrack * waveformBarsForUI.length);
+    
+    // ✅ Используем SocialContext для счетчиков
+    const likesCount = getLikeCount(track.id);
+    const repostsCount = getRepostCount(track.id);
+    const playsCount = track.plays ?? track.play_count ?? track.stats?.plays ?? 0;
+    const commentsCount = track.comment_count ?? track.comments_count ?? 0;
+    
+    return (
+      <div 
+        key={track.id} 
+        className="unified-track-card"
+        onMouseEnter={() => setHoveredTrackId(track.id)}
+        onMouseLeave={() => setHoveredTrackId(null)}
+      >
+        {/* Обложка и кнопка play */}
+        <div className="unified-track-cover">
+          <img
+            src={track.cover || track.cover_url || 'https://via.placeholder.com/64'}
+            alt={track.title}
+          />
+          
+          <button
+            className="unified-track-play-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTrackPlayPause(track.id, track);
+            }}
+            aria-label={isTrackPlaying ? 'Pause' : 'Play'}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(0, 0, 0, 0.7)',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              transition: 'all 0.2s ease',
+              opacity: hoveredTrackId === track.id ? 1 : 0
+            }}
+          >
+            {isTrackPlaying ? <IconPause /> : <IconPlay />}
+          </button>
+        </div>
+        
+        {/* Информация о треке */}
+        <div className="unified-track-info">
+          <div 
+            className="unified-track-title"
+            onClick={(e) => handleTrackTitleClick(track.id, e)}
+            style={{
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              color: 'white',
+              marginBottom: '4px',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#8456ff'}
+            onMouseLeave={(e) => e.target.style.color = 'white'}
+          >
+            {track.title}
+          </div>
+          
+          <div 
+            className="unified-track-artist"
+            onClick={(e) => handleArtistClick(e, track)}
+            title={`Go to ${track.uploaded_by?.username || track.artist}'s profile`}
+            style={{
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              color: 'rgba(255, 255, 255, 0.7)',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#c084fc'}
+            onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.7)'}
+          >
+            {track.uploaded_by?.username || track.artist}
+          </div>
+        </div>
+        
+        {/* Waveform */}
+        <div className="unified-track-waveform" style={{ flex: 1, margin: '0 10px' }}>
+          <div
+            className="profile-waveform sh-waveform-container"
+            onMouseDown={(e) => handleWaveformClick(e, track)}
+            title="Click to seek"
+            role="button"
+            tabIndex={0}
+            aria-label="Waveform seek"
+          >
+            <div
+              className="sh-waveform-progress"
+              style={{ width: `${progressForThisTrack * 100}%` }}
+            />
+
+            <div className="sh-waveform-inner">
+              {waveformBarsForUI.map((height, index) => {
+                const isPlayed = index < playedBarsCount;
+                return (
+                  <div
+                    key={index}
+                    className={`sh-waveform-bar ${isPlayed ? 'played' : ''}`}
+                    style={{ '--height': `${Math.max(6, Math.min(100, Number(height) || 0))}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Лазер позиции (только для текущего трека) */}
+            {isCurrent && (
+              <div
+                className="sh-waveform-laser"
+                style={{ left: `${progressForThisTrack * 100}%` }}
+              />
+            )}
+          </div>
+        </div>
+        
+        {/* Кнопки действий */}
+        <div className="unified-track-actions" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <button
+            className="like-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike(track.id);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              color: isTrackLiked ? '#ff4757' : 'rgba(255, 255, 255, 0.7)'
+            }}
+            title={isTrackLiked ? 'Unlike' : 'Like'}
+          >
+            <IconHeart filled={isTrackLiked} />
+          </button>
+          <span className="like-count-mini" style={{
+            fontSize: '0.8rem',
+            color: 'rgba(255, 255, 255, 0.7)',
+            minWidth: '20px'
+          }}>
+            {likesCount?.toLocaleString() || 0}
+          </span>
+
+          <button
+            className={`repost-button-mini ${isTrackReposted ? 'reposted' : ''}`}
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (syncInProgress) return;
+
+              const wasReposted = isTrackReposted;
+              const ok = await toggleRepost(track.id);
+
+              // ✅ Сразу обновляем список в профиле (без перезагрузки)
+              if (ok && isMyProfile) {
+                if (wasReposted) {
+                  // Удаляем трек из списка репостов
+                  setUserReposts(prev => (prev || []).filter(t => t?.id !== track.id));
+                } else {
+                  // Добавляем трек в начало списка репостов
+                  setUserReposts(prev => {
+                    const arr = prev || [];
+                    if (arr.some(t => t?.id === track.id)) return arr;
+                    return [track, ...arr];
+                  });
+                }
+              }
+            }}
+            disabled={syncInProgress}
+            title={isTrackReposted ? 'Remove repost' : 'Repost'}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              color: isTrackReposted ? '#8456ff' : 'rgba(255, 255, 255, 0.7)'
+            }}
+          >
+            <IconShare />
+          </button>
+          <span className="repost-count-mini" style={{
+            fontSize: '0.8rem',
+            color: 'rgba(255, 255, 255, 0.7)',
+            minWidth: '20px'
+          }}>
+            {repostsCount?.toLocaleString() || 0}
+          </span>
+
+          <button
+            className="more-button-mini"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent('openTrackMenu', {
+                detail: {
+                  trackId: track.id,
+                  track: track,
+                  position: {
+                    x: e.clientX,
+                    y: e.clientY
+                  }
+                }
+              }));
+            }}
+            title="More actions"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              color: 'rgba(255, 255, 255, 0.7)'
+            }}
+          >
+            <IconMore />
+          </button>
+
+          <div className="track-stat plays-stat" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '0.8rem',
+            color: 'rgba(255, 255, 255, 0.7)'
+          }}>
+            <IconEye />
+            <span>
+              {playsCount?.toLocaleString() || 0}
+            </span>
+          </div>
+
+          <div className="track-stat comments-stat" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '0.8rem',
+            color: 'rgba(255, 255, 255, 0.7)'
+          }}>
+            <IconComment />
+            <span>
+              {commentsCount?.toLocaleString() || 0}
+            </span>
+          </div>
+
+          {/* 🗑️ Кнопка удаления трека (только для своих) */}
+          {canDeleteThisTrack && (
+            <button
+              className="track-delete-inline"
+              title="Удалить трек"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteMyTrack(track.id);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                color: 'rgba(255, 255, 255, 0.7)'
+              }}
+            >
+              <IconTrash />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // 🔥 МИНИ-КАРТОЧКА ПЛЕЙЛИСТА (для вкладки All и Playlists)
+  // ✅ Функция: получить очередь треков плейлиста (ids) с бэка (как в LibraryPage)
+  const fetchPlaylistQueueIds = async (playlistId) => {
+    if (!playlistId) return [];
+    if (playlistQueueCache[playlistId]?.length) {
+      return playlistQueueCache[playlistId];
+    }
+    try {
+      const r = await apiFetch(`/api/playlists/${playlistId}/`);
+      if (!r.ok) return [];
+      const d = await r.json();
+
+      const items = d?.items || d?.playlist?.items || [];
+      const tracks = items
+        .map((it) => it?.track || it)
+        .filter(Boolean);
+
+      const ids = tracks.map((t) => t?.id).filter((x) => x != null);
+
+      setPlaylistQueueCache((prev) => ({ ...prev, [playlistId]: ids }));
+      return ids;
+    } catch (e) {
+      console.error('ProfilePage: fetchPlaylistQueueIds error', e);
+      return [];
+    }
+  };
+
+  // ✅ Play/Pause плейлиста: ставим очередь и запускаем первый трек
+  const handlePlaylistPlayPause = async (pl) => {
+    if (!pl?.id) return;
+
+    // если уже этот плейлист активен — просто toggle play/pause
+    if (playingPlaylistId === pl.id && Array.isArray(playQueueIds) && playQueueIds.length > 0) {
+      onPlayPause?.(); // toggle
+      return;
+    }
+
+    const ids = await fetchPlaylistQueueIds(pl.id);
+    if (!ids.length) return;
+
+    if (typeof setPlaybackQueue === 'function') {
+      setPlaybackQueue(ids);
+    }
+
+    setPlayingPlaylistId(pl.id);
+
+    // запускаем первый трек
+    if (typeof playTrack === 'function' && ids[0]) {
+      const track = trackData?.[ids[0]];
+      if (track) {
+        playTrack(track);
+      }
+    }
+  };
+
+  // ✅ Карточка плейлиста (как в LibraryPage) — для вкладки All и Playlists
+  const renderPlaylistCard = (pl) => {
+    if (!pl?.id) return null;
+
+    const isThisPlaylistPlaying =
+      playingPlaylistId === pl.id &&
+      Array.isArray(playQueueIds) &&
+      playQueueIds.length > 0;
+
+    const cover = pl.cover_url || pl.cover || '/default-cover.jpg';
+    const title = pl.title || 'Untitled playlist';
+    const tracksCount = pl.track_count ?? pl.tracks_count ?? 0;
+
+    return (
+      <div key={`pl-${pl.id}`} className="library-playlist-row">
+        <div className="library-playlist-left">
+          <div
+            className="playlist-cover-wrap"
+            onClick={() => navigate(`/playlist/${pl.id}`)}
+            title="Open playlist"
+          >
+            <img className="library-playlist-cover" src={cover} alt={title} />
+
+            <button
+              className="playlist-cover-play"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlaylistPlayPause(pl);
+              }}
+              aria-label={isThisPlaylistPlaying && isPlaying ? 'Pause playlist' : 'Play playlist'}
+            >
+              {isThisPlaylistPlaying && isPlaying ? <IconPause /> : <IconPlay />}
+            </button>
+          </div>
+
+          <div className="library-playlist-meta">
+            <div
+              className="library-playlist-title clickable"
+              onClick={() => navigate(`/playlist/${pl.id}`)}
+              title="Open playlist"
+            >
+              {title}
+            </div>
+            <div className="library-playlist-sub">
+              {tracksCount} tracks
+            </div>
+          </div>
+        </div>
+
+        <div className="playlist-actions">
+          <button
+            className={`pl-action-btn ${isPlaylistLiked?.(pl.id) ? 'active' : ''}`}
+            onClick={() => togglePlaylistLike?.(pl.id)}
+            title="Like"
+          >
+            {isPlaylistLiked?.(pl.id) ? <IconHeartFilled /> : <IconHeartOutline />}
+            <span>{getPlaylistLikeCount?.(pl.id) ?? pl.likes_count ?? 0}</span>
+          </button>
+
+          <button
+            className={`pl-action-btn ${isPlaylistReposted?.(pl.id) ? 'active' : ''}`}
+            onClick={() => togglePlaylistRepost?.(pl.id)}
+            title="Repost"
+          >
+            {isPlaylistReposted?.(pl.id) ? <IconRepostFilled /> : <IconRepostOutline />}
+            <span>{getPlaylistRepostCount?.(pl.id) ?? pl.repost_count ?? pl.reposts_count ?? 0}</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   
   // 🔥 Loading screen
   if (isLoading) {
@@ -1133,7 +2047,6 @@ const ProfilePage = ({
     );
   }
   
-  // 🔥 Ошибка загрузки профиля
   if (profileLoadError && !user) {
     return (
       <div className="profile-error">
@@ -1189,59 +2102,8 @@ const ProfilePage = ({
     );
   }
   
-  // 🔥 ДЕБАГГИНГ РЕНДЕРА
-  console.log('🎨 Render data:', {
-    user: currentUser,
-    headerImageUrl,
-    avatarUrl,
-    isMyProfile,
-    extractingColor
-  });
-  
-  const profileStats = {
-    tracks: currentUser?.tracks_count ?? userTracks.length ?? 0,
-    // Followers: только реальные данные, без фейковых значений
-    followers: isMyProfile
-      ? Number(myFollowStats.followers ?? 0)
-      : Number(
-          currentUser?.followers_count ??
-          currentUser?.followers ??
-          0
-        ),
-    // Following: пользователи, на которых подписан ЭТОТ профиль
-    following: isMyProfile
-      ? Number(myFollowStats.following ?? 0)
-      : Number(
-          currentUser?.following_count ??
-          currentUser?.following ??
-          0
-        ),
-    // Plays: только реальные прослушивания, без заглушек
-    plays: Number(
-      currentUser?.total_listens ??
-      currentUser?.plays ??
-      0
-    )
-  };
-  
-  // 🔍 ЛОГИРОВАНИЕ для отладки
-  console.log('📊 [PROFILE STATS] Текущие значения:', {
-    following: profileStats.following,
-    followers: profileStats.followers,
-    currentUserFollowing: currentUser?.following_count ?? currentUser?.following,
-    currentUserFollowers: currentUser?.followers_count ?? currentUser?.followers,
-    userFollowing: user?.following_count ?? user?.following,
-    userFollowers: user?.followers_count ?? user?.followers,
-    currentUserPropFollowing: currentUserProp?.following_count ?? currentUserProp?.following,
-    currentUserPropFollowers: currentUserProp?.followers_count ?? currentUserProp?.followers
-  });
-  
-  const displayTracks = userTracks.length > 0 ? userTracks : (trackData ? Object.values(trackData) : []);
-  const trackCount = displayTracks.length;
-  
   return (
     <div className="profile-page-wrapper">
-      {/* 🔥 GridScan как фон */}
       <div className="gridscan-background">
         <GridScan 
           key={`${gridScanColors.gridBgColor}-${gridScanColors.linesColor}-${gridScanColors.scanColor}`}
@@ -1249,173 +2111,241 @@ const ProfilePage = ({
         />
       </div>
       
-      {/* Sidebar */}
-      <Sidebar
-        currentTrack={currentTrack}
-        isPlaying={isPlaying}
-        onTogglePlayPause={onPlayPause}
-        onToggleLike={onToggleLike}
-        likedTrackIds={likedTracks || []}
-        tracksById={trackData || {}}
-        playTrack={() => {}}
-        currentTime={currentTime}
-        user={currentUser}
-        getAuthToken={getAuthToken}
-      />
-      
-      {/* 🔥 Основной контейнер */}
-      <div className="profile-page-container">
-        {/* Header */}
-        <header className="site-header glass-header">
-          <nav className="sound-nav">
-            <div className="nav-left">
-              <button
-                className="brand"
-                onClick={() => navigate('/')}
-              >
-                <img src={logoMark} alt="Music platform logo" />
-                <Shuffle
-                  text="MUSIC"
-                  shuffleDirection="right"
-                  duration={0.35}
-                  animationMode="evenodd"
-                  shuffleTimes={1}
-                  ease="power3.out"
-                  stagger={0.03}
-                  threshold={0.1}
-                  triggerOnce={true}
-                  triggerOnHover={true}
-                  style={{ 
-                    fontSize: '1.2rem',
-                    marginLeft: '10px',
-                    fontFamily: "'Press Start 2P', sans-serif"
-                  }}
-                />
-              </button>
-              
-              <GooeyNav
-                items={[
-                  { label: 'Home', href: '#home' },
-                  { label: 'Feed', href: '#feed' },
-                  { label: 'Library', href: '#library' }
-                ]}
-                particleCount={12}
-                particleDistances={[90, 20]}
-                particleR={120}
-                initialActiveIndex={0}
-                animationTime={600}
-                timeVariance={300}
-                colors={[1, 2, 3, 4, 5, 6]}
-                onNavigate={(item) => {
-                  let page = 'home';
-                  if (item.label === 'Feed') page = 'feed';
-                  else if (item.label === 'Library') page = 'library';
-                  navigate(`/?page=${page}`);
-                }}
-                className="profile-gooey-nav"
-              />
-            </div>
-
-            <div className="nav-center" role="search">
-              <div className="nav-search">
-                <input
-                  type="text"
-                  placeholder="Search for tracks, artists, playlists, and more..."
-                  aria-label="Search tracks"
-                  className="nav-search-input"
-                />
-                <button type="button" aria-label="Search" className="nav-search-btn">
-                  <IconSearch />
-                </button>
-              </div>
-            </div>
-
-            <div className="nav-right">
-              <button className="nav-pill" type="button">
-                <Shuffle
-                  text="For Artists"
-                  shuffleDirection="right"
-                  duration={0.3}
-                  animationMode="evenodd"
-                  shuffleTimes={1}
-                  ease="power2.out"
-                  stagger={0.01}
-                  threshold={0.1}
-                  triggerOnce={false}
-                  triggerOnHover={true}
-                  style={{ 
-                    fontSize: '0.9rem',
-                    fontFamily: "'Press Start 2P', sans-serif",
-                    color: '#ffffff'
-                  }}
-                />
-              </button>
-              
-              <div className="icon-group">
-                {[
-                  { label: 'Upload', Icon: IconUpload },
-                  { label: 'Notifications', Icon: IconBell },
-                  { label: 'Messages', Icon: IconMessage }
-                ].map(({ label, Icon }) => (
-                  <button
-                    key={label}
-                    className="icon-button"
-                    type="button"
-                    aria-label={label}
-                    onClick={() => {
-                      if (label === 'Upload') {
-                        navigate('/upload');
-                      }
-                    }}
-                  >
-                    <Icon />
-                  </button>
-                ))}
-              </div>
-              
-              <div className="user-avatar-container" ref={userMenuRef}>
+      <div className="profile-app-layout">
+        <div className="profile-sidebar-container">
+          <Sidebar
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            onTogglePlayPause={onPlayPause}
+            playTrack={playTrack}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={onSeek}
+            user={currentUserProp}
+            getAuthToken={getAuthToken}
+            navigate={navigate}
+            reposts={reposts}
+            loadMyReposts={loadMyReposts}
+          />
+        </div>
+        
+        <div className="profile-content-container">
+          <header className="site-header glass-header">
+            <nav className="sound-nav">
+              <div className="nav-left">
                 <button
-                  className="user-avatar-btn"
-                  onClick={handleUserMenuToggle}
-                  aria-label="User menu"
+                  className="brand"
+                  onClick={() => navigate('/')}
+                  style={{
+                    all: 'unset',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    boxShadow: 'none'
+                  }}
                 >
-                  <div className="user-avatar-circle">
-                    {currentUserProp?.avatar ? (
-                      <img src={currentUserProp.avatar} alt="User avatar" />
-                    ) : (
-                      <IconUserCircle />
-                    )}
-                  </div>
+                  <img src={logoMark} alt="Music platform logo" />
+                  <Shuffle
+                    text="MUSIC"
+                    shuffleDirection="right"
+                    duration={0.35}
+                    animationMode="evenodd"
+                    shuffleTimes={1}
+                    ease="power3.out"
+                    stagger={0.03}
+                    threshold={0.1}
+                    triggerOnce={true}
+                    triggerOnHover={true}
+                    style={{ 
+                      fontSize: '1.2rem',
+                      marginLeft: '10px',
+                      fontFamily: "'Press Start 2P', sans-serif"
+                    }}
+                  />
                 </button>
                 
-                {showUserMenu && (
-                  <div className="user-dropdown-menu">
-                    <FloatingLinesDropdown
-                      linesGradient={['#ff00ff', '#ff00cc', '#8456ff', '#00ccff', '#ff00ff']}
-                      enabledWaves={['top', 'middle', 'bottom']}
-                      lineCount={[8, 15, 22]}
-                      lineDistance={[1.5, 0.8, 0.3]}
-                      animationSpeed={1.5}
-                      interactive={true}
-                      opacity={1.0}
-                      brightness={2.8}
-                      showOverlay={false}
-                    />
-                    
-                    <div className="user-dropdown-header">
-                      <div className="user-dropdown-avatar">
-                        {currentUserProp?.avatar ? (
-                          <img src={currentUserProp.avatar} alt="User avatar" />
-                        ) : (
-                          <IconUserCircle />
-                        )}
+                <GooeyNav
+                  items={[
+                    { label: 'Home', href: '#home' },
+                    { label: 'Feed', href: '#feed' },
+                    { label: 'Library', href: '#library' }
+                  ]}
+                  particleCount={12}
+                  particleDistances={[90, 20]}
+                  particleR={120}
+                  initialActiveIndex={0}
+                  animationTime={600}
+                  timeVariance={300}
+                  colors={[1, 2, 3, 4, 5, 6]}
+                  onNavigate={(item) => {
+                    let page = 'home';
+                    if (item.label === 'Feed') page = 'feed';
+                    else if (item.label === 'Library') page = 'library';
+                    navigate(`/?page=${page}`);
+                  }}
+                  className="profile-gooey-nav"
+                />
+              </div>
+
+              <div className="nav-center" role="search">
+                <div className="nav-search">
+                  <input
+                    type="text"
+                    placeholder="Search for tracks, artists, playlists, and more..."
+                    aria-label="Search tracks"
+                    className="nav-search-input"
+                  />
+                  <button type="button" aria-label="Search" className="nav-search-btn">
+                    <IconSearch />
+                  </button>
+                </div>
+              </div>
+
+              <div className="nav-right">
+                <button className="nav-pill" type="button">
+                  <Shuffle
+                    text="For Artists"
+                    shuffleDirection="right"
+                    duration={0.3}
+                    animationMode="evenodd"
+                    shuffleTimes={1}
+                    ease="power2.out"
+                    stagger={0.01}
+                    threshold={0.1}
+                    triggerOnce={false}
+                    triggerOnHover={true}
+                    style={{ 
+                      fontSize: '0.9rem',
+                      fontFamily: "'Press Start 2P', sans-serif",
+                      color: '#ffffff'
+                    }}
+                  />
+                </button>
+                
+                <div className="icon-group">
+                  {[
+                    { label: 'Upload', Icon: IconUpload },
+                    { label: 'Notifications', Icon: IconBell },
+                    { label: 'Messages', Icon: IconMessage }
+                  ].map(({ label, Icon }) => (
+                    <button
+                      key={label}
+                      className="icon-button"
+                      type="button"
+                      aria-label={label}
+                      onClick={() => {
+                        if (label === 'Upload') {
+                          navigate('/upload');
+                          return;
+                        }
+                        if (label === 'Messages') {
+                          navigate('/messagehub');
+                          return;
+                        }
+                      }}
+                    >
+                      <Icon />
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="user-avatar-container" ref={userMenuRef}>
+                  <button
+                    className="user-avatar-btn"
+                    onClick={handleUserMenuToggle}
+                    aria-label="User menu"
+                  >
+                    <div className="user-avatar-circle">
+                      {currentUserProp?.avatar ? (
+                        <img src={currentUserProp.avatar} alt="User avatar" />
+                      ) : (
+                        <IconUserCircle />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="user-dropdown-menu">
+                      <FloatingLinesDropdown
+                        linesGradient={['#ff00ff', '#ff00cc', '#8456ff', '#00ccff', '#ff00ff']}
+                        enabledWaves={['top', 'middle', 'bottom']}
+                        lineCount={[8, 15, 22]}
+                        lineDistance={[1.5, 0.8, 0.3]}
+                        animationSpeed={1.5}
+                        interactive={true}
+                        opacity={1.0}
+                        brightness={2.8}
+                        showOverlay={false}
+                      />
+                      
+                      <div className="user-dropdown-header">
+                        <div className="user-dropdown-avatar">
+                          {currentUserProp?.avatar ? (
+                            <img src={currentUserProp.avatar} alt="User avatar" />
+                          ) : (
+                            <IconUserCircle />
+                          )}
+                        </div>
+                        <div className="user-dropdown-info">
+                          <div className="user-dropdown-username">
+                            <Shuffle
+                              text={currentUserProp?.username || 'User'}
+                              shuffleDirection="right"
+                              duration={0.4}
+                              animationMode="evenodd"
+                              shuffleTimes={1}
+                              ease="power2.out"
+                              stagger={0.01}
+                              threshold={0.1}
+                              triggerOnce={false}
+                              triggerOnHover={true}
+                              style={{ 
+                                fontSize: '1rem',
+                                fontFamily: "'Press Start 2P', sans-serif",
+                                color: '#ffffff'
+                              }}
+                            />
+                          </div>
+                          <div className="user-dropdown-email">
+                            <Shuffle
+                              text={currentUserProp?.email || 'user@example.com'}
+                              shuffleDirection="left"
+                              duration={0.3}
+                              animationMode="random"
+                              shuffleTimes={1}
+                              ease="power2.out"
+                              stagger={0.01}
+                              threshold={0.1}
+                              triggerOnce={false}
+                              triggerOnHover={true}
+                              style={{ 
+                                fontSize: '0.8rem',
+                                fontFamily: "'Press Start 2P', sans-serif",
+                                color: '#94a3b8'
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="user-dropdown-info">
-                        <div className="user-dropdown-username">
+                      
+                      <div className="user-dropdown-divider" />
+                      
+                      <div className="user-dropdown-items">
+                        <button
+                          className="user-dropdown-item"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/profile');
+                          }}
+                        >
+                          <IconProfile />
                           <Shuffle
-                            text={currentUserProp?.username || 'User'}
+                            text="Profile"
                             shuffleDirection="right"
-                            duration={0.4}
+                            duration={0.3}
                             animationMode="evenodd"
                             shuffleTimes={1}
                             ease="power2.out"
@@ -1424,18 +2354,26 @@ const ProfilePage = ({
                             triggerOnce={false}
                             triggerOnHover={true}
                             style={{ 
-                              fontSize: '1rem',
+                              fontSize: '0.9rem',
                               fontFamily: "'Press Start 2P', sans-serif",
                               color: '#ffffff'
                             }}
                           />
-                        </div>
-                        <div className="user-dropdown-email">
+                        </button>
+                        
+                        <button
+                          className="user-dropdown-item"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/settings');
+                          }}
+                        >
+                          <IconDots />
                           <Shuffle
-                            text={currentUserProp?.email || 'user@example.com'}
+                            text="Settings"
                             shuffleDirection="left"
                             duration={0.3}
-                            animationMode="random"
+                            animationMode="evenodd"
                             shuffleTimes={1}
                             ease="power2.out"
                             stagger={0.01}
@@ -1443,371 +2381,530 @@ const ProfilePage = ({
                             triggerOnce={false}
                             triggerOnHover={true}
                             style={{ 
-                              fontSize: '0.8rem',
+                              fontSize: '0.9rem',
                               fontFamily: "'Press Start 2P', sans-serif",
-                              color: '#94a3b8'
+                              color: '#ffffff'
                             }}
                           />
-                        </div>
+                        </button>
+                        
+                        <div className="user-dropdown-divider" />
+                        
+                        <button
+                          className="user-dropdown-item logout-item"
+                          onClick={() => {
+                            if (onLogout) {
+                              onLogout();
+                            }
+                            setShowUserMenu(false);
+                            navigate('/');
+                          }}
+                        >
+                          <IconLogout />
+                          <Shuffle
+                            text="Log Out"
+                            shuffleDirection="up"
+                            duration={0.3}
+                            animationMode="evenodd"
+                            shuffleTimes={1}
+                            ease="power2.out"
+                            stagger={0.01}
+                            threshold={0.1}
+                            triggerOnce={false}
+                            triggerOnHover={true}
+                            style={{ 
+                              fontSize: '0.9rem',
+                              fontFamily: "'Press Start 2P', sans-serif",
+                              color: '#ff4757'
+                            }}
+                          />
+                        </button>
                       </div>
                     </div>
-                    
-                    <div className="user-dropdown-divider" />
-                    
-                    <div className="user-dropdown-items">
-                      <button
-                        className="user-dropdown-item"
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          navigate('/profile');
-                        }}
-                      >
-                        <IconProfile />
-                        <Shuffle
-                          text="Profile"
-                          shuffleDirection="right"
-                          duration={0.3}
-                          animationMode="evenodd"
-                          shuffleTimes={1}
-                          ease="power2.out"
-                          stagger={0.01}
-                          threshold={0.1}
-                          triggerOnce={false}
-                          triggerOnHover={true}
-                          style={{ 
-                            fontSize: '0.9rem',
-                            fontFamily: "'Press Start 2P', sans-serif",
-                            color: '#ffffff'
-                          }}
-                        />
-                      </button>
-                      
-                      <button
-                        className="user-dropdown-item"
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          navigate('/settings');
-                        }}
-                      >
-                        <IconDots />
-                        <Shuffle
-                          text="Settings"
-                          shuffleDirection="left"
-                          duration={0.3}
-                          animationMode="evenodd"
-                          shuffleTimes={1}
-                          ease="power2.out"
-                          stagger={0.01}
-                          threshold={0.1}
-                          triggerOnce={false}
-                          triggerOnHover={true}
-                          style={{ 
-                            fontSize: '0.9rem',
-                            fontFamily: "'Press Start 2P', sans-serif",
-                            color: '#ffffff'
-                          }}
-                        />
-                      </button>
-                      
-                      <div className="user-dropdown-divider" />
-                      
-                      <button
-                        className="user-dropdown-item logout-item"
-                        onClick={() => {
-                          if (onLogout) {
-                            onLogout();
-                          }
-                          setShowUserMenu(false);
-                          navigate('/');
-                        }}
-                      >
-                        <IconLogout />
-                        <Shuffle
-                          text="Log Out"
-                          shuffleDirection="up"
-                          duration={0.3}
-                          animationMode="evenodd"
-                          shuffleTimes={1}
-                          ease="power2.out"
-                          stagger={0.01}
-                          threshold={0.1}
-                          triggerOnce={false}
-                          triggerOnHover={true}
-                          style={{ 
-                            fontSize: '0.9rem',
-                            fontFamily: "'Press Start 2P', sans-serif",
-                            color: '#ff4757'
-                          }}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </nav>
-        </header>
+            </nav>
+          </header>
 
-        {/* 🔥 Основной контент */}
-        <main className="profile-page-content">
-          {/* Header image секция */}
-          <section className="profile-header-image">
-            {headerImageUrl ? (
-              <img
-                src={headerImageUrl}
-                alt="Profile header"
-                className="profile-header-bg"
-                key={headerImageUrl}
-                onLoad={() => {
-                  console.log('✅ Header image loaded:', headerImageUrl);
-                  if (!extractingColor) {
-                    extractColorsFromHeader();
-                  }
-                }}
-                onError={(e) => {
-                  console.error('❌ Ошибка загрузки header image:', e);
-                  // Если есть gridscan_color, используем его
-                  if (user?.gridscan_color) {
-                    const color = user.gridscan_color;
-                    if (color && color !== 'null' && color !== 'undefined' && color.trim() !== '') {
-                      setGridScanColors({
-                        gridBgColor: color,
-                        linesColor: brightenColor(color, 0.2),
-                        scanColor: brightenColor(color, 0.3)
-                      });
+          <main className="profile-page-content">
+            <section className="profile-header-image">
+              {headerImageUrl ? (
+                <img
+                  src={headerImageUrl}
+                  alt="Profile header"
+                  className="profile-header-bg"
+                  key={headerImageUrl}
+                  onLoad={() => {
+                    if (!extractingColor) {
+                      extractColorsFromHeader();
                     }
-                  }
-                }}
-              />
-            ) : (
-              <div 
-                className="profile-header-bg-empty"
-                style={{ 
-                  backgroundColor: gridScanColors.gridBgColor,
-                  height: '400px'
-                }}
-              />
-            )}
-
-            {/* 🔥 Кнопки управления header (ТОЛЬКО для своего профиля) */}
-            {isMyProfile && (
-              <div className="header-controls">
-                <button
-                  className="gooey-btn upload-header-btn"
-                  onClick={handleHeaderUploadClick}
-                  disabled={uploadingHeader || extractingColor}
-                >
-                  {extractingColor ? 'Extracting colors...' : uploadingHeader ? 'Uploading...' : 'Upload header image'}
-                </button>
-                
-                {headerImageUrl && (
-                  <button
-                    className="gooey-btn remove-header-btn"
-                    onClick={handleRemoveHeader}
-                    disabled={extractingColor}
-                  >
-                    Remove header
-                  </button>
-                )}
-              </div>
-            )}
-
-            <input
-              type="file"
-              accept="image/*"
-              ref={headerFileInputRef}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleHeaderUpload(file);
-                }
-              }}
-            />
-
-            <div className="profile-header-overlay">
-              {/* 🔥 БЛОК АВАТАРА */}
-              <div className="profile-avatar-section">
-                <div className="profile-avatar-wrapper">
-                  {avatarUrl ? (
-                    <img 
-                      src={avatarUrl} 
-                      alt={currentUser?.username}
-                      className="profile-avatar-img"
-                      onError={(e) => {
-                        console.error('❌ Ошибка загрузки аватара:', e);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="profile-avatar-placeholder">
-                      <IconUserCircle />
-                    </div>
-                  )}
-                  
-                  {/* 🔥 Кнопка Upload поверх аватара (ТОЛЬКО для своего профиля) */}
-                  {isMyProfile && (
-                    <label className="avatar-upload-label">
-                      <span className="avatar-upload-text">
-                        {uploadingAvatar ? 'Uploading...' : 'Upload'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={avatarFileInputRef}
-                        onChange={handleAvatarUpload}
-                        hidden
-                        disabled={uploadingAvatar}
-                      />
-                    </label>
-                  )}
-                  
-                  {/* 🔥 Кнопка удаления аватара (ТОЛЬКО для своего профиля) */}
-                  {isMyProfile && avatarUrl && (
-                    <button
-                      className="avatar-remove-btn"
-                      onClick={handleRemoveAvatar}
-                      disabled={uploadingAvatar}
-                      title="Remove avatar"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-                
-                {/* 🔥 Бейдж "You" для своего профиля */}
-                {isMyProfile && (
-                  <div className="profile-badge-you">
-                    <span>you</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-header-text">
-                <h1 className="profile-username">
-                  {currentUser?.username || 'Engstrom'}
-                </h1>
-                <p className="profile-bio">
-                  {currentUser?.bio || 'Electronic music producer • Berlin • Releases on Monstercat, NCS, and Spinnin\' Records'}
-                </p>
-                
-                <div className="profile-stats">
-                  <div className="stat-item">
-                    <span className="stat-number">{profileStats.tracks}</span>
-                    <span className="stat-label">Tracks</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{profileStats.followers.toLocaleString()}</span>
-                    <span className="stat-label">Followers</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{profileStats.following.toLocaleString()}</span>
-                    <span className="stat-label">Following</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{profileStats.plays.toLocaleString()}</span>
-                    <span className="stat-label">Plays</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Табы + кнопки действий профиля */}
-          <div className="profile-tabs-row">
-            <div className="profile-tabs-section">
-              <GooeyNav
-                items={[
-                  { label: 'All' },
-                  { label: 'Popular tracks' },
-                  { label: 'Tracks' },
-                  { label: 'Albums' },
-                  { label: 'Playlists' },
-                  { label: 'Repost' }
-                ]}
-                particleCount={8}
-                particleDistances={[70, 15]}
-                particleR={90}
-                initialActiveIndex={0}
-                animationTime={500}
-                timeVariance={200}
-                colors={[1, 2, 3, 4]}
-                onNavigate={(item) => setActiveTab(item.label)}
-                className="profile-gooey-tabs"
-              />
-            </div>
-
-            {!isMyProfile && (
-              <div className="profile-actions">
-                <button
-                  className={`follow-button ${isFollowing ? 'following' : ''} ${followLoading ? 'loading' : ''}`}
-                  onClick={handleFollowToggle}
-                  disabled={followLoading}
-                >
-                  {followLoading ? '...' : (isFollowing ? 'Following' : 'Follow')}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Список треков */}
-          <section className="profile-body">
-            <div className="profile-section-header">
-              <h2>{activeTab}</h2>
-              <span className="track-count">
-                {trackCount} tracks
-              </span>
-            </div>
-            
-            <div className="profile-tracks-list">
-              {displayTracks.length > 0 ? (
-                displayTracks.map(track => (
-                  <div 
-                    key={track.id} 
-                    className="profile-track-row"
-                    onClick={() => navigate(`/track/${track.id}`)}
-                  >
-                    <img
-                      src={track.cover || track.cover_url || 'https://via.placeholder.com/64'}
-                      className="track-cover"
-                      alt={track.title}
-                    />
-                    <div className="track-info">
-                      <div className="track-title">{track.title}</div>
-                      <div className="track-artist">{track.artist || track.uploaded_by?.username}</div>
-                    </div>
-                    <div className="track-actions">
-                      <button
-                        className="like-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleLike && onToggleLike(track.id);
-                        }}
-                      >
-                        <IconHeart filled={checkTrackLiked ? checkTrackLiked(track.id) : false} />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  }}
+                  onError={(e) => {
+                    if (user?.gridscan_color) {
+                      const color = user.gridscan_color;
+                      if (color && color !== 'null' && color !== 'undefined' && color.trim() !== '') {
+                        setGridScanColors({
+                          gridBgColor: color,
+                          linesColor: brightenColor(color, 0.2),
+                          scanColor: brightenColor(color, 0.3)
+                        });
+                      }
+                    }
+                  }}
+                />
               ) : (
-                <div className="empty-state">
-                  <p>No tracks yet.</p>
-                  {isMyProfile && (
+                <div 
+                  className="profile-header-bg-empty"
+                  style={{ 
+                    backgroundColor: gridScanColors.gridBgColor,
+                    height: '400px'
+                  }}
+                />
+              )}
+
+              {isMyProfile && (
+                <div className="header-controls">
+                  <button
+                    className="gooey-btn upload-header-btn"
+                    onClick={handleHeaderUploadClick}
+                    disabled={uploadingHeader || extractingColor}
+                  >
+                    {extractingColor ? 'Extracting colors...' : uploadingHeader ? 'Uploading...' : 'Upload header image'}
+                  </button>
+                  
+                  {headerImageUrl && (
                     <button
-                      className="upload-btn gooey-btn"
-                      onClick={() => navigate('/upload')}
+                      className="gooey-btn remove-header-btn"
+                      onClick={handleRemoveHeader}
+                      disabled={extractingColor}
                     >
-                      Upload your first track
+                      Remove header
                     </button>
                   )}
                 </div>
               )}
+
+              {/* ✅ КНОПКА REPORT ДЛЯ ЧУЖИХ ПРОФИЛЕЙ */}
+              {!isMyProfile && currentUserProp && profileUserId && (
+                <div className="header-controls">
+                  <button
+                    className="gooey-btn report-user-btn"
+                    onClick={() => navigate(`/report/user/${profileUserId}`)}
+                    title="Пожаловаться на пользователя"
+                  >
+                    Report
+                  </button>
+                </div>
+              )}
+
+              <input
+                type="file"
+                accept="image/*"
+                ref={headerFileInputRef}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleHeaderUpload(file);
+                  }
+                }}
+              />
+
+              {isMyProfile && (
+                <div className="edit-about-controls">
+                  <button
+                    className="gooey-btn edit-about-btn"
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
+                    Edit About
+                  </button>
+                </div>
+              )}
+
+              <div className="profile-header-overlay">
+                {/* ✅ ИСПРАВЛЕННАЯ ОБОЛОЧКА АВАТАРКИ */}
+                <div className="profile-avatar-shell">
+                  <div className="profile-avatar-wrapper">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt={currentUser?.username}
+                        className="profile-avatar-img"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="profile-avatar-placeholder">
+                        <IconUserCircle />
+                      </div>
+                    )}
+
+                    {isMyProfile && (
+                      <label className="avatar-upload-label">
+                        <span className="avatar-upload-text">
+                          {uploadingAvatar ? 'Uploading...' : 'Upload'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={avatarFileInputRef}
+                          onChange={handleAvatarUpload}
+                          hidden
+                          disabled={uploadingAvatar}
+                        />
+                      </label>
+                    )}
+                    
+                    {isMyProfile && avatarUrl && (
+                      <button
+                        className="avatar-remove-btn"
+                        onClick={handleRemoveAvatar}
+                        disabled={uploadingAvatar}
+                        title="Remove avatar"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ✅ Кружок статуса ВНЕ wrapper — теперь его ничего не перекроет */}
+                  <span 
+                    className={`profile-presence ${profilePresence}`} 
+                    title={profilePresence}
+                  />
+                </div>
+
+                <div className="profile-header-text">
+                  {/* ✅ ЗАГОЛОВОК С АДМИН-БЕЙДЖЕМ */}
+                  <h1 className="profile-username">
+                    <span className="profile-username-text">
+                      {currentUser?.username || 'Engstrom'}
+                    </span>
+
+                    {(currentUser?.is_admin || currentUser?.is_staff || currentUser?.is_superuser) && (
+                      <span className="profile-admin-badge" title="Администратор">
+                        <span className="profile-admin-crown">👑</span>
+                        ADMIN
+                      </span>
+                    )}
+                  </h1>
+                  
+                  <p className="profile-bio">
+                    {currentUser?.bio || 'Electronic music producer • Berlin • Releases on Monstercat, NCS, and Spinnin\' Records'}
+                  </p>
+                  
+                  {currentUser?.country && (
+                    <p className="profile-country">
+                      <strong>Country:</strong> {currentUser.country}
+                    </p>
+                  )}
+
+                  <div className="profile-stats">
+                    <div className="stat-item">
+                      <span className="stat-number">{profileStats.tracks}</span>
+                      <span className="stat-label">Tracks</span>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-number">{profileStats.plays.toLocaleString()}</span>
+                      <span className="stat-label">Plays</span>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-number">{profileStats.followers.toLocaleString()}</span>
+                      <span className="stat-label">Followers</span>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-number">{profileStats.following.toLocaleString()}</span>
+                      <span className="stat-label">Following</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 🔥 СЕКЦИЯ С ТАБАМИ И КНОПКОЙ FOLLOW */}
+            <div className="profile-tabs-row">
+              <div className="profile-tabs-section">
+                <GooeyNav
+                  items={[
+                    { label: 'All' },
+                    { label: 'Popular tracks' },
+                    { label: 'Tracks' },
+                    { label: 'Playlists' },
+                    { label: 'Repost' }
+                  ]}
+                  particleCount={8}
+                  particleDistances={[70, 15]}
+                  particleR={90}
+                  initialActiveIndex={0}
+                  animationTime={500}
+                  timeVariance={200}
+                  colors={[1, 2, 3, 4]}
+                  onNavigate={handleTabChange}
+                  className="profile-gooey-tabs"
+                />
+              </div>
+              
+              {!isMyProfile && currentUserProp?.id && user?.id && (
+                <div className="nav-follow-container">
+                  <button
+                    className={`nav-follow-btn ${
+                      !followsLoaded ? 'loading' : 
+                      isFollowingArtist ? 'following' : ''
+                    } ${followLoading ? 'loading' : ''}`}
+                    onClick={handleFollowToggle}
+                    disabled={!followsLoaded || followLoading}
+                  >
+                    {!followsLoaded 
+                      ? '...' 
+                      : followLoading 
+                        ? '...' 
+                        : (isFollowingArtist ? 'Following' : 'Follow')}
+                  </button>
+                </div>
+              )}
+              
+              <div className="profile-actions">
+                {/* Дополнительные кнопки действий */}
+              </div>
             </div>
-          </section>
-        </main>
+
+            {activeTab === 'Repost' ? (
+              <section className="reposts-section">
+                <div className="profile-section-header">
+                  <h2>Reposts</h2>
+                  <span className="track-count">
+                    {userReposts.length} tracks, {repostTabPlaylists.length} playlists
+                  </span>
+                </div>
+                
+                {/* 🔥 НОВОЕ: Репостнутые плейлисты (с фильтрацией по SocialContext) */}
+                {loadingRepostedPlaylists ? (
+                  <div className="loading-playlists">
+                    <p>Loading reposted playlists...</p>
+                  </div>
+                ) : repostTabPlaylists.length > 0 && (
+                  <div className="profile-playlists-section">
+                    <div className="profile-playlists-header">
+                      <span>Reposted playlists</span>
+                      <span className="profile-playlists-count">{repostTabPlaylists.length}</span>
+                    </div>
+
+                    <div className="library-playlists-list profile-playlists-list">
+                      {repostTabPlaylists.map((pl) => renderPlaylistCard(pl))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🔥 Репостнутые треки */}
+                {loadingReposts ? (
+                  <div className="loading-reposts">
+                    <p>Loading reposted tracks...</p>
+                  </div>
+                ) : userReposts.length === 0 ? (
+                  <p className="empty-state">
+                    {isMyProfile ? "You haven't reposted any tracks yet." : "User hasn't reposted any tracks yet."}
+                  </p>
+                ) : (
+                  <div className="profile-tracks-list">
+                    {userReposts.map(track => renderTrackCard(track, true))}
+                  </div>
+                )}
+              </section>
+            ) : (
+              <section className="profile-body">
+                <div className="profile-section-header">
+                  <h2>{activeTab}</h2>
+
+                  <span className="track-count">
+                    {activeTab === 'Playlists'
+                      ? `${userPlaylists.length} playlists`
+                      : `${trackCount} tracks`}
+                  </span>
+                </div>
+
+                {/* ✅ Вкладка Playlists (только плейлисты автора) */}
+                {activeTab === 'Playlists' ? (
+                  <div className="profile-playlists-section">
+                    {userPlaylists.length > 0 ? (
+                      <div className="library-playlists-list profile-playlists-list">
+                        {userPlaylists.map((pl) => renderPlaylistCard(pl))}
+                      </div>
+                    ) : (
+                      <div className="empty-state">
+                        <p>No playlists yet.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* ✅ Остальные вкладки — треки как раньше */
+                  <div className="profile-tracks-list">
+                    {tracksToShow.length > 0 ? (
+                      <>
+                        {tracksToShow.map(track => renderTrackCard(track, false))}
+
+                        {/* ✅ Плейлисты в All (лайк+репост пересечение) */}
+                        {activeTab === 'All' && allActivityPlaylists.length > 0 && (
+                          <div className="profile-playlists-section">
+                            <div className="profile-playlists-header">
+                              <span>Playlists</span>
+                              <span className="profile-playlists-count">{allActivityPlaylists.length}</span>
+                            </div>
+
+                            <div className="library-playlists-list profile-playlists-list">
+                              {allActivityPlaylists.map((pl) => renderPlaylistCard(pl))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="empty-state">
+                        <p>No tracks yet.</p>
+                        {isMyProfile && (
+                          <button
+                            className="upload-btn gooey-btn"
+                            onClick={() => navigate('/upload')}
+                          >
+                            Upload your first track
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+          </main>
+        </div>
       </div>
       
-      {/* Player */}
+      {/* Модальное окно «Edit About» */}
+      {isEditModalOpen && (
+        <div className="modal-backdrop" onClick={() => setIsEditModalOpen(false)}>
+          <div className="modal-content-glass" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit About</h3>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="edit-bio" className="form-label">
+                  Bio
+                </label>
+                <textarea
+                  id="edit-bio"
+                  rows={6}
+                  value={editBio}
+                  onChange={e => setEditBio(e.target.value)}
+                  className="form-textarea"
+                  placeholder="Tell the world about yourself..."
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="edit-country" className="form-label">
+                  Country
+                </label>
+                <input
+                  id="edit-country"
+                  type="text"
+                  value={editCountry}
+                  placeholder="e.g., United States, Germany"
+                  onChange={e => {
+                    const val = e.target.value;
+                    setEditCountry(val);
+
+                    if (val && !/^[A-Za-z\s-]+$/.test(val)) {
+                      setEditCountryError(
+                        'Country may contain only English letters, spaces and hyphens'
+                      );
+                    } else {
+                      setEditCountryError('');
+                    }
+                  }}
+                  className={`form-input ${editCountryError ? 'error' : ''}`}
+                />
+                
+                {editCountryError && (
+                  <div className="error-message">
+                    ⚠️ {editCountryError}
+                  </div>
+                )}
+                
+                <div className="form-hint">
+                  Country may contain only English letters, spaces, and hyphens.
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-btn save"
+                disabled={!!editCountryError}
+                onClick={async () => {
+                  if (editCountryError) {
+                    alert(editCountryError);
+                    return;
+                  }
+
+                  try {
+                    const token = getAuthToken();
+                    if (!token) {
+                      alert('Authorization required');
+                      return;
+                    }
+                    const resp = await fetch('http://localhost:8000/api/users/me/', {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        bio: editBio,
+                        country: editCountry
+                      })
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok) {
+                      throw new Error(data.error || 'Profile update error');
+                    }
+                    
+                    if (data.user && updateUser) {
+                      updateUser(data.user);
+                    }
+                    
+                    await loadProfileData();
+                    setIsEditModalOpen(false);
+                    alert('Profile updated successfully');
+                  } catch (err) {
+                    console.error('Ошибка сохранения профиля:', err);
+                    alert(err.message);
+                  }
+                }}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <GlassMusicPlayer
         currentTrack={currentTrack}
         isPlaying={isPlaying}
@@ -1815,8 +2912,12 @@ const ProfilePage = ({
         currentTime={currentTime}
         duration={duration}
         onSeek={onSeek}
-        isLiked={checkTrackLiked ? checkTrackLiked(currentTrack) : false}
-        onToggleLike={() => onToggleLike && onToggleLike(currentTrack)}
+        isLiked={isLiked(currentTrack)}
+        onToggleLike={() => {
+          if (currentTrack) {
+            toggleLike(currentTrack);
+          }
+        }}
         volume={volume}
         onVolumeChange={onVolumeChange}
         onNext={onNext}

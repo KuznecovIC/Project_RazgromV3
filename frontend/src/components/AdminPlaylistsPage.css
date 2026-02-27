@@ -1,0 +1,136 @@
+.admin-playlists-page{
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  .admin-terminal-bg{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  
+  .admin-playlists-overlay{
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 26px;
+  }
+  
+  .admin-playlists-card{
+    width: min(1200px, 94vw);
+    margin-top: 80px;
+    border-radius: 26px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.46);
+    box-shadow: 0 22px 70px rgba(0,0,0,0.62);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 22px;
+  }
+  
+  .admin-playlists-header{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  
+  .admin-playlists-title{
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    margin-right: 10px;
+  }
+  
+  .admin-search{
+    flex: 1;
+    max-width: 520px;
+    border-radius: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(0,0,0,0.22);
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 10px;
+    outline: none;
+  }
+  
+  .admin-search:focus{
+    border-color: rgba(132,86,255,0.55);
+  }
+  
+  .admin-refresh{
+    cursor:pointer;
+    border-radius: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(0,0,0,0.25);
+    color:#fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 10px;
+  }
+  
+  .admin-refresh:hover{
+    border-color: rgba(132,86,255,0.55);
+  }
+  
+  .admin-loading{ padding: 20px; opacity: 0.85; }
+  
+  .admin-user-block{
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.10);
+  }
+  
+  .admin-user-title{
+    cursor: pointer;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    transition: color .15s ease;
+  }
+  
+  .admin-user-title:hover{ color: #8456ff; }
+  
+  .admin-user-id{
+    opacity: 0.6;
+    font-size: 10px;
+  }
+  
+  .admin-user-playlists{
+    display: grid;
+    gap: 12px;
+  }
+  
+  .admin-pl-card{
+    border-radius: 18px;
+  }
+  
+  .admin-delete-btn{
+    margin-left: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255, 70, 70, 0.10);
+    color: rgba(255,255,255,0.9);
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  
+  .admin-delete-btn:hover{
+    border-color: rgba(255, 70, 70, 0.55);
+    background: rgba(255, 70, 70, 0.18);
+  }
+  
+  .admin-empty{
+    opacity: 0.6;
+    padding: 10px 0;
+  }

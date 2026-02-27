@@ -83,8 +83,11 @@ const TrackPreviewCard = ({ title, artist, cover, duration, genre, className }) 
   );
 };
 
-const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
+const UploadPage = ({ user, sessionToken, onUploadSuccess, getAuthToken }) => {
   const navigate = useNavigate();
+  
+  // 🔥 ИСПРАВЛЕНИЕ: Состояние для обработки ошибок аватара
+  const [avatarFailed, setAvatarFailed] = useState(false);
   
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -114,6 +117,35 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
   
   const audioInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  
+  // 🔥 ИСПРАВЛЕНИЕ: Нормализация URL аватара
+  const isBackendDefaultImage = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    return (
+      url.includes('/static/default_avatar') ||
+      url.includes('/static/default_cover') ||
+      url.includes('default_avatar') ||
+      url.includes('default_cover')
+    );
+  };
+
+  // 🔥 ИСПРАВЛЕНИЕ: Получаем правильный URL аватара
+  const getAvatarUrl = () => {
+    const avatarRaw = user?.avatar || user?.profile_picture || user?.avatar_url;
+    if (!avatarRaw) return null;
+    
+    if (avatarRaw.startsWith('http')) {
+      return avatarRaw;
+    }
+    
+    if (avatarRaw.startsWith('/media/')) {
+      return `http://localhost:8000${avatarRaw}`;
+    }
+    
+    return avatarRaw;
+  };
+
+  const avatarSrc = !avatarFailed ? getAvatarUrl() : null;
   
   const genres = [
     { value: 'electronic', label: 'Electronic' },
@@ -253,7 +285,15 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     
-    if (!sessionToken) {
+    // 🔥 ИСПРАВЛЕНИЕ: Получаем токен из нескольких источников
+    const token =
+      sessionToken ||
+      (typeof getAuthToken === 'function' ? getAuthToken() : null) ||
+      localStorage.getItem('access') ||
+      localStorage.getItem('accessToken') ||
+      localStorage.getItem('token');
+
+    if (!token) {
       setError('You must be logged in to upload tracks');
       return;
     }
@@ -273,7 +313,11 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
     formData.append('artist', artistName);
     formData.append('description', description);
     formData.append('genre', genre);
-    formData.append('hashtags', hashtags);
+    
+    // ✅ ФИКС 1: Отправляем и tags (основное поле), и hashtags (для обратной совместимости)
+    formData.append('tags', hashtags);        // бэкенд ожидает поле "tags"
+    formData.append('hashtags', hashtags);    // для совместимости
+    
     formData.append('is_explicit', isExplicit.toString());
     formData.append('is_downloadable', isDownloadable.toString());
     
@@ -294,12 +338,13 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
     setError('');
     
     try {
-      console.log('📤 Uploading track:', { title, artist: artistName, genre });
+      console.log('📤 Uploading track:', { title, artist: artistName, genre, tags: hashtags });
       
-      const response = await fetch('/api/tracks/upload/', {
+      // 🔥 ИСПРАВЛЕНИЕ URL: /api/upload-track/ вместо /api/tracks/upload/
+      const response = await fetch('/api/upload-track/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${sessionToken}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: formData
       });
@@ -323,12 +368,13 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
       setUploadProgress(100);
       setUploadStatus('success');
       
+      // 🔥 ИСПРАВЛЕНИЕ URL для waveform
       if (publishImmediately && result.track?.id) {
         try {
-          await fetch(`/api/tracks/${result.track.id}/waveform/generate/`, {
+          await fetch(`/api/track/${result.track.id}/generate-waveform/`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${sessionToken}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ force: true })
@@ -358,7 +404,7 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
       setIsUploading(false);
     }
   }, [
-    sessionToken, title, description, genre, 
+    sessionToken, getAuthToken, title, description, genre, 
     hashtags, isExplicit, isDownloadable, publishImmediately,
     audioFile, coverFile, navigate, onUploadSuccess, artistName
   ]);
@@ -380,6 +426,7 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
     setUploadStatus('idle');
     setError('');
     setGenreOpen(false);
+    setAvatarFailed(false); // 🔥 Сбрасываем состояние аватара
     
     if (audioInputRef.current) audioInputRef.current.value = '';
     if (coverInputRef.current) coverInputRef.current.value = '';
@@ -627,7 +674,7 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
                       </span>
                     </div>
 
-                    {/* ✅ FIX: ТОЛЬКО dropdown, БЕЗ backdrop */}
+                    {/* Dropdown */}
                     {genreOpen && (
                       <div className="custom-select-dropdown glass">
                         <div className="dropdown-content">
@@ -797,8 +844,13 @@ const UploadPage = ({ user, sessionToken, onUploadSuccess }) => {
                 <h4>Uploading as:</h4>
                 <div className="user-preview">
                   <div className="user-avatar">
-                    {user?.profile_picture ? (
-                      <img src={user.profile_picture} alt={artistName} />
+                    {/* 🔥 ИСПРАВЛЕНИЕ: Аватарка с нормализацией URL и fallback */}
+                    {avatarSrc && !isBackendDefaultImage(avatarSrc) ? (
+                      <img
+                        src={avatarSrc}
+                        alt={artistName}
+                        onError={() => setAvatarFailed(true)}
+                      />
                     ) : (
                       <span>{artistName.charAt(0).toUpperCase()}</span>
                     )}

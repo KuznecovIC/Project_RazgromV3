@@ -9,6 +9,9 @@
   --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --primary-color: #8456ff;
+  --primary-glow: rgba(132, 86, 255, 0.5);
+  --hover-glow: rgba(132, 86, 255, 0.3);
 }
 
 * {
@@ -359,6 +362,7 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* ✅ ИСПРАВЛЕНИЕ #1: Увеличиваем ширину дропдауна */
 .user-dropdown-menu {
   position: absolute;
   top: 100%;
@@ -372,7 +376,8 @@
     0 25px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  min-width: 260px;
+  min-width: 360px; /* было 260px, стало 360px - расширили */
+  max-width: 400px; /* добавили ограничение */
   z-index: 1000;
   overflow: hidden;
   animation: dropdownFadeIn 0.2s ease-out;
@@ -401,6 +406,7 @@
   pointer-events: none;
 }
 
+/* ✅ БОЛЕЕ ФИОЛЕТОВЫЕ, НЕОНОВЫЕ ЛИНИИ */
 .user-dropdown-menu .floating-lines-dropdown canvas {
   position: absolute;
   top: 0;
@@ -409,10 +415,11 @@
   height: 100%;
   display: block;
   mix-blend-mode: screen;
-  filter: none !important;
-  opacity: 0.9 !important;
+  filter: brightness(2.4) contrast(1.6) saturate(2.0) hue-rotate(-10deg) !important;
+  opacity: 0.72 !important; /* линии яркие, но контент главнее */
 }
 
+/* ✅ БОЛЕЕ ФИОЛЕТОВАЯ ПОДСВЕТКА РАМКИ */
 .user-dropdown-menu .floating-lines-dropdown::before {
   content: '';
   position: absolute;
@@ -422,9 +429,9 @@
   bottom: -2px;
   background: linear-gradient(
     45deg,
-    rgba(255, 159, 252, 0.6) 0%,
-    rgba(132, 86, 255, 0.5) 50%,
-    rgba(255, 159, 252, 0.6) 100%
+    rgba(255, 45, 255, 0.65) 0%,
+    rgba(132, 86, 255, 0.55) 50%,
+    rgba(255, 159, 252, 0.65) 100%
   );
   border-radius: 18px;
   z-index: -1;
@@ -444,6 +451,7 @@
   }
 }
 
+/* ✅ Затемняющий оверлей - возвращаем, но делаем темнее и фиолетовее */
 .user-dropdown-menu::after {
   content: '';
   position: absolute;
@@ -451,19 +459,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(5, 5, 15, 0.9);
+  background: rgba(5, 0, 20, 0.78); /* темнее и фиолетовее */
   backdrop-filter: blur(1px);
   border-radius: 16px;
   z-index: 1;
   pointer-events: none;
 }
 
+/* ✅ ПОДНИМАЕМ КОНТЕНТ НАД ЛИНИЯМИ И ОВЕРЛЕЕМ */
 .user-dropdown-header,
 .user-dropdown-divider,
 .user-dropdown-items,
-.user-dropdown-item {
+.user-dropdown-item,
+.user-dropdown-username,
+.user-dropdown-email {
   position: relative;
-  z-index: 2;
+  z-index: 10; /* значительно выше, чем z-index:1 у линий */
 }
 
 .user-dropdown-header {
@@ -511,13 +522,24 @@
     0 0 10px rgba(132, 86, 255, 0.3);
 }
 
+/* ✅ ИСПРАВЛЕНИЕ #2: Показываем email целиком, без троеточия, максимум 2 строки */
 .user-dropdown-email {
   font-family: 'Press Start 2P', sans-serif;
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.85);
-  white-space: nowrap;
+  
+  /* ✅ вместо ellipsis */
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  
+  /* ✅ аккуратная обрезка максимум на 2 строки */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  
+  /* ✅ чтобы длинные email не ломали верстку */
+  word-break: break-all;
+  
   text-shadow: 
     0 1px 2px rgba(0, 0, 0, 0.6),
     0 0 8px rgba(255, 159, 252, 0.2);
@@ -670,6 +692,116 @@
 .section-subtitle-shuffle:hover {
   color: #ff9ffc;
 }
+
+/* =============== СТИЛИ ДЛЯ ПАГИНАЦИИ =============== */
+.compact-grid-wrapper {
+  position: relative;
+  margin: 20px 0;
+  min-height: 280px;
+}
+
+.compact-grid-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
+}
+
+/* Отодвигаем стрелки дальше от карточек */
+.compact-grid-arrow.left {
+  left: -60px;
+}
+
+.compact-grid-arrow.right {
+  right: -60px;
+}
+
+/* Разворачиваем левую стрелку влево (используем ту же иконку IconNext) */
+.compact-grid-arrow.left svg {
+  transform: rotate(180deg);
+}
+
+/* Бонусный улучшенный hover-эффект */
+.compact-grid-arrow:hover:not(.disabled) {
+  background: rgba(132, 86, 255, 0.25);
+  border-color: rgba(132, 86, 255, 0.6);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 0 20px rgba(132, 86, 255, 0.3);
+}
+
+.compact-grid-arrow svg {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.3s ease;
+}
+
+.compact-grid-arrow.disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Адаптивность для пагинации */
+@media (max-width: 768px) {
+  .compact-grid-arrow {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .compact-grid-arrow.left {
+    left: -40px;
+  }
+  
+  .compact-grid-arrow.right {
+    right: -40px;
+  }
+  
+  .compact-grid-arrow svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .compact-grid-wrapper {
+    min-height: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .compact-grid-arrow {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .compact-grid-arrow.left {
+    left: -30px;
+  }
+  
+  .compact-grid-arrow.right {
+    right: -30px;
+  }
+  
+  .compact-grid-arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .compact-grid-wrapper {
+    min-height: 240px;
+  }
+}
+/* ================================================= */
 
 .compact-tracks-grid {
   display: grid;
@@ -1052,50 +1184,53 @@
   gap: 16px;
 }
 
+/* УБРАЛИ СТЕКЛЯННЫЕ ОБВОДЫ У ВСЕХ КНОПОК */
 .glass-control-btn {
   background: none;
   border: none;
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
+  padding: 8px;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .glass-control-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  color: white;
   transform: scale(1.1);
 }
 
 .glass-play-pause-btn {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #ff9ffc, #8456ff);
-  color: black;
-  box-shadow: 0 4px 15px rgba(255, 159, 252, 0.4);
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #ff9ffc, #8456ff) !important;
+  color: black !important;
+  box-shadow: 0 4px 20px rgba(255, 159, 252, 0.4);
+  border-radius: 50%;
 }
 
 .glass-play-pause-btn:hover {
-  background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+  background: linear-gradient(135deg, #ff6b6b, #ffd93d) !important;
   transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
 }
 
 .glass-control-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
 }
 
 .glass-play-pause-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .glass-loop-btn {
   position: relative;
-  transition: all 0.3s ease;
 }
 
 .glass-loop-btn:hover {
@@ -1103,7 +1238,12 @@
 }
 
 .glass-loop-btn.loop-active {
-  color: #8456ff !important;
+  color: var(--primary-color) !important;
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.glass-loop-btn.loop-active:hover {
+  text-shadow: 0 0 15px var(--primary-glow);
 }
 
 .loop-active-indicator {
@@ -1112,7 +1252,7 @@
   right: -2px;
   width: 6px;
   height: 6px;
-  background-color: #8456ff;
+  background-color: var(--primary-color);
   border-radius: 50%;
   animation: pulse 1.5s infinite;
 }
@@ -1204,7 +1344,6 @@
   color: white;
   cursor: pointer;
   padding: 6px;
-  border-radius: 50%;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
@@ -1212,7 +1351,8 @@
 }
 
 .glass-volume-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-color);
+  transform: scale(1.1);
 }
 
 .glass-volume-btn svg {
@@ -1227,10 +1367,16 @@
 
 .glass-like-btn:hover {
   transform: scale(1.1);
+  color: white;
 }
 
 .glass-like-btn.liked {
-  color: #8456ff;
+  color: var(--primary-color) !important;
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.glass-like-btn.liked:hover {
+  text-shadow: 0 0 15px var(--primary-glow);
 }
 
 .glass-like-btn.loading {
@@ -1534,6 +1680,363 @@ button:disabled:hover {
   display: none;
 }
 
+/* ============================================================= */
+/* НОВЫЕ СТИЛИ ДЛЯ КНОПОК REPOST И FOLLOW БЕЗ СТЕКЛЯННЫХ ОБВОДОВ */
+/* ============================================================= */
+
+/* Базовые стили для кнопок Repost и Follow - БЕЗ ФОНА И ГРАНИЦ */
+.glass-repost-btn,
+.glass-follow-btn {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Hover эффект - только изменение цвета и масштаба */
+.glass-repost-btn:hover,
+.glass-follow-btn:hover {
+  color: white !important;
+  transform: scale(1.1);
+}
+
+/* Активное состояние (нажатие) */
+.glass-repost-btn:active,
+.glass-follow-btn:active {
+  transform: scale(0.95);
+}
+
+/* Состояние "репостнуто" - ФИОЛЕТОВЫЙ цвет и свечение текста */
+.glass-repost-btn.reposted {
+  color: var(--primary-color) !important;
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.glass-repost-btn.reposted:hover {
+  color: #9a73ff !important;
+  text-shadow: 0 0 15px var(--primary-glow);
+}
+
+.glass-repost-btn.reposted:active {
+  text-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* Состояние "подписан" - ФИОЛЕТОВЫЙ цвет и свечение текста */
+.glass-follow-btn.following {
+  color: var(--primary-color) !important;
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.glass-follow-btn.following:hover {
+  color: #9a73ff !important;
+  text-shadow: 0 0 15px var(--primary-glow);
+}
+
+.glass-follow-btn.following:active {
+  text-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* Иконки внутри кнопок */
+.glass-repost-btn svg,
+.glass-follow-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+/* Анимация при активации */
+@keyframes buttonGlow {
+  0% {
+    text-shadow: 0 0 5px var(--primary-glow);
+  }
+  50% {
+    text-shadow: 0 0 15px var(--primary-glow);
+  }
+  100% {
+    text-shadow: 0 0 10px var(--primary-glow);
+  }
+}
+
+.glass-repost-btn.reposted,
+.glass-follow-btn.following {
+  animation: buttonGlow 0.5s ease;
+}
+
+/* Disabled состояние */
+.glass-repost-btn:disabled,
+.glass-follow-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.glass-repost-btn:disabled:hover,
+.glass-follow-btn:disabled:hover {
+  transform: none;
+  color: rgba(255, 255, 255, 0.4) !important;
+  text-shadow: none;
+}
+
+/* Убираем старый блок glass-bottom-actions */
+.glass-bottom-actions {
+  display: none !important;
+}
+
+/* ============================================================= */
+/* ИСПРАВЛЕНИЕ ДЛЯ ПОДВАЛА НА СТРАНИЦЕ ПЛЕЙЛИСТА */
+/* ============================================================= */
+
+/* Скрываем подвал ТОЛЬКО на странице трека, но НЕ на плейлисте */
+.track-page:not(.playlist-page) .glass-player-footer {
+  display: none;
+}
+
+/* ============================================================= */
+/* 🔥 НОВЫЕ СТИЛИ ДЛЯ КАРТОЧЕК ПЛЕЙЛИСТОВ (как CompactTrackCard) */
+/* ============================================================= */
+
+.compact-playlist-card {
+  width: 200px; /* Увеличено с 180px до 225px (+25%) */
+  background: rgba(30, 30, 46, 0.6);
+  border-radius: 12px;
+  padding: 16px; /* Увеличено с 12px до 16px */
+  border: 1px solid rgba(132, 86, 255, 0.12);
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.compact-playlist-card:hover {
+  background: rgba(40, 40, 60, 0.8);
+  border-color: rgba(132, 86, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(132, 86, 255, 0.14);
+}
+
+.playlist-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px; /* Увеличено с 10px до 12px */
+}
+
+.playlist-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.compact-playlist-card:hover .playlist-image {
+  transform: scale(1.06);
+}
+
+/* overlay play */
+.playlist-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.compact-playlist-card:hover .playlist-play-overlay {
+  opacity: 1;
+}
+
+.playlist-play-button {
+  width: 54px; /* Увеличено с 46px до 54px */
+  height: 54px; /* Увеличено с 46px до 54px */
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(132, 86, 255, 0.95);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.playlist-play-button:hover {
+  transform: scale(1.08);
+}
+
+.playlist-play-button svg {
+  width: 24px; /* Увеличено с 20px до 24px */
+  height: 24px; /* Увеличено с 20px до 24px */
+}
+
+/* info */
+.playlist-info {
+  min-height: 85px; /* Увеличено с 72px до 85px */
+}
+
+.playlist-title {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.9rem; /* Увеличено с 0.85rem до 0.9rem */
+  color: white;
+  line-height: 1.3; /* Немного увеличено для лучшей читаемости */
+  cursor: pointer;
+  transition: color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.playlist-title:hover {
+  color: #8456ff;
+}
+
+.playlist-meta {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.75rem; /* Увеличено с 0.72rem до 0.75rem */
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8px; /* Увеличено с 6px до 8px */
+}
+
+/* actions like/repost */
+.playlist-actions {
+  display: flex;
+  gap: 12px; /* Увеличено с 10px до 12px */
+  align-items: center;
+  margin-top: 12px; /* Увеличено с 10px до 12px */
+}
+
+.playlist-like-button,
+.playlist-repost-button {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+  border-radius: 12px; /* Увеличено с 10px до 12px */
+  padding: 8px 12px; /* Увеличено с 6px 10px до 8px 12px */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* Увеличено с 6px до 8px */
+  transition: all 0.15s ease;
+}
+
+.playlist-like-button svg,
+.playlist-repost-button svg {
+  width: 20px; /* Увеличено с 18px до 20px */
+  height: 20px; /* Увеличено с 18px до 20px */
+}
+
+/* фиолетовый hover */
+.playlist-like-button:hover,
+.playlist-repost-button:hover {
+  color: #8456ff;
+  border-color: rgba(132, 86, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.playlist-like-button.liked,
+.playlist-repost-button.reposted {
+  color: #8456ff;
+  border-color: rgba(132, 86, 255, 0.55);
+  background: rgba(132, 86, 255, 0.12);
+}
+
+.playlist-action-count {
+  font-family: "Press Start 2P", sans-serif;
+  font-size: 0.75rem; /* Увеличено с 0.7rem до 0.75rem */
+  opacity: 0.95;
+}
+
+/* Секция плейлистов */
+#playlists-section {
+  margin-top: 20px;
+}
+
+/* Карусель для плейлистов */
+.uploaded-tracks-carousel {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px 0 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(132, 86, 255, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+.uploaded-tracks-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.uploaded-tracks-carousel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.uploaded-tracks-carousel::-webkit-scrollbar-thumb {
+  background: rgba(132, 86, 255, 0.5);
+  border-radius: 10px;
+}
+
+.uploaded-tracks-carousel::-webkit-scrollbar-thumb:hover {
+  background: rgba(132, 86, 255, 0.8);
+}
+
+/* Сообщение о загрузке плейлистов */
+.loading-tracks-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+}
+
+.loading-tracks-message svg {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 16px;
+  animation: spin 1s linear infinite;
+}
+
+/* Пустое состояние */
+.uploaded-tracks-empty {
+  text-align: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.upload-first-btn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ff9ffc, #8456ff);
+  border: none;
+  border-radius: 8px;
+  color: black;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-first-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(132, 86, 255, 0.4);
+}
+
 /* Responsive Styles */
 @media (max-width: 1200px) {
   .sound-nav {
@@ -1651,6 +2154,7 @@ button:disabled:hover {
     left: 20px;
     margin-top: 0;
     min-width: auto;
+    max-width: none; /* сбрасываем ограничение на мобильных */
   }
 
   .glass-player-footer {
@@ -1791,6 +2295,80 @@ button:disabled:hover {
   .user-info {
     display: none;
   }
+  
+  /* Адаптивность для кнопок Repost и Follow на мобильных */
+  .glass-repost-btn,
+  .glass-follow-btn {
+    padding: 6px;
+  }
+  
+  .glass-repost-btn svg,
+  .glass-follow-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Адаптивность для пагинации на мобильных */
+  .compact-grid-arrow {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .compact-grid-arrow.left {
+    left: -40px;
+  }
+  
+  .compact-grid-arrow.right {
+    right: -40px;
+  }
+  
+  .compact-grid-arrow svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .compact-grid-wrapper {
+    min-height: 260px;
+  }
+
+  /* Адаптивность для карточек плейлистов на мобильных */
+  .compact-playlist-card {
+    width: 200px; /* Увеличено с 160px до 200px на планшетах */
+    padding: 14px; /* Увеличено с 10px до 14px */
+  }
+  
+  .compact-playlist-card .playlist-title {
+    font-size: 0.8rem; /* Увеличено с 0.75rem до 0.8rem */
+  }
+  
+  .compact-playlist-card .playlist-meta {
+    font-size: 0.7rem; /* Увеличено с 0.65rem до 0.7rem */
+  }
+  
+  .compact-playlist-card .playlist-play-button {
+    width: 46px; /* Увеличено с 40px до 46px */
+    height: 46px; /* Увеличено с 40px до 46px */
+  }
+  
+  .compact-playlist-card .playlist-play-button svg {
+    width: 20px; /* Увеличено с 18px до 20px */
+    height: 20px; /* Увеличено с 18px до 20px */
+  }
+  
+  .compact-playlist-card .playlist-like-button,
+  .compact-playlist-card .playlist-repost-button {
+    padding: 6px 10px; /* Увеличено с 4px 8px до 6px 10px */
+  }
+  
+  .compact-playlist-card .playlist-like-button svg,
+  .compact-playlist-card .playlist-repost-button svg {
+    width: 18px; /* Увеличено с 16px до 18px */
+    height: 18px; /* Увеличено с 16px до 18px */
+  }
+  
+  .compact-playlist-card .playlist-action-count {
+    font-size: 0.7rem; /* Увеличено с 0.65rem до 0.7rem */
+  }
 }
 
 @media (max-width: 480px) {
@@ -1851,6 +2429,95 @@ button:disabled:hover {
   
   .section-subtitle {
     font-size: 0.7rem;
+  }
+  
+  /* Адаптивность для кнопок Repost и Follow на очень маленьких экранах */
+  .glass-repost-btn,
+  .glass-follow-btn {
+    padding: 5px;
+  }
+  
+  .glass-repost-btn svg,
+  .glass-follow-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Адаптивность для пагинации на очень маленьких экранах */
+  .compact-grid-arrow {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .compact-grid-arrow.left {
+    left: -30px;
+  }
+  
+  .compact-grid-arrow.right {
+    right: -30px;
+  }
+  
+  .compact-grid-arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .compact-grid-wrapper {
+    min-height: 240px;
+  }
+
+  /* Адаптивность для карточек плейлистов на очень маленьких экранах */
+  .compact-playlist-card {
+    width: 175px; /* Увеличено с 140px до 175px на мобильных */
+    padding: 12px; /* Увеличено с 8px до 12px */
+  }
+  
+  .compact-playlist-card .playlist-title {
+    font-size: 0.7rem; /* Увеличено с 0.65rem до 0.7rem */
+  }
+  
+  .compact-playlist-card .playlist-meta {
+    font-size: 0.65rem; /* Увеличено с 0.6rem до 0.65rem */
+  }
+  
+  .compact-playlist-card .playlist-play-button {
+    width: 42px; /* Увеличено с 36px до 42px */
+    height: 42px; /* Увеличено с 36px до 42px */
+  }
+  
+  .compact-playlist-card .playlist-play-button svg {
+    width: 18px; /* Увеличено с 16px до 18px */
+    height: 18px; /* Увеличено с 16px до 18px */
+  }
+  
+  .compact-playlist-card .playlist-like-button,
+  .compact-playlist-card .playlist-repost-button {
+    padding: 5px 8px; /* Увеличено с 3px 6px до 5px 8px */
+  }
+  
+  .compact-playlist-card .playlist-like-button svg,
+  .compact-playlist-card .playlist-repost-button svg {
+    width: 16px; /* Увеличено с 14px до 16px */
+    height: 16px; /* Увеличено с 14px до 16px */
+  }
+  
+  .compact-playlist-card .playlist-action-count {
+    font-size: 0.65rem; /* Увеличено с 0.6rem до 0.65rem */
+  }
+  
+  .loading-tracks-message {
+    font-size: 0.7rem;
+    padding: 30px;
+  }
+  
+  .uploaded-tracks-empty {
+    font-size: 0.7rem;
+    padding: 30px;
+  }
+  
+  .upload-first-btn {
+    font-size: 0.6rem;
+    padding: 8px 16px;
   }
 }
 
@@ -1928,8 +2595,9 @@ button:disabled:hover {
   right: 0 !important;
 }
 
-.track-page .glass-player-footer {
-  display: none; /* Скрываем плеер на странице трека */
+/* Скрываем подвал ТОЛЬКО на странице трека, но НЕ на плейлисте */
+.track-page:not(.playlist-page) .glass-player-footer {
+  display: none;
 }
 
 .track-page .sidebar {
@@ -2046,19 +2714,6 @@ button:disabled:hover {
   transition: right 0.3s ease !important;
 }
 
-/* Стили для страницы трека */
-.track-page .glass-player-footer {
-  display: none; /* Скрываем плеер на странице трека */
-}
-
-.track-page .sidebar {
-  display: none; /* Скрываем сайдбар на странице трека */
-}
-
-.track-page .app {
-  padding-right: 0 !important;
-}
-
 /* Для мобильных устройств */
 @media (max-width: 768px) {
   .comment-delete {
@@ -2099,4 +2754,92 @@ button:disabled:hover {
 
 .glass-player-artist.clickable-artist:hover {
   color: #8456ff !important;
+}
+
+/* =========================
+   STUDIO MODE (без Sidebar и GlassMusicPlayer)
+   ========================= */
+   .app--studio{
+    padding-right: 0 !important;
+  }
+  
+  .app--studio .site-header{
+    right: 0 !important;
+  }
+  
+  /* =========================
+     STUDIO: усиливаем видимость GridScan
+     ========================= */
+  .app--studio .background-gridscan {
+    opacity: 1 !important;
+    filter: contrast(1.25) brightness(1.35) saturate(1.15) !important;
+    z-index: 1 !important;
+  }
+  
+  .app--studio .background-gridscan canvas {
+    opacity: 1 !important;
+  }
+  
+  .app--studio .page-shell {
+    z-index: 2 !important;
+  }
+
+/* =========================
+   MESSAGE MODE: центрируем весь layout (без Sidebar справа)
+   ========================= */
+   .app.app--message{
+    padding-right: 0 !important;
+  }
+  
+  .app.app--message .site-header{
+    right: 0 !important;
+  }
+  
+  /* если page-shell был "поджат" — расправим */
+  .app.app--message .page-shell{
+    max-width: none;
+    padding-left: clamp(20px, 4vw, 80px);
+    padding-right: clamp(20px, 4vw, 80px);
+  }
+
+/* =========================
+   ADMIN MODE ( /admin* )
+   ========================= */
+   .app.app--admin{
+    padding-right: 0 !important;
+  }
+  
+  .app.app--admin::before{
+    height: 0;
+  }
+  
+  .app.app--admin .page-shell{
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+/* ===== REPORT ROUTE: без резерва под sidebar ===== */
+.app.app--report {
+  padding-right: 0 !important;
+}
+
+.app.app--report .site-header {
+  right: 0 !important;
+}
+
+.app.app--report .page-shell {
+  margin-right: 0 !important;
+}
+
+/* === report route: гарантированно центрируем контент === */
+.app.app--report .main-content,
+.app.app--report .page-shell {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.app.app--report .page-shell {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }

@@ -1,0 +1,486 @@
+/* frontend/src/components/AdminTracksPage.css */
+
+.admin-tracks-page {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  .admin-terminal-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+  
+  .admin-tracks-overlay {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 26px;
+  }
+  
+  .admin-tracks-card {
+    width: min(1200px, 94vw);
+    margin-top: 80px;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.46);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 22px;
+  }
+  
+  .admin-tracks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-tracks-title {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(132, 86, 255, 0.5);
+  }
+  
+  /* ✅ Стили для поиска */
+  .admin-search {
+    flex: 1;
+    max-width: 420px;
+    border-radius: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 10px;
+    outline: none;
+    transition: all 0.15s ease;
+  }
+  
+  .admin-search:focus {
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 15px rgba(132, 86, 255, 0.2);
+  }
+  
+  .admin-search::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 9px;
+  }
+  
+  .admin-tracks-refresh {
+    cursor: pointer;
+    border-radius: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 10px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  
+  .admin-tracks-refresh:hover {
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(132, 86, 255, 0.2);
+  }
+  
+  .admin-tracks-loading {
+    padding: 20px;
+    opacity: 0.85;
+    color: #ffffff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    text-align: center;
+  }
+  
+  .admin-user-block {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .admin-user-block:first-of-type {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+  
+  .admin-user-title {
+    cursor: pointer;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    transition: color 0.15s ease;
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .admin-user-title:hover {
+    color: #8456ff !important;
+    background: rgba(132, 86, 255, 0.1);
+  }
+  
+  .admin-user-id {
+    opacity: 0.6;
+    font-size: 10px;
+    margin-left: 6px;
+  }
+  
+  .admin-user-tracks {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .admin-track-card {
+    border-radius: 18px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  
+  .admin-track-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* ✅ Кнопка удаления */
+  .admin-delete-btn {
+    margin-left: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 70, 70, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  
+  .admin-delete-btn:hover {
+    border-color: rgba(255, 70, 70, 0.55);
+    background: rgba(255, 70, 70, 0.18);
+    transform: scale(1.05);
+    color: #ff6b6b;
+  }
+  
+  .admin-waveform-wrap {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  
+  /* ✅ Действия с треком (лайки, репосты, статистика) */
+  .admin-track-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-like-btn,
+  .admin-repost-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.18);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  
+  .admin-like-btn:hover,
+  .admin-repost-btn:hover {
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.12);
+    transform: translateY(-1px);
+  }
+  
+  .admin-like-btn.active {
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.12);
+    color: #8456ff;
+  }
+  
+  .admin-repost-btn.active {
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.12);
+    color: #8456ff;
+  }
+  
+  .admin-count {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 9px;
+    opacity: 0.85;
+    min-width: 30px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .admin-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .admin-stat svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .admin-duration {
+    margin-left: auto;
+    opacity: 0.75;
+    font-size: 9px;
+    font-family: 'Press Start 2P', sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+  }
+  
+  .admin-empty {
+    opacity: 0.6;
+    padding: 10px 0;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 10px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+  }
+  
+  /* ✅ Стили для сайдбар-карточки внутри админки */
+  .sidebar-track-card.admin-track-card {
+    background: rgba(20, 20, 30, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 0;
+  }
+  
+  .sidebar-track-card.admin-track-card .sidebar-track-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .sidebar-track-card.admin-track-card .sidebar-track-title {
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  
+  /* =========================
+     ✅ Waveform (только для админки, чтобы не ломать остальные страницы)
+     ========================= */
+  .admin-tracks-page .sh-waveform-container {
+    position: relative;
+    width: 100%;
+    height: 58px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .admin-tracks-page .sh-waveform-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    padding: 8px 10px;
+    z-index: 3;
+  }
+  
+  .admin-tracks-page .sh-waveform-bar {
+    flex: 1;
+    min-width: 2px;
+    height: var(--height, 25%);
+    background: rgba(255, 255, 255, 0.32);
+    border-radius: 2px;
+    transition: filter 0.12s ease;
+  }
+  
+  .admin-tracks-page .sh-waveform-bar.played {
+    background: rgba(132, 86, 255, 0.95);
+    box-shadow: 0 0 14px rgba(132, 86, 255, 0.28);
+  }
+  
+  .admin-tracks-page .sh-waveform-container:hover .sh-waveform-bar {
+    filter: brightness(1.05);
+  }
+  
+  .admin-tracks-page .sh-waveform-progress {
+    position: absolute;
+    inset: 0;
+    left: 0;
+    width: 0%;
+    background: rgba(132, 86, 255, 0.10);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  .admin-tracks-page .sh-waveform-laser {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-1px);
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 4;
+    pointer-events: none;
+    box-shadow: 0 0 18px rgba(132, 86, 255, 0.45);
+  }
+  
+  .admin-tracks-page .sh-wf-empty {
+    width: 100%;
+    height: 100%;
+    opacity: 0.35;
+    background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+  }
+  
+  /* ✅ Адаптация для планшетов */
+  @media (max-width: 1024px) {
+    .admin-tracks-card {
+      margin-top: 60px;
+      padding: 18px;
+    }
+    
+    .admin-tracks-header {
+      gap: 8px;
+    }
+    
+    .admin-search {
+      max-width: 300px;
+    }
+    
+    .admin-tracks-page .sh-waveform-container {
+      height: 48px;
+    }
+    
+    .admin-tracks-page .sh-waveform-inner {
+      padding: 6px 8px;
+    }
+  }
+  
+  /* ✅ Адаптация для мобильных */
+  @media (max-width: 720px) {
+    .admin-tracks-overlay {
+      padding: 16px;
+    }
+    
+    .admin-tracks-card {
+      margin-top: 40px;
+      padding: 16px;
+    }
+    
+    .admin-tracks-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .admin-tracks-title {
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    
+    .admin-search {
+      max-width: none;
+      width: 100%;
+      margin: 4px 0;
+    }
+    
+    .admin-tracks-refresh {
+      width: 100%;
+      margin-top: 4px;
+    }
+    
+    .admin-user-title {
+      font-size: 11px;
+    }
+    
+    .admin-track-actions {
+      gap: 6px;
+    }
+    
+    .admin-like-btn,
+    .admin-repost-btn,
+    .admin-delete-btn {
+      width: 28px;
+      height: 28px;
+    }
+    
+    .admin-stat {
+      margin-left: 2px;
+    }
+    
+    .admin-stat svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .admin-count {
+      font-size: 8px;
+      min-width: 24px;
+    }
+    
+    .admin-duration {
+      font-size: 8px;
+    }
+    
+    .admin-tracks-page .sh-waveform-container {
+      height: 42px;
+    }
+    
+    .admin-tracks-page .sh-waveform-inner {
+      padding: 4px 6px;
+    }
+  }
+  
+  /* ✅ Адаптация для очень маленьких экранов */
+  @media (max-width: 480px) {
+    .admin-tracks-card {
+      padding: 12px;
+    }
+    
+    .admin-track-actions {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+    
+    .admin-duration {
+      margin-left: 0;
+      width: 100%;
+      text-align: right;
+      margin-top: 4px;
+    }
+    
+    .admin-tracks-page .sh-waveform-container {
+      height: 36px;
+    }
+  }

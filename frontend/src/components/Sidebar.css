@@ -98,11 +98,78 @@
   width: 100%;
 }
 
-.track-count {
+/* 🔥 ОБНОВЛЕННЫЙ СТИЛЬ ДЛЯ ЗАГОЛОВКА LIKED TRACKS */
+.sidebar-liked-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+/* Заголовок "Liked Tracks" слева */
+.sidebar-liked-header .section-title {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0;
+}
+
+/* Контейнер для счетчика и кнопки View All */
+.sidebar-liked-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 5px;
+}
+
+/* Счетчик треков - слева */
+.sidebar-liked-meta .track-count {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
   font-weight: 600;
-  margin-top: 5px;
+  margin: 0;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+/* Кнопка View All - справа */
+.sidebar-view-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(132, 86, 255, 0.12);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 30px;
+}
+
+.sidebar-view-all-btn:hover {
+  background: rgba(132, 86, 255, 0.2);
+  border-color: #8456ff;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.sidebar-view-all-btn:active {
+  transform: translateY(0);
+}
+
+.sidebar-view-all-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sidebar-view-all-count {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 3px;
 }
 
 /* Artist Tools Section - с отступом от края */
@@ -120,6 +187,206 @@
   overflow: hidden;
   z-index: 10;
   margin-right: 10px;
+}
+
+/* 🔥 СТИЛИ ДЛЯ НОВОГО БЛОКА "Artists you liked" */
+.sidebar-liked-artists-section {
+  margin-bottom: 25px;
+  padding: 20px 15px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  margin-right: 10px;
+}
+
+.sidebar-artists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-artist-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  min-height: 50px;
+}
+
+.sidebar-artist-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(132, 86, 255, 0.2);
+  transform: translateX(-3px);
+}
+
+.sidebar-artist-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+/* ✅ НОВЫЙ СТИЛЬ: Контейнер для текста артиста и счётчиков */
+.sidebar-artist-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-artist-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(132, 86, 255, 0.3);
+  background: rgba(132, 86, 255, 0.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-artist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-artist-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8456ff, #ff9ffc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: white;
+  font-weight: bold;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.sidebar-artist-name {
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+  font-family: 'Press Start 2P', sans-serif;
+  transition: color 0.2s ease;
+}
+
+.sidebar-artist-card:hover .sidebar-artist-name {
+  color: #8456ff;
+}
+
+/* ✅ НОВЫЕ СТИЛИ: Счётчики подписчиков и подписок */
+.sidebar-artist-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.sidebar-artist-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.72);
+  transition: all 0.2s ease;
+}
+
+.sidebar-artist-stat svg {
+  width: 14px;
+  height: 14px;
+  color: rgba(132, 86, 255, 0.95);
+  filter: drop-shadow(0 0 6px rgba(132, 86, 255, 0.35));
+  transition: all 0.2s ease;
+}
+
+.sidebar-artist-card:hover .sidebar-artist-stat {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar-artist-card:hover .sidebar-artist-stat svg {
+  color: #8456ff;
+  filter: drop-shadow(0 0 8px rgba(132, 86, 255, 0.5));
+}
+
+.sidebar-follow-purple {
+  background: #8456ff;
+  border: none;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  color: white;
+  font-family: 'Press Start 2P', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(132, 86, 255, 0.3);
+}
+
+.sidebar-follow-purple:hover:not(:disabled) {
+  background: #9a72ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(132, 86, 255, 0.4);
+}
+
+.sidebar-follow-purple:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sidebar-follow-purple.following {
+  background: rgba(132, 86, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(132, 86, 255, 0.15);
+}
+
+.sidebar-follow-purple.following:hover:not(:disabled) {
+  background: rgba(132, 86, 255, 0.2);
+  color: #fff;
+  border-color: rgba(132, 86, 255, 0.5);
+}
+
+.sidebar-follow-purple:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Индикатор загрузки в кнопке Follow */
+.sidebar-follow-purple .sidebar-loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: sidebar-spin 0.8s linear infinite;
 }
 
 .artist-tools-grid {
@@ -678,6 +945,447 @@
   color: #ffffff !important;
 }
 
+/* === ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ КНОПОК СЧЕТЧИКОВ === */
+
+/* Контейнер для кнопок действий */
+.sidebar-track-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Группа: кнопка + число */
+.sidebar-action-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Число рядом с иконкой */
+.sidebar-action-count {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1;
+}
+
+/* Статистика (иконка + число), не кнопка */
+.sidebar-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sidebar-stat svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Кнопка лайка внизу (как follow/repost) */
+.sidebar-like-btn {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+
+.sidebar-like-btn:hover {
+  background: rgba(132, 86, 255, 0.1) !important;
+  color: #8456ff;
+  transform: scale(1.08);
+}
+
+.sidebar-like-btn.liked {
+  background: rgba(132, 86, 255, 0.1) !important;
+  color: #8456ff;
+}
+
+.sidebar-like-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Базовые стили для кнопок Follow/Repost - ПРОЗРАЧНЫЕ БЕЗ ОБВОДКИ */
+.sidebar-follow-btn,
+.sidebar-repost-btn {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Ховер состояния */
+.sidebar-follow-btn:hover,
+.sidebar-repost-btn:hover {
+  background: rgba(132, 86, 255, 0.1) !important;
+  color: #8456ff;
+  transform: scale(1.08);
+}
+
+/* Активные состояния */
+.sidebar-follow-btn.following,
+.sidebar-repost-btn.reposted {
+  background: rgba(132, 86, 255, 0.1) !important;
+  color: #8456ff;
+}
+
+/* Загрузка/отключение */
+.sidebar-follow-btn:disabled,
+.sidebar-repost-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Контейнер для репоста (чтобы разместить счетчик) */
+.sidebar-repost-container {
+  position: relative;
+}
+
+/* Счетчик репостов */
+.sidebar-repost-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: rgba(132, 86, 255, 0.8);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', sans-serif;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Индикатор загрузки */
+.sidebar-loading-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #8456ff;
+  border-radius: 50%;
+  animation: sidebar-spin 1s linear infinite;
+}
+
+@keyframes sidebar-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Прогресс-бар для текущего трека */
+.sidebar-track-progress-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.sidebar-track-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8456ff, #ff9ffc);
+  transition: width 0.1s linear;
+}
+
+.sidebar-track-progress-bar {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.sidebar-track-progress-indicator {
+  height: 100%;
+  background: linear-gradient(90deg, #8456ff, #ff9ffc);
+  transition: width 0.1s linear;
+}
+
+/* ==================== SIDEBAR PLAYLIST CARDS ==================== */
+.sidebar-section {
+  margin-bottom: 25px;
+  padding: 20px 15px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  margin-right: 10px;
+}
+
+.sidebar-empty {
+  padding: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-family: 'Press Start 2P', sans-serif;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 3;
+}
+
+.sidebar-playlist-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.sidebar-playlist-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(132, 86, 255, 0.25);
+  transform: translateX(-3px);
+  box-shadow: 0 6px 16px rgba(132, 86, 255, 0.18);
+}
+
+.sidebar-playlist-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-playlist-cover-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-playlist-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-playlist-card:hover .sidebar-playlist-cover {
+  transform: scale(1.05);
+}
+
+.sidebar-playlist-cover-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: all 0.2s ease;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-playlist-cover-wrap:hover .sidebar-playlist-cover-play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sidebar-playlist-cover-play:hover {
+  background: rgba(132, 86, 255, 0.4);
+  color: #fff;
+}
+
+.sidebar-playlist-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-playlist-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+  color: #ffffff;
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.sidebar-playlist-title.clickable-playlist {
+  cursor: pointer;
+}
+
+.sidebar-playlist-title.clickable-playlist:hover {
+  color: #a855f7 !important;
+}
+
+.sidebar-playlist-sub {
+  font-size: 0.6rem;
+  opacity: 0.75;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.sidebar-playlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.sidebar-pl-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  min-width: 50px;
+  justify-content: center;
+}
+
+.sidebar-pl-action span {
+  font-size: 0.6rem;
+  font-weight: 800;
+  font-family: 'Press Start 2P', sans-serif;
+  margin-left: 2px;
+}
+
+.sidebar-pl-action:hover {
+  border-color: rgba(168, 85, 247, 0.75);
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  transform: translateY(-1px);
+}
+
+.sidebar-pl-action.active {
+  border-color: rgba(168, 85, 247, 0.95);
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.15);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+}
+
+.sidebar-pl-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Адаптивность для плейлистов */
+@media (max-width: 768px) {
+  .sidebar-playlist-card {
+    padding: 10px 12px;
+  }
+  
+  .sidebar-playlist-cover-wrap {
+    width: 46px;
+    height: 46px;
+  }
+  
+  .sidebar-playlist-title {
+    font-size: 0.7rem;
+  }
+  
+  .sidebar-playlist-sub {
+    font-size: 0.55rem;
+  }
+  
+  .sidebar-pl-action {
+    padding: 6px 8px;
+    min-width: 40px;
+  }
+  
+  .sidebar-pl-action span {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-playlist-card {
+    padding: 8px 10px;
+  }
+  
+  .sidebar-playlist-cover-wrap {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sidebar-playlist-title {
+    font-size: 0.65rem;
+  }
+  
+  .sidebar-playlist-sub {
+    font-size: 0.5rem;
+  }
+  
+  .sidebar-pl-action {
+    padding: 5px 6px;
+    min-width: 36px;
+  }
+  
+  .sidebar-pl-action span {
+    font-size: 0.5rem;
+  }
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .sidebar {
@@ -708,6 +1416,47 @@
     max-width: 180px;
   }
   
+  /* Адаптивность для нового блока артистов */
+  .sidebar-artist-card {
+    padding: 6px 8px;
+  }
+  
+  .sidebar-artist-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .sidebar-artist-name {
+    font-size: 0.7rem;
+    max-width: 150px;
+  }
+  
+  /* ✅ Адаптивность для счётчиков артистов */
+  .sidebar-artist-text {
+    gap: 3px;
+  }
+  
+  .sidebar-artist-stats {
+    gap: 8px;
+  }
+  
+  .sidebar-artist-stat {
+    font-size: 0.5rem;
+    gap: 4px;
+  }
+  
+  .sidebar-artist-stat svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .sidebar-follow-purple {
+    padding: 5px 12px;
+    font-size: 0.65rem;
+    min-width: 70px;
+    height: 26px;
+  }
+  
   .liked-tracks-controls {
     gap: 10px;
   }
@@ -720,6 +1469,30 @@
   .liked-control-btn.play-btn {
     width: 38px;
     height: 38px;
+  }
+  
+  .sidebar-liked-header {
+    gap: 8px;
+  }
+  
+  .sidebar-view-all-btn {
+    padding: 5px 10px;
+    font-size: 0.65rem;
+    height: 28px;
+  }
+  
+  /* Адаптивность для счетчиков */
+  .sidebar-track-actions {
+    gap: 8px;
+  }
+  
+  .sidebar-action-group,
+  .sidebar-stat {
+    gap: 3px;
+  }
+  
+  .sidebar-action-count {
+    font-size: 0.5rem;
   }
 }
 
@@ -747,4 +1520,14 @@
   text-align: left !important;
   width: auto !important;
   display: block !important;
+}
+
+/* 🔥 Скрытая подсказка для треков (необязательно) */
+.sidebar-hidden-tracks-hint {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin-top: 10px;
+  font-family: "'Press Start 2P', sans-serif";
+  padding: 0 10px;
 }

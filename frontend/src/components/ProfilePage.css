@@ -1,14 +1,10 @@
-/* ============================================
-   PROFILE PAGE STYLES
-   ============================================ */
-
-/* 🔥 НОВАЯ ОБЕРТКА */
+/* 🔥 ОСНОВНАЯ ОБЕРТКА */
 .profile-page-wrapper {
   position: relative;
   width: 100%;
   min-height: 100vh;
   background: transparent;
-  z-index: 1;
+  overflow-x: hidden;
 }
 
 /* 🔥 GRIDSCAN КАК ФОН */
@@ -24,51 +20,226 @@
   pointer-events: none;
 }
 
-/* 🔥 ОСНОВНОЙ КОНТЕЙНЕР */
+/* 🔥 КОНТЕЙНЕР ДЛЯ ВСЕЙ СТРАНИЦЫ */
 .profile-page-container {
   position: relative;
   z-index: 10;
   width: 100%;
   min-height: 100vh;
-  padding-left: 280px; /* ширина Sidebar */
-  padding-top: 96px;   /* высота header */
+  padding-top: 80px;
+  box-sizing: border-box;
 }
 
-/* 🔥 СТЕКЛЯННЫЙ HEADER */
+/* ============================================
+   HEADER СТИЛИ
+   ============================================ */
+
+/* 🔥 HEADER - ИСПРАВЛЕННЫЙ */
 .glass-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 440px !important;
+  width: calc(100% - 440px) !important;
+  background: rgba(15, 23, 42, 0) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0) !important;
+  z-index: 100 !important;
+  transition: all 0.3s ease;
+}
+
+/* 🔥 НАВИГАЦИЯ В HEADER */
+.sound-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 80px;
   width: 100%;
-  background: transparent !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  pointer-events: auto;
-  z-index: 100;
+  box-sizing: border-box;
+  margin-left: 0 !important;
 }
 
-.glass-header .sound-nav {
-  margin-left: -405px;
-  background: transparent !important;
+/* ЛЕВАЯ ЧАСТЬ НАВИГАЦИИ */
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex: 0 0 auto;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 
+/* КНОПКА BRAND */
+.brand {
+  all: unset !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+}
+
+/* GOOEY NAV В HEADER */
 .glass-header .profile-gooey-nav .gooey-wrapper {
-  transform: translateX(-420px) !important;
-  background: transparent !important;
+  transform: none !important;
+  margin-left: 20px !important;
 }
 
-/* ===== USER AVATAR BUTTON (HEADER) ===== */
+.gooey-nav-container {
+  margin-left: 20px;
+}
+
+/* ✅ ЦЕНТРАЛЬНАЯ ЧАСТЬ - ПОИСК (СКОУПИНУТ) */
+.profile-page-wrapper .nav-center {
+  flex: 1;
+  max-width: 500px;
+  margin: 0 30px;
+}
+
+.profile-page-wrapper .nav-search {
+  position: relative;
+  width: 100%;
+}
+
+.profile-page-wrapper .nav-search-input {
+  width: 100%;
+  padding: 14px 55px 14px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  font-size: 0.92rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.profile-page-wrapper .nav-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  font-size: 0.92rem;
+  letter-spacing: 0.5px;
+}
+
+.profile-page-wrapper .nav-search-input:focus {
+  outline: none;
+  border-color: rgba(255, 159, 252, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 159, 252, 0.1);
+}
+
+.profile-page-wrapper .nav-search-btn {
+  position: absolute;
+  right: 6px;
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(120deg, #ff9ffc, #f97316);
+  color: black;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.profile-page-wrapper .nav-search-btn:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.profile-page-wrapper .nav-search-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ПРАВАЯ ЧАСТЬ НАВИГАЦИИ */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 0 0 auto;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+.nav-pill {
+  background: linear-gradient(135deg, rgba(132, 86, 255, 0.15), rgba(255, 159, 252, 0.15));
+  border: 1px solid rgba(132, 86, 255, 0.3);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.nav-pill:hover {
+  background: linear-gradient(135deg, rgba(132, 86, 255, 0.25), rgba(255, 159, 252, 0.25));
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(132, 86, 255, 0.3);
+}
+
+/* ГРУППА ИКОНОК */
+.icon-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* АВАТАР ПОЛЬЗОВАТЕЛЯ */
 .user-avatar-container {
   position: relative;
+  margin-left: 10px;
 }
 
 .user-avatar-btn {
   all: unset;
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,8 +247,8 @@
 }
 
 .user-avatar-circle {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   overflow: hidden;
   display: flex;
@@ -85,20 +256,24 @@
   justify-content: center;
   background: rgba(15, 23, 42, 0.8);
   border: 2px solid rgba(255, 255, 255, 0.25);
-  box-shadow:
-    0 0 10px rgba(99, 102, 241, 0.6),
-    inset 0 0 6px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
 }
 
-.user-avatar-circle img {
+.user-avatar-circle:hover {
+  border-color: rgba(132, 86, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.user-avatar-circle img,
+.user-avatar-circle svg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
   pointer-events: none;
 }
 
-/* 🔥 Dropdown меню пользователя */
+/* DROPDOWN МЕНЮ */
 .user-dropdown-menu {
   position: absolute;
   top: 55px;
@@ -136,7 +311,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  pointer-events: none;
 }
 
 .user-dropdown-info {
@@ -207,24 +381,26 @@
   color: #ff4757;
 }
 
-/* 🔥 ОСНОВНОЙ КОНТЕНТ */
+/* ============================================
+   ОСНОВНОЙ КОНТЕНТ ПРОФИЛЯ
+   ============================================ */
+
 .profile-page-content {
   position: relative;
-  width: calc(100vw - 280px);
-  max-width: 1400px;
-  margin-left: -210px;
-  padding: 32px 48px 160px;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
   z-index: 20;
   background: transparent;
+  box-sizing: border-box;
 }
 
-/* 🔥 ШАПКА ПРОФИЛЯ */
+/* ШАПКА ПРОФИЛЯ */
 .profile-header-image {
   position: relative;
-  width: 69vw;
-  margin-left: 0px;
-  margin-top: 56px;
-  height: 360px;
+  width: 100%;
+  margin-top: 20px;
+  height: 420px;
   overflow: hidden;
   border-radius: 18px;
   z-index: 30;
@@ -245,8 +421,8 @@
 /* Кнопки управления шапкой */
 .header-controls {
   position: absolute;
-  top: 20px;
-  right: 24px;
+  top: 14px;
+  right: 18px;
   z-index: 40;
   pointer-events: auto;
   display: flex;
@@ -266,7 +442,6 @@
   backdrop-filter: blur(6px);
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
-  pointer-events: auto;
 }
 
 .upload-header-btn:hover,
@@ -283,7 +458,59 @@
   background: rgba(220, 38, 38, 0.85);
 }
 
-/* Оверлей поверх шапки */
+/* 🔥 КНОПКА REPORT ДЛЯ ЧУЖИХ ПРОФИЛЕЙ */
+.report-user-btn {
+  background: rgba(255, 90, 120, 0.18);
+  border: 1px solid rgba(255, 90, 120, 0.35);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(255, 90, 120, 0.16);
+  transition: transform .15s ease, filter .15s ease;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-family: 'Press Start 2P', sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  letter-spacing: 0.3px;
+}
+
+.report-user-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+  background: rgba(255, 90, 120, 0.25);
+  border-color: rgba(255, 90, 120, 0.5);
+  box-shadow: 0 0 22px rgba(255, 90, 120, 0.25);
+}
+
+/* Кнопка Edit About */
+.edit-about-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+
+.edit-about-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #8456ff;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+  letter-spacing: 0.3px;
+}
+
+.edit-about-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Оверлей шапки */
 .profile-header-overlay {
   position: absolute;
   inset: 30px 40px 40px 40px;
@@ -292,46 +519,57 @@
   gap: 24px;
   padding: 32px 48px 48px;
   z-index: 35;
-  /* Убрали тёмный градиент, оставляем чистое изображение */
   background: none;
+  backdrop-filter: none;
 }
 
 .profile-header-text {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
 }
 
-/* 🔥 БОЛЬШАЯ АВАТАРКА */
-.profile-avatar-large {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid var(--profile-color, #8456ff);
-  box-shadow: 
-    0 0 30px rgba(132, 86, 255, 0.25),
-    0 10px 40px rgba(0, 0, 0, 0.3);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* ============================================
+   ИСПРАВЛЕННАЯ СТРУКТУРА АВАТАРКИ С КРУЖКОМ
+   ============================================ */
+
+/* ✅ НОВАЯ ОБОЛОЧКА ДЛЯ АВАТАРКИ */
+.profile-avatar-shell {
+  position: relative;
+  width: 140px;
+  height: 140px;
   flex-shrink: 0;
+  z-index: 5;
 }
 
-.profile-avatar-large img,
-.profile-avatar-placeholder svg {
+/* ✅ САМА АВАТАРКА С overflow: hidden */
+.profile-avatar-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  pointer-events: none;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(132, 86, 255, 0.3);
+  z-index: 1;
 }
 
+.profile-avatar-img,
 .profile-avatar-placeholder {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-avatar-placeholder {
+  background: rgba(132, 86, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(132, 86, 255, 0.1);
-  border-radius: 50%;
 }
 
 .profile-avatar-placeholder svg {
@@ -340,7 +578,79 @@
   color: rgba(132, 86, 255, 0.5);
 }
 
-/* 🔥 ИНФОРМАЦИЯ ПОЛЬЗОВАТЕЛЯ */
+/* Кнопка загрузки аватара */
+.avatar-upload-label {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+  z-index: 10;
+}
+
+.profile-avatar-wrapper:hover .avatar-upload-label {
+  opacity: 1;
+}
+
+.avatar-upload-text {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(132, 86, 255, 0.8);
+}
+
+/* Кнопка удаления аватара - ПОЛНОСТЬЮ СКРЫТА */
+.avatar-remove-btn {
+  display: none !important;
+}
+
+/* ✅ КРУЖОК СТАТУСА - ВНЕ wrapper, ПОВЕРХ ВСЕГО */
+.profile-presence {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(10, 10, 20, 0.95);
+  z-index: 9999 !important;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.14), 0 0 12px rgba(0,0,0,0.35);
+}
+
+.profile-presence.online { 
+  background: #39ff88;
+  box-shadow: 0 0 8px #39ff88;
+}
+
+.profile-presence.offline { 
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.profile-presence.afk { 
+  background: #ffd34a;
+  box-shadow: 0 0 8px #ffd34a;
+}
+
+.profile-presence.dnd { 
+  background: #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+}
+
+.profile-presence.sleep { 
+  background: #7aa7ff;
+  box-shadow: 0 0 8px #7aa7ff;
+}
+
+/* ============================================
+   ИНФО ПРОФИЛЯ С АДМИН-БЕЙДЖЕМ
+   ============================================ */
+
 .profile-username {
   font-size: 2.5rem;
   font-weight: 700;
@@ -349,8 +659,61 @@
   margin: 0;
   letter-spacing: 0.5px;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
+.profile-username-text {
+  display: inline-block;
+}
+
+/* 👑 АДМИН-БЕЙДЖ */
+.profile-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.6px;
+  color: rgba(255, 214, 102, 0.95);
+  background: rgba(20, 16, 30, 0.45);
+  border: 1px solid rgba(255, 214, 102, 0.45);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 10px 30px rgba(0,0,0,0.25);
+  text-shadow: 0 0 10px rgba(255, 214, 102, 0.35);
+  white-space: nowrap;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.profile-admin-badge:hover {
+  background: rgba(30, 25, 40, 0.6);
+  border-color: rgba(255, 214, 102, 0.7);
+  box-shadow: 0 0 15px rgba(255, 214, 102, 0.3);
+  transform: translateY(-1px);
+}
+
+.profile-admin-crown {
+  font-size: 0.9rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255, 214, 102, 0.25));
+  animation: crownGlow 2s ease-in-out infinite;
+}
+
+@keyframes crownGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(255, 214, 102, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 214, 102, 0.5));
+  }
+}
+
+/* Остальная информация профиля */
 .profile-bio {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.85);
@@ -360,45 +723,81 @@
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
 }
 
-/* 🔥 СТАТИСТИКА */
+.profile-country {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.4;
+}
+
+.profile-country strong {
+  color: #cbd5e1;
+  margin-right: 6px;
+}
+
+/* СТАТИСТИКА */
 .profile-stats {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   margin-top: 16px;
   flex-wrap: wrap;
-  pointer-events: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: fit-content;
 }
 
 .stat-item {
-  text-align: left;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(132, 86, 255, 0.2);
 }
 
 .stat-number {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   font-family: 'Press Start 2P', sans-serif;
   color: white;
   line-height: 1.2;
+  text-shadow: 0 0 10px rgba(132, 86, 255, 0.3);
 }
 
 .stat-label {
-  font-size: 12px;
-  opacity: 0.6;
+  font-size: 11px;
+  opacity: 0.8;
   font-family: 'Press Start 2P', sans-serif;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* 🔥 НОВЫЙ РЯД С ТАБАМИ И КНОПКАМИ */
+/* ТАБЫ ПРОФИЛЯ */
 .profile-tabs-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 90px;
+  margin-top: 40px;
   position: relative;
   z-index: 40;
 }
@@ -415,7 +814,7 @@
   flex-shrink: 0;
 }
 
-/* 🔥 ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ КНОПОК */
+/* КНОПКИ FOLLOW/MESSAGE */
 .follow-button {
   background: #8456ff;
   color: white;
@@ -465,6 +864,11 @@
   box-shadow: 0 5px 20px rgba(100, 100, 100, 0.4);
 }
 
+.follow-button svg {
+  width: 18px;
+  height: 18px;
+}
+
 .message-button {
   background: transparent;
   color: #fff;
@@ -484,13 +888,7 @@
   transform: translateY(-2px);
 }
 
-/* Иконка Follow */
-.follow-button svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* 🔥 ТАБЫ */
+/* ТАБЫ GOOEY */
 .profile-gooey-tabs button,
 .profile-tabs-section button {
   background: rgba(255, 255, 255, 0.1) !important;
@@ -513,7 +911,7 @@
     0 10px 40px rgba(132,86,255,0.35);
 }
 
-/* 🔥 КОНТЕНТ ПРОФИЛЯ */
+/* КОНТЕНТ ПРОФИЛЯ */
 .profile-body {
   margin-top: 40px;
   pointer-events: auto;
@@ -545,24 +943,30 @@
   font-family: 'Press Start 2P', sans-serif;
 }
 
-/* 🔥 СПИСОК ТРЕКОВ */
+/* ============================================
+   СТИЛИ ДЛЯ ТРЕКОВ
+   ============================================ */
+
 .profile-tracks-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
+/* СТРОКА ТРЕКА */
 .profile-track-row {
   display: flex;
-  gap: 14px;
-  padding: 12px;
+  gap: 16px;
+  padding: 16px 14px;
   border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   align-items: center;
   backdrop-filter: blur(4px);
+  position: relative;
+  margin-bottom: 8px;
 }
 
 .profile-track-row:hover {
@@ -574,44 +978,1758 @@
     0 0 0 1px rgba(132, 86, 255, 0.2);
 }
 
-.track-cover {
+/* ОБЛОЖКА ТРЕКА */
+.track-cover-wrapper {
+  position: relative;
   width: 64px;
   height: 64px;
   border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-.track-info {
-  flex: 1;
-  min-width: 0;
+.track-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+/* КНОПКА PLAY/PAUSE */
+.track-play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.track-play-button:hover {
+  background: rgba(132, 86, 255, 0.9);
+  border-color: #8456ff;
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1 !important;
+}
+
+.track-cover-wrapper:hover .track-play-button {
+  opacity: 0.9;
+}
+
+.track-play-button svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+/* ИНФОРМАЦИЯ О ТРЕКЕ */
+.track-info-compact {
+  flex-shrink: 0;
+  width: 220px;
+  min-width: 220px;
 }
 
 .track-title {
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   font-family: 'Press Start 2P', sans-serif;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.track-title:hover {
+  color: #8456ff;
 }
 
 .track-artist {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
   font-family: 'Press Start 2P', sans-serif;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 2px 0;
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  transition: color 0.2s ease;
+  cursor: pointer;
 }
 
-/* 🔥 ПУСТОЕ СОСТОЯНИЕ */
+.track-artist:hover {
+  color: #8456ff !important;
+  text-decoration: underline;
+  text-decoration-color: #8456ff;
+}
+
+/* ============================================
+   🔥 ИСПРАВЛЕННЫЙ WAVEFORM - БАРЫ ВСЕГДА СНИЗУ
+   ============================================ */
+
+.track-waveform-mini {
+  flex: 1;
+  margin: 0 24px;
+  height: 56px;
+  min-width: 350px;
+  max-width: 750px;
+  cursor: pointer;
+  position: relative;
+}
+
+/* ✅ ИСПРАВЛЕНО: бары растут снизу, не центрируются */
+.waveform-container-mini {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  user-select: none;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.waveform-container-mini:hover {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(132, 86, 255, 0.3);
+  box-shadow: 
+    0 0 15px rgba(132, 86, 255, 0.25),
+    inset 0 0 10px rgba(132, 86, 255, 0.1);
+}
+
+/* ✅ ИСПРАВЛЕНО: абсолютное позиционирование и прижатие к низу */
+.waveform-inner-mini {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 8px 10px;
+  z-index: 2;
+}
+
+/* ✅ ИСПРАВЛЕНО: бары растут от низа */
+.waveform-bar-mini {
+  flex: 1;
+  min-width: 0;
+  height: var(--height);
+  background: linear-gradient(
+    to top, 
+    rgba(132, 86, 255, 0.5),
+    rgba(132, 86, 255, 0.8)
+  );
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform-origin: bottom;
+}
+
+.waveform-bar-mini.played {
+  background: linear-gradient(
+    to top, 
+    #8456ff, 
+    #a78bfa
+  );
+  box-shadow: 
+    0 0 8px rgba(132, 86, 255, 0.8),
+    0 0 12px rgba(132, 86, 255, 0.4);
+}
+
+.waveform-bar-mini:hover {
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+.waveform-bar-mini.played:hover {
+  background: linear-gradient(to top, #9b76ff, #b594ff);
+  box-shadow: 
+    0 0 10px rgba(132, 86, 255, 0.9),
+    0 0 15px rgba(132, 86, 255, 0.5);
+}
+
+.waveform-position-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    to bottom,
+    #ffffff,
+    #8456ff
+  );
+  box-shadow: 
+    0 0 12px rgba(255, 255, 255, 0.9),
+    0 0 18px rgba(132, 86, 255, 0.7);
+  z-index: 15;
+  pointer-events: none;
+  transition: left 0.1s linear;
+  transform: translateX(-1.5px);
+}
+
+/* КНОПКИ ДЕЙСТВИЙ */
+.track-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+
+.repost-button-mini,
+.more-button-mini,
+.like-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+}
+
+.repost-button-mini:hover,
+.more-button-mini:hover,
+.like-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.repost-button-mini.reposted {
+  color: #8456ff !important;
+}
+
+.repost-button-mini.reposted:hover {
+  background: rgba(132, 86, 255, 0.1);
+}
+
+.repost-button-mini svg,
+.more-button-mini svg,
+.like-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.repost-count-mini,
+.like-count-mini {
+  font-size: 0.7rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 4px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* СТАТИСТИКА ВНИЗУ ОБЛОЖКИ */
+.track-bottom-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 0 0 8px 8px;
+}
+
+.track-cover-wrapper:hover .track-bottom-actions {
+  opacity: 1;
+}
+
+.track-stats-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: right;
+  width: 100%;
+}
+
+.track-likes-count,
+.track-reposts-count,
+.track-plays-count,
+.track-comments-count {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
+.track-reposts-count,
+.track-plays-count {
+  font-size: 0.65rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ПРОСМОТРЫ И КОММЕНТАРИИ */
+.track-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0.8;
+  color: #94a3b8;
+}
+
+.track-stat svg {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* ============================================
+   СЕКЦИЯ РЕПОСТОВ
+   ============================================ */
+
+.reposts-section {
+  margin-top: 40px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 40;
+}
+
+.reposts-section h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Press Start 2P', sans-serif;
+  color: white;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+.loading-reposts {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+}
+
+.empty-reposts {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.related-tracks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* КАРТОЧКИ REPOST */
+.related-track-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
+  backdrop-filter: blur(4px);
+  position: relative;
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.related-track-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(132, 86, 255, 0.2);
+}
+
+.related-track-cover {
+  position: relative;
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+.related-track-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.related-track-card:hover .related-track-cover img {
+  transform: scale(1.05);
+}
+
+.related-play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.related-track-cover:hover .related-play-button {
+  opacity: 0.9;
+}
+
+.related-play-button:hover {
+  background: rgba(132, 86, 255, 0.9);
+  border-color: #8456ff;
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1 !important;
+}
+
+.related-play-button svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.related-track-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.related-track-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Press Start 2P', sans-serif;
+  color: white;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.related-track-title:hover {
+  color: #8456ff;
+}
+
+.track-author-main {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.track-author-main:hover {
+  color: #8456ff;
+}
+
+.related-track-duration {
+  font-size: 0.7rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ============================================
+   МОДАЛЬНОЕ ОКНО EDIT ABOUT
+   ============================================ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content-glass {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  border-radius: 20px;
+  width: 480px;
+  color: #fff;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.modal-header h3 {
+  font-size: 1.4rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.modal-body {
+  margin-bottom: 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-family: 'Press Start 2P', sans-serif;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+}
+
+.form-textarea,
+.form-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 14px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  resize: vertical;
+  transition: all 0.2s ease;
+  line-height: 1.5;
+}
+
+.form-textarea:focus,
+.form-input:focus {
+  outline: none;
+  border-color: #8456ff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(132, 86, 255, 0.2);
+}
+
+.form-input.error {
+  border-color: #ff4757;
+  background: rgba(255, 71, 87, 0.05);
+}
+
+.form-textarea::placeholder,
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+
+.error-message {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #ff6b6b;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+}
+
+.modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.modal-btn.save {
+  background: linear-gradient(135deg, #8456ff, #9b76ff);
+  color: #ffffff;
+}
+
+.modal-btn.save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9b76ff, #b594ff);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(132, 86, 255, 0.4);
+}
+
+.modal-btn.save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   LOADING & ERROR STATES
+   ============================================ */
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.profile-error {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 16, 32, 0.95);
+  z-index: 9999;
+}
+
+.error-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+}
+
+.go-back-btn {
+  background: #8456ff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.go-back-btn:hover {
+  background: #9b76ff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(132, 86, 255, 0.4);
+}
+
+/* ============================================
+   КНОПКА ПОДПИСКИ
+   ============================================ */
+
+.profile-follow-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 30px 0 60px;
+  padding: 20px;
+}
+
+.follow-btn {
+  padding: 12px 32px;
+  border-radius: 24px;
+  border: 2px solid #8456ff;
+  background: transparent;
+  color: #8456ff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  font-family: "'Press Start 2P', sans-serif";
+}
+
+.follow-btn:hover {
+  background: rgba(132, 86, 255, 0.1);
+}
+
+.follow-btn.following {
+  background: #8456ff;
+  color: white;
+}
+
+.follow-btn.following:hover {
+  background: #6b46c1;
+  border-color: #6b46c1;
+}
+
+.follow-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   СТИЛИ ДЛЯ КНОПКИ FOLLOW В НАВИГАЦИИ
+   ============================================ */
+
+.nav-follow-container {
+  margin-left: auto;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-follow-btn {
+  background: rgba(132, 86, 255, 0.15);
+  border: 1px solid rgba(132, 86, 255, 0.5);
+  color: #8456ff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.nav-follow-btn:hover:not(:disabled) {
+  background: rgba(132, 86, 255, 0.25);
+  border-color: #8456ff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(132, 86, 255, 0.3);
+}
+
+.nav-follow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nav-follow-btn.following {
+  background: #8456ff;
+  color: white;
+  border-color: #8456ff;
+}
+
+.nav-follow-btn.following:hover:not(:disabled) {
+  background: #9b76ff;
+  border-color: #9b76ff;
+}
+
+.nav-follow-btn.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* ============================================
+   УНИФИКАЦИЯ СТИЛЕЙ КАРТОЧЕК ТРЕКОВ
+   ============================================ */
+
+/* 🔥 ЕДИНЫЙ СТИЛЬ КАРТОЧКИ ДЛЯ ВСЕХ РАЗДЕЛОВ */
+.unified-track-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
+  backdrop-filter: blur(4px);
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.unified-track-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(132, 86, 255, 0.2);
+}
+
+/* 🔥 ОБЛОЖКА С КНОПКОЙ PLAY ПО ЦЕНТРУ */
+.unified-track-cover {
+  position: relative;
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+.unified-track-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.unified-track-card:hover .unified-track-cover img {
+  transform: scale(1.05);
+}
+
+.unified-track-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.unified-track-cover:hover .unified-track-play-btn {
+  opacity: 0.9;
+}
+
+.unified-track-play-btn:hover {
+  background: rgba(132, 86, 255, 0.9);
+  border-color: #8456ff;
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1 !important;
+}
+
+.unified-track-play-btn svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+/* 🔥 ИНФОРМАЦИЯ О ТРЕКЕ */
+.unified-track-info {
+  flex-shrink: 0;
+  width: 220px;
+  min-width: 220px;
+}
+
+.unified-track-title {
+  margin: 0 0 6px 0;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.unified-track-title:hover {
+  color: #8456ff;
+}
+
+.unified-track-artist {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Press Start 2P', sans-serif;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.unified-track-artist:hover {
+  color: #8456ff !important;
+  text-decoration: underline;
+  text-decoration-color: #8456ff;
+}
+
+/* 🔥 WAVEFORM - ЕДИНЫЙ СТИЛЬ */
+.unified-track-waveform {
+  flex: 1;
+  margin: 0 24px;
+  height: 56px;
+  min-width: 350px;
+  max-width: 750px;
+  cursor: pointer;
+  position: relative;
+}
+
+/* ============================================
+   ПЛЕЙЛИСТЫ
+   ============================================ */
+
+.profile-playlists-section { 
+  margin-top: 14px; 
+}
+
+.profile-playlists-header {
+  display: flex;
+  justify-content: space-between;
+  opacity: 0.85;
+  font-size: 14px;
+  margin: 6px 4px;
+}
+
+.profile-playlists-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+.library-playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.library-playlist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.library-playlist-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(132, 86, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.library-playlist-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  flex: 1;
+}
+
+.playlist-cover-wrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.library-playlist-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-cover-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10;
+  color: white;
+}
+
+.playlist-cover-wrap:hover .playlist-cover-play {
+  opacity: 0.9;
+}
+
+.playlist-cover-play:hover {
+  background: rgba(132, 86, 255, 0.9);
+  border-color: #8456ff;
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 1 !important;
+}
+
+.playlist-cover-play svg {
+  width: 14px;
+  height: 14px;
+}
+
+.library-playlist-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.library-playlist-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.library-playlist-title:hover {
+  color: #8456ff;
+}
+
+.library-playlist-sub {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.playlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.pl-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.pl-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.pl-action-btn.active {
+  color: #8456ff;
+}
+
+.pl-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   АДАПТИВНОСТЬ
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .glass-header {
+    right: 0 !important;
+    width: 100% !important;
+  }
+  
+  .profile-page-content {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 32px;
+    padding-right: 32px;
+    max-width: none;
+    padding-top: 100px;
+  }
+  
+  .sound-nav {
+    padding: 0 20px;
+  }
+  
+  .profile-header-image {
+    width: 100%;
+    margin-left: 0;
+    height: 320px;
+  }
+  
+  .profile-header-overlay {
+    padding: 24px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .profile-avatar-shell {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .profile-presence {
+    width: 14px;
+    height: 14px;
+    right: 4px;
+    bottom: 4px;
+  }
+  
+  .header-controls {
+    top: 16px;
+    right: 16px;
+    flex-direction: column;
+  }
+  
+  .upload-header-btn,
+  .remove-header-btn,
+  .report-user-btn {
+    padding: 8px 12px;
+    font-size: 0.7rem;
+  }
+
+  .edit-about-controls {
+    bottom: 16px;
+  }
+  
+  .edit-about-btn {
+    padding: 6px 12px;
+    font-size: 0.7rem;
+  }
+
+  .track-waveform-mini,
+  .unified-track-waveform {
+    height: 48px;
+    min-width: 250px;
+    max-width: 500px;
+    margin: 0 16px;
+  }
+
+  .waveform-container-mini {
+    padding: 6px 8px;
+  }
+  
+  .waveform-inner-mini {
+    padding: 6px 8px;
+  }
+
+  .profile-stats {
+    gap: 12px;
+  }
+  
+  .stat-item {
+    min-width: 60px;
+    padding: 8px 10px;
+  }
+  
+  .stat-number {
+    font-size: 18px;
+  }
+  
+  .stat-label {
+    font-size: 10px;
+  }
+  
+  .profile-username {
+    font-size: 2.2rem;
+    gap: 10px;
+  }
+  
+  .profile-admin-badge {
+    padding: 6px 10px;
+    font-size: 0.6rem;
+  }
+  
+  .unified-track-waveform {
+    min-width: 250px;
+  }
+  
+  .unified-track-info {
+    width: 180px;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-page-content {
+    padding: 100px 20px 80px;
+    padding-top: 100px;
+  }
+  
+  .sound-nav {
+    padding: 0 15px;
+    height: 70px;
+  }
+  
+  .profile-page-wrapper .nav-center {
+    display: none;
+  }
+  
+  .profile-header-image {
+    height: 280px;
+  }
+  
+  .profile-username {
+    font-size: 1.8rem;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .profile-bio {
+    font-size: 0.85rem;
+  }
+
+  .profile-country {
+    font-size: 0.8rem;
+  }
+  
+  .profile-stats {
+    gap: 12px;
+  }
+  
+  .stat-item {
+    flex: 1;
+    min-width: calc(50% - 6px);
+    padding: 6px 8px;
+  }
+  
+  .stat-number {
+    font-size: 16px;
+  }
+  
+  .stat-label {
+    font-size: 9px;
+  }
+  
+  .profile-track-row,
+  .related-track-card,
+  .unified-track-card {
+    padding: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .track-cover-wrapper,
+  .related-track-cover,
+  .unified-track-cover {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  .track-play-button,
+  .related-play-button,
+  .unified-track-play-btn {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .track-play-button svg,
+  .related-play-button svg,
+  .unified-track-play-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .track-info-compact,
+  .unified-track-info {
+    width: 150px;
+    min-width: 150px;
+  }
+  
+  .track-title,
+  .related-track-title,
+  .unified-track-title {
+    font-size: 0.85rem;
+  }
+  
+  .track-artist,
+  .track-author-main,
+  .unified-track-artist {
+    font-size: 0.75rem;
+  }
+  
+  .track-waveform-mini,
+  .unified-track-waveform {
+    order: 4;
+    width: 100%;
+    margin: 12px 0 0 0;
+    min-width: 100%;
+    max-width: 100%;
+    height: 40px;
+  }
+
+  .waveform-container-mini {
+    padding: 4px 6px;
+    gap: 2px;
+  }
+
+  .waveform-inner-mini {
+    padding: 4px 6px;
+    gap: 2px;
+  }
+
+  .waveform-bar-mini {
+    border-radius: 1.5px;
+  }
+
+  .waveform-position-indicator {
+    width: 2.5px;
+  }
+  
+  .track-actions,
+  .unified-track-actions {
+    order: 3;
+    margin-left: auto;
+    gap: 8px;
+    padding-right: 8px;
+  }
+  
+  .repost-button-mini,
+  .more-button-mini,
+  .like-btn,
+  .track-delete-inline {
+    padding: 6px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .repost-button-mini svg,
+  .more-button-mini svg,
+  .like-btn svg,
+  .track-delete-inline svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .track-delete-inline {
+    margin-left: 4px;
+  }
+  
+  .profile-tabs-row {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  
+  .profile-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-content-glass {
+    width: 90%;
+    max-width: 400px;
+    padding: 24px;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .form-textarea,
+  .form-input {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+  
+  .modal-btn {
+    padding: 10px 20px;
+    min-width: 100px;
+    font-size: 0.7rem;
+  }
+  
+  .repost-count-mini,
+  .like-count-mini {
+    font-size: 0.65rem;
+    margin-left: 3px;
+    min-width: 18px;
+  }
+  
+  .profile-avatar-shell {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .profile-admin-badge {
+    padding: 5px 8px;
+    font-size: 0.55rem;
+    gap: 4px;
+  }
+  
+  .profile-admin-crown {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-page-content {
+    padding: 90px 16px 60px;
+  }
+  
+  .profile-header-image {
+    height: 220px;
+  }
+  
+  .profile-username {
+    font-size: 1.5rem;
+    gap: 6px;
+  }
+  
+  .profile-bio {
+    font-size: 0.8rem;
+  }
+
+  .profile-country {
+    font-size: 0.75rem;
+  }
+  
+  .profile-avatar-shell {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .profile-presence {
+    width: 12px;
+    height: 12px;
+    right: 4px;
+    bottom: 4px;
+    border-width: 1.5px;
+  }
+  
+  .stat-number {
+    font-size: 14px;
+  }
+  
+  .stat-label {
+    font-size: 8px;
+  }
+  
+  .profile-tabs-section {
+    margin-top: 32px;
+  }
+  
+  .follow-button,
+  .message-button {
+    padding: 10px 20px;
+    font-size: 0.7rem;
+    min-width: 120px;
+  }
+
+  .edit-about-btn {
+    padding: 5px 10px;
+    font-size: 0.65rem;
+  }
+  
+  .profile-track-row,
+  .related-track-card,
+  .unified-track-card {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .track-cover-wrapper,
+  .related-track-cover,
+  .unified-track-cover {
+    width: 45px !important;
+    height: 45px !important;
+  }
+  
+  .track-play-button,
+  .related-play-button,
+  .unified-track-play-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .track-play-button svg,
+  .related-play-button svg,
+  .unified-track-play-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .track-info-compact,
+  .unified-track-info {
+    width: 130px;
+    min-width: 130px;
+    padding: 0 8px;
+  }
+  
+  .track-title,
+  .related-track-title,
+  .unified-track-title {
+    font-size: 0.8rem;
+  }
+  
+  .track-artist,
+  .track-author-main,
+  .unified-track-artist {
+    font-size: 0.7rem;
+  }
+  
+  .track-waveform-mini,
+  .unified-track-waveform {
+    height: 36px;
+  }
+
+  .waveform-container-mini {
+    padding: 3px 5px;
+    gap: 1.5px;
+  }
+
+  .waveform-inner-mini {
+    padding: 3px 5px;
+    gap: 1.5px;
+  }
+
+  .waveform-bar-mini {
+    border-radius: 1px;
+  }
+
+  .waveform-position-indicator {
+    width: 2px;
+  }
+  
+  .track-actions,
+  .unified-track-actions {
+    padding-right: 6px;
+    gap: 6px;
+  }
+
+  .repost-button-mini,
+  .more-button-mini,
+  .like-btn,
+  .track-delete-inline {
+    padding: 5px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .repost-button-mini svg,
+  .more-button-mini svg,
+  .like-btn svg,
+  .track-delete-inline svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .track-delete-inline {
+    margin-left: 3px;
+  }
+
+  .modal-content-glass {
+    padding: 20px;
+    width: 95%;
+  }
+  
+  .modal-header {
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 18px;
+  }
+  
+  .modal-actions {
+    gap: 12px;
+  }
+  
+  .modal-btn {
+    padding: 8px 16px;
+    min-width: 90px;
+    font-size: 0.65rem;
+  }
+  
+  .repost-count-mini,
+  .like-count-mini {
+    font-size: 0.6rem;
+    margin-left: 2px;
+    min-width: 16px;
+  }
+  
+  .track-bottom-actions,
+  .unified-track-bottom-actions {
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+  
+  .track-stats-bottom,
+  .unified-track-stats-bottom {
+    width: 100%;
+    text-align: center;
+    font-size: 0.6rem;
+    gap: 1px;
+  }
+  
+  .track-likes-count,
+  .track-reposts-count,
+  .track-plays-count,
+  .track-comments-count {
+    font-size: 0.55rem;
+  }
+  
+  .profile-admin-badge {
+    padding: 4px 8px;
+    font-size: 0.5rem;
+    gap: 4px;
+  }
+  
+  .profile-admin-crown {
+    font-size: 0.7rem;
+  }
+}
+
+/* ============================================
+   КРИТИЧЕСКИЕ FIXES
+   ============================================ */
+
+.sidebar {
+  z-index: 110 !important;
+  position: fixed !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 100vh !important;
+}
+
+@media (max-width: 1200px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+.profile-page-wrapper * {
+  box-sizing: border-box;
+}
+
+.nav-left,
+.nav-center,
+.nav-right {
+  margin: 0;
+  padding: 0;
+}
+
+.shuffle-parent {
+  margin: 0;
+  padding: 0;
+}
+
+.profile-tabs-row,
+.profile-body,
+.profile-section-header,
+.profile-tracks-list,
+.reposts-section {
+  margin-left: 0;
+  padding-left: 0;
+  width: 100%;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -643,80 +2761,6 @@
   box-shadow: 0 10px 25px rgba(132, 86, 255, 0.4);
 }
 
-/* 🔥 УПРАВЛЕНИЕ АВАТАРКОЙ */
-.profile-avatar-section {
-  position: relative;
-  z-index: 5;
-}
-
-.profile-avatar-wrapper {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-/* сама аватарка */
-.profile-avatar-img,
-.profile-avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-  pointer-events: none;
-}
-
-/* overlay кнопка */
-.avatar-upload-label {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity 0.25s ease;
-}
-
-/* показываем ТОЛЬКО при наведении */
-.profile-avatar-wrapper:hover .avatar-upload-label {
-  opacity: 1;
-}
-
-/* текст Upload */
-.avatar-upload-text {
-  font-family: 'Press Start 2P', sans-serif;
-  font-size: 0.7rem;
-  color: #fff;
-  text-shadow: 0 0 8px rgba(132, 86, 255, 0.8);
-  pointer-events: none;
-}
-
-/* кнопка удаления */
-.avatar-remove-btn {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #ff4757;
-  color: #fff;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  z-index: 2;
-}
-
-.avatar-remove-btn:hover {
-  background: #ff6b81;
-}
-
-/* 🔥 CSS ПЕРЕМЕННЫЕ */
 :root {
   --profile-color: #8456ff;
   --profile-color-light: rgba(132, 86, 255, 0.1);
@@ -724,155 +2768,6 @@
   --profile-color-dark: rgba(132, 86, 255, 0.7);
 }
 
-/* АДАПТИВНОСТЬ */
-@media (max-width: 1200px) {
-  .profile-page-container {
-    padding-left: 0;
-  }
-  
-  .profile-page-content {
-    width: 100vw;
-    margin-left: 0;
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-  
-  .glass-header .sound-nav {
-    margin-left: 0;
-  }
-  
-  .glass-header .profile-gooey-nav .gooey-wrapper {
-    transform: none !important;
-  }
-  
-  .profile-header-image {
-    width: 100%;
-    margin-left: 0;
-    height: 280px;
-  }
-  
-  .profile-header-overlay {
-    padding: 24px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-  
-  .profile-avatar-large {
-    margin-left: 0;
-  }
-  
-  .profile-tabs-section {
-    margin-top: 40px;
-  }
-  
-  .header-controls {
-    top: 16px;
-    right: 16px;
-    flex-direction: column;
-  }
-  
-  .upload-header-btn,
-  .remove-header-btn {
-    padding: 8px 12px;
-    font-size: 0.7rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .profile-page-content {
-    padding: 20px;
-  }
-  
-  .profile-page-container {
-    padding-top: 140px;
-  }
-  
-  .profile-header-image {
-    height: 240px;
-  }
-  
-  .profile-username {
-    font-size: 2rem;
-  }
-  
-  .profile-bio {
-    font-size: 0.85rem;
-  }
-  
-  .profile-stats {
-    gap: 16px;
-  }
-  
-  .stat-item {
-    flex: 1;
-    min-width: calc(50% - 8px);
-  }
-  
-  .profile-track-row {
-    padding: 10px;
-    gap: 12px;
-  }
-  
-  .track-cover {
-    width: 50px;
-    height: 50px;
-  }
-  
-  .track-title {
-    font-size: 0.8rem;
-  }
-  
-  .track-artist {
-    font-size: 0.7rem;
-  }
-  
-  .profile-tabs-row {
-    flex-direction: column;
-    gap: 20px;
-    align-items: flex-start;
-  }
-  
-  .profile-actions {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-header-image {
-    height: 200px;
-  }
-  
-  .profile-username {
-    font-size: 1.8rem;
-  }
-  
-  .profile-bio {
-    font-size: 0.8rem;
-  }
-  
-  .profile-avatar-large {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .stat-number {
-    font-size: 16px;
-  }
-  
-  .stat-label {
-    font-size: 10px;
-  }
-  
-  .profile-tabs-section {
-    margin-top: 32px;
-  }
-  
-  .follow-button,
-  .message-button {
-    padding: 10px 20px;
-    font-size: 0.7rem;
-    min-width: 120px;
-  }
+body {
+  overflow-x: hidden;
 }

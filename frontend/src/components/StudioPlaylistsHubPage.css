@@ -1,0 +1,217 @@
+.sphWrap {
+    min-height: 100vh;
+    color: #fff;
+    position: relative;
+    font-family: "Press Start 2P", sans-serif;
+  }
+  
+  .sphInner {
+    width: min(1200px, calc(100% - 44px));
+    margin: 0 auto;
+    padding: 24px 0 50px;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .sphTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  
+  .sphTitle {
+    font-size: 18px;
+    text-transform: uppercase;
+  }
+  
+  .sphActions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .sphBtn {
+    background: rgba(132, 86, 255, 0.88);
+    border: 1px solid rgba(132, 86, 255, 0.75);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 900;
+  }
+  
+  .sphBtn:hover {
+    background: rgba(132, 86, 255, 1);
+  }
+  
+  .sphBtnGhost {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 10px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+  
+  .sphBtnGhost:hover {
+    border-color: rgba(132, 86, 255, 0.55);
+    color: #cdbdff;
+  }
+  
+  .sphList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .sphCard {
+    display: grid;
+    grid-template-columns: 78px 1fr 220px; /* ✅ расширено для двух кнопок */
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(8px); /* ✅ легкое размытие для читаемости поверх GridScan */
+  }
+  
+  .sphCover {
+    width: 78px;
+    height: 78px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .sphCover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .sphCoverStub {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .sphMeta {
+    min-width: 0;
+  }
+  
+  .sphName {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    color: #8456ff;             /* ✅ фиолетовое */
+    font-weight: 950;
+    font-size: 12px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .sphName:hover {
+    color: #cdbdff;
+    text-decoration: underline;
+  }
+  
+  .sphSub {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 10px;
+    opacity: 0.85;
+  }
+  
+  .sphBadge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    text-transform: uppercase;
+  }
+  
+  .sphBadge.private {
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+  
+  .sphBadge.unlisted {
+    border-color: rgba(132, 86, 255, 0.35);
+  }
+  
+  .sphBadge.public {
+    border-color: rgba(132, 86, 255, 0.70);
+  }
+  
+  .sphDot {
+    opacity: 0.4;
+  }
+  
+  .sphEdit {
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.22);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 900;
+  }
+  
+  .sphEdit:hover {
+    background: rgba(132, 86, 255, 0.35);
+  }
+  
+  .sphHint {
+    opacity: 0.75;
+    padding: 12px 0;
+  }
+  
+  .sphError {
+    color: #ffd6f5;
+    padding: 12px 0;
+  }
+  
+  /* ✅ Новые стили для кнопок справа */
+  .sphRightBtns {
+    justify-self: end;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .sphDelete {
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 80, 140, 0.65);
+    background: rgba(255, 80, 140, 0.18);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 900;
+  }
+  
+  .sphDelete:hover {
+    background: rgba(255, 80, 140, 0.28);
+    border-color: rgba(255, 80, 140, 0.85);
+  }
+
+  /* ✅ GridScan как фон на весь экран */
+  .sphGridBg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none; /* чтобы клики проходили */
+  }
+
+  /* ✅ На случай, если GridScan внутренне имеет класс .gridscan */
+  .sphGridBg .gridscan {
+    width: 100vw;
+    height: 100vh;
+  }

@@ -222,47 +222,15 @@ X_FRAME_OPTIONS = 'DENY'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'simple': {
-            'format': '{levelname} {asctime} {message}',
-            'style': '{',
-        },
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'debug.log'),
-            'formatter': 'verbose',
         },
     },
     'loggers': {
-        'django': {
+        'django.server': {
             'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'api': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
-        'rest_framework_simplejwt': {
-            'handlers': ['console'],
-            'level': 'WARNING',
-            'propagate': False,
-        },
-        'django.security.csrf': {  # 🔴 Добавлено для логирования CSRF ошибок
-            'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'WARNING',
-            'propagate': False,
+            'level': 'WARNING',  # 🔥 вместо INFO
         },
     },
 }

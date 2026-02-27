@@ -1,0 +1,162 @@
+.studioHub {
+    padding: 30px 0 120px;
+  }
+  
+  /* --- STATS BAR (прозрачный фон, без стекла) --- */
+  .studioStatsBar {
+    width: min(1400px, calc(100% - 48px));
+    margin: 0 auto 40px auto;
+    padding: 10px 0 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  
+  .studioStatsTitle {
+    margin-bottom: 12px;
+    opacity: 0.95;
+  }
+  
+  .studioStatsRow {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+  }
+  
+  /* --- Стеклянные плитки статистики с фиолетовым hover --- */
+  .studioStatPill {
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    padding: 14px 14px;
+    text-align: left;
+    color: #fff;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+    min-width: 0;
+    backdrop-filter: blur(18px);
+  }
+  
+  .studioStatPill:hover {
+    transform: translateY(-2px);
+    border-color: rgba(132, 86, 255, 0.55);
+    background: rgba(132, 86, 255, 0.18);
+    box-shadow: 0 10px 40px rgba(132, 86, 255, 0.18);
+  }
+  
+  .studioStatLabel {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .studioStatValue {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1;
+    opacity: 0.95;
+  }
+  
+  /* --- CENTER CARD (полностью прозрачная) --- */
+  .studioCenter {
+    width: min(1100px, calc(100% - 48px));
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
+  }
+  
+  .studioMainCard {
+    width: 100%;
+    padding: 8px 0 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  
+  .studioMainTitle {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .studioMainSub {
+    opacity: 0.86;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  
+  /* --- Большие стеклянные кнопки действий --- */
+  .studioMainActions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 10px;
+  }
+  
+  .studioMainAction {
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 22px;
+    padding: 28px 22px;
+    text-align: center;
+    color: #fff;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+    backdrop-filter: blur(22px);
+    min-height: 110px;
+    display: grid;
+    place-items: center;
+  }
+  
+  .studioMainAction:hover {
+    transform: translateY(-3px);
+    border-color: rgba(132, 86, 255, 0.65);
+    background: rgba(132, 86, 255, 0.2);
+    box-shadow: 0 14px 55px rgba(132, 86, 255, 0.22);
+  }
+  
+  .studioMainAction .t {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    transition: color 0.2s ease;
+  }
+  
+  .studioMainAction:hover .t {
+    color: #b87cff;
+  }
+  
+  /* --- Адаптивность --- */
+  @media (max-width: 1100px) {
+    .studioStatsRow {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  
+  @media (max-width: 760px) {
+    .studioStatsRow {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .studioMainActions {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .studioHubStatDisabled{
+    cursor: default !important;
+    opacity: 0.75;
+  }
+  .studioHubStatDisabled:hover{
+    transform: none !important;
+    background: rgba(0,0,0,0.14) !important;
+    border-color: rgba(255,255,255,0.14) !important;
+    box-shadow: none !important;
+  }

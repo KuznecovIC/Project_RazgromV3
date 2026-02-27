@@ -1,0 +1,748 @@
+/* ====== CYBERPUNK NEON PACK (ADMIN/REPORTS) ====== */
+
+:root{
+  --rp-green: rgba(124,255,180,0.95);
+  --rp-green-soft: rgba(124,255,180,0.18);
+  --rp-purple: rgba(185,130,255,0.95);
+  --rp-purple-soft: rgba(185,130,255,0.18);
+  --rp-stroke: rgba(255,255,255,0.14);
+  --rp-glass: rgba(0,0,0,0.60);
+}
+
+/* ===== Pixel font for ADMIN / REPORTS ===== */
+.admin-reports-title,
+.admin-reports-sub,
+.tab-btn,
+.admin-reports-err,
+.empty-big,
+.empty-sub,
+.appeal-row-title,
+.mini-label {
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* чтобы маленький пиксельный текст читался */
+.appeal-row-meta,
+.mini-text,
+.mini-v {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+/* ===== FaultyTerminal background layer ===== */
+.admin-reports-wrap--ft {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 20px 120px;
+  box-sizing: border-box;
+}
+
+.admin-reports-ft-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Стили для FaultyTerminal в fullscreen режиме */
+.admin-reports-ft-bg .faulty-terminal-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-reports-ft-bg .faulty-terminal-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.admin-reports-ft-overlay{
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px 400px at 70% 30%, rgba(185,130,255,0.25), transparent 60%),
+    radial-gradient(900px 500px at 20% 70%, rgba(124,255,180,0.2), transparent 60%),
+    linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6));
+  mix-blend-mode: screen;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* чтобы контент был над фоном */
+.admin-reports-card {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* премиум-карточка с неоновой рамкой */
+.admin-reports-card--neon{
+  background: var(--rp-glass);
+  border: 1px solid var(--rp-stroke);
+  box-shadow:
+    0 18px 70px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(185,130,255,0.12),
+    0 0 26px rgba(185,130,255,0.10);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+/* неоновый кант */
+.admin-reports-card--neon::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius: 24px;
+  background:
+    radial-gradient(1000px 240px at 25% 0%,
+      rgba(124,255,180,0.16), transparent 55%),
+    radial-gradient(1000px 240px at 75% 100%,
+      rgba(185,130,255,0.16), transparent 58%);
+  filter: blur(10px);
+  opacity: .95;
+  z-index: -1;
+  animation: rpBreath 3.6s ease-in-out infinite;
+}
+
+@keyframes rpBreath{
+  0%,100%{ transform: translateY(0); opacity: .75; }
+  50%{ transform: translateY(-4px); opacity: 1; }
+}
+
+/* кнопки табов - зелёно-фиолетовые */
+.tab-btn{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+}
+
+.tab-btn:hover{
+  border-color: rgba(124,255,180,0.45);
+  box-shadow:
+    0 0 0 1px rgba(124,255,180,0.14),
+    0 0 18px rgba(185,130,255,0.14),
+    0 14px 34px rgba(0,0,0,0.35);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active{
+  background: linear-gradient(90deg, rgba(124,255,180,0.14), rgba(185,130,255,0.14));
+  border-color: rgba(185,130,255,0.55);
+  box-shadow:
+    0 0 0 1px rgba(185,130,255,0.14),
+    0 0 22px rgba(124,255,180,0.10);
+}
+
+/* карточки апелляций - панели с зелёным/фиолетовым hover */
+.appeal-row{
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(255,255,255,0.10);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 180ms ease;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.appeal-row:hover{
+  transform: translateY(-2px);
+  border-color: rgba(124,255,180,0.22);
+  box-shadow:
+    0 0 0 1px rgba(124,255,180,0.10),
+    0 0 26px rgba(185,130,255,0.10),
+    0 18px 55px rgba(0,0,0,0.55);
+}
+
+.appeal-row-title{
+  text-shadow: 0 0 18px rgba(185,130,255,0.16);
+}
+
+/* ====== ОРИГИНАЛЬНЫЙ CSS (ниже, без изменений) ====== */
+
+.admin-reports-wrap {
+    min-height: 100vh;
+    padding: 26px 16px;
+    display: grid;
+    place-items: start center;
+  }
+  
+  .admin-reports-card {
+    width: min(1200px, 98vw);
+    border-radius: 22px;
+    padding: 18px;
+    background: rgba(0,0,0,0.62);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 18px 70px rgba(0,0,0,0.55);
+  }
+  
+  .admin-reports-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  
+  .admin-reports-title {
+    font-size: 26px;
+    letter-spacing: 1px;
+  }
+  
+  .admin-reports-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .tab-btn {
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+  
+  .tab-btn:hover {
+    border-color: rgba(185,130,255,0.55);
+    transform: translateY(-1px);
+  }
+  
+  .tab-btn.active {
+    background: rgba(185,130,255,0.18);
+    border-color: rgba(185,130,255,0.55);
+  }
+  
+  .admin-reports-err {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 70, 70, 0.14);
+    border: 1px solid rgba(255, 70, 70, 0.25);
+    margin-bottom: 12px;
+  }
+  
+  .admin-reports-empty {
+    border-radius: 18px;
+    padding: 22px;
+    border: 1px dashed rgba(255,255,255,0.16);
+    background: rgba(0,0,0,0.35);
+    text-align: center;
+  }
+  
+  .empty-big { font-size: 20px; }
+  .empty-sub { opacity: 0.7; margin-top: 6px; }
+  
+  .admin-reports-list {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .appeal-row {
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  
+  .appeal-row-title {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  
+  .appeal-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    opacity: 0.75;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .appeal-row-reason,
+  .appeal-row-text {
+    border-radius: 14px;
+    padding: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-top: 10px;
+  }
+  
+  .mini-label {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  
+  .mini-text {
+    white-space: pre-wrap;
+    line-height: 1.35;
+  }
+
+/* ===== clickable rows ===== */
+.appeal-row--clickable{
+  cursor: pointer;
+}
+.appeal-row--clickable:focus-visible{
+  outline: 2px solid rgba(185,130,255,0.6);
+  outline-offset: 3px;
+}
+
+/* ===== status pill ===== */
+.status-pill{
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  opacity: .95;
+}
+.status-pill.big{
+  transform: translateY(-1px);
+  padding: 6px 12px;
+  font-size: 11px;
+}
+.st-pending{ border-color: rgba(185,130,255,0.45); box-shadow: 0 0 18px rgba(185,130,255,0.12); }
+.st-approved{ border-color: rgba(124,255,180,0.45); box-shadow: 0 0 18px rgba(124,255,180,0.12); }
+.st-rejected{ border-color: rgba(255,90,90,0.45); box-shadow: 0 0 18px rgba(255,90,90,0.10); }
+.st-unknown{}
+
+/* ===== fullscreen modal ===== */
+.appeal-modal-backdrop{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background:
+    radial-gradient(900px 500px at 70% 30%, rgba(185,130,255,0.18), transparent 60%),
+    radial-gradient(900px 600px at 20% 70%, rgba(124,255,180,0.14), transparent 60%),
+    rgba(0,0,0,0.70);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+}
+
+.appeal-modal{
+  width: min(1100px, 96vw);
+  max-height: calc(100vh - 44px);
+  overflow: auto;
+}
+
+.appeal-modal-card{
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.72);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.72);
+  backdrop-filter: blur(14px);
+  padding: 18px;
+}
+
+.appeal-modal-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.appeal-modal-title{
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.appeal-modal-close{
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.appeal-modal-close:hover{
+  border-color: rgba(185,130,255,0.55);
+  transform: translateY(-1px);
+}
+
+.appeal-modal-meta{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.meta-chip{
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  font-size: 12px;
+  opacity: .9;
+}
+
+.appeal-modal-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 820px){
+  .appeal-modal-grid{ grid-template-columns: 1fr; }
+}
+
+.appeal-box{
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.appeal-decision{
+  margin-top: 12px;
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.appeal-decision--bad{ border-color: rgba(255,90,90,0.22); background: rgba(255,90,90,0.06); }
+.appeal-decision--ok{ border-color: rgba(124,255,180,0.22); background: rgba(124,255,180,0.06); }
+
+.appeal-modal-err{
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 70, 70, 0.14);
+  border: 1px solid rgba(255, 70, 70, 0.25);
+}
+
+.appeal-actions{
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 820px){
+  .appeal-actions{ grid-template-columns: 1fr; }
+}
+
+.action-col{
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+}
+.action-title{
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: .08em;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.action-sub{
+  opacity: .7;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.action-textarea{
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  padding: 10px 12px;
+  outline: none;
+  resize: vertical;
+}
+.action-textarea:focus{
+  border-color: rgba(185,130,255,0.55);
+  box-shadow: 0 0 0 1px rgba(185,130,255,0.14);
+}
+
+.appeal-bottom-actions{
+  margin-top: 14px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adm-act-btn{
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  cursor: pointer;
+  transition: .15s ease;
+  font-family: 'Press Start 2P', sans-serif;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.adm-act-btn:hover{ transform: translateY(-1px); border-color: rgba(185,130,255,0.55); }
+.adm-act-btn:disabled{ opacity: .45; cursor: not-allowed; transform: none; }
+
+.adm-act-btn.ok:hover{ border-color: rgba(124,255,180,0.55); }
+.adm-act-btn.danger:hover{ border-color: rgba(255,90,90,0.55); }
+
+.adm-act-btn.ghost{
+  background: rgba(0,0,0,0.30);
+}
+.adm-act-btn.ghost.armed{
+  border-color: rgba(255,90,90,0.55);
+  box-shadow: 0 0 18px rgba(255,90,90,0.12);
+}
+
+.appeal-hint{
+  margin-top: 10px;
+  opacity: .6;
+  font-size: 12px;
+}
+
+/* === Report modal extras === */
+.report-ban-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:10px 0 12px;
+}
+
+.report-check{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  user-select:none;
+  opacity:0.95;
+  font-family:'Press Start 2P', sans-serif;
+  font-size:10px;
+  text-transform:uppercase;
+}
+
+.report-check input{
+  width:16px;
+  height:16px;
+  accent-color: rgba(185,130,255,0.95);
+}
+
+.report-days{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.report-days-input{
+  width:70px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.45);
+  color:#fff;
+  outline:none;
+  font-family:'Press Start 2P', sans-serif;
+  font-size:10px;
+}
+
+.report-days-input:focus{
+  border-color: rgba(185,130,255,0.45);
+  box-shadow: 0 0 0 3px rgba(185,130,255,0.10);
+}
+
+.appeal-row-snippet{
+  margin-top:10px;
+  opacity:0.9;
+  font-family:'Press Start 2P', sans-serif;
+  font-size:10px;
+  line-height:1.35;
+  text-transform:uppercase;
+  color: rgba(255,255,255,0.85);
+  max-width: 100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ===== header actions ===== */
+.admin-reports-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-left: 10px;
+}
+
+.admin-icon-btn{
+  width: 42px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 14px;
+  transition: transform .15s ease, filter .15s ease;
+}
+.admin-icon-btn:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+.admin-icon-btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* ===== row right icons ===== */
+.appeal-row-right{
+  display:flex;
+  align-items: center;
+  padding-right: 10px;
+}
+
+.row-icon-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform .15s ease, filter .15s ease, background .15s ease;
+}
+.row-icon-btn:hover{
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
+.row-icon-delete{
+  border-color: rgba(255,80,100,0.35);
+  box-shadow: 0 0 14px rgba(255,80,100,0.12);
+}
+.row-icon-delete:hover{
+  background: rgba(255,80,100,0.10);
+}
+
+/* ===== AI panel styles (ШАГ 19.7) ===== */
+.ai-toggle-btn{
+  margin-left: 10px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.38);
+  color: rgba(255,255,255,0.92);
+  cursor: pointer;
+  transition: 160ms ease;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.ai-toggle-btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(124,255,180,0.35);
+}
+.ai-toggle-btn.on{
+  border-color: rgba(124,255,180,0.55);
+  box-shadow: 0 0 0 2px rgba(124,255,180,0.10) inset;
+}
+
+.appeal-review-grid.one{ 
+  display:block; 
+}
+.appeal-review-grid.two{
+  display:grid;
+  grid-template-columns: 1fr 0.95fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.appeal-review-col.ai{
+  position: sticky;
+  top: 18px;
+}
+
+.ai-panel{
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(0,0,0,0.38);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(10px);
+}
+.ai-panel-title{
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  margin-bottom: 10px;
+}
+.ai-block{ 
+  margin-top: 12px; 
+}
+.ai-muted{ 
+  opacity: 0.7; 
+  font-family: 'Press Start 2P', sans-serif; 
+  font-size: 10px; 
+}
+.ai-error{ 
+  color: rgba(255,120,120,0.95); 
+  font-family: 'Press Start 2P', sans-serif; 
+  font-size: 10px; 
+}
+
+.ai-footnote{
+  margin-top: 14px;
+  opacity: 0.6;
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.ai-badge{
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(124,255,180,0.45);
+  background: rgba(124,255,180,0.12);
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.10em;
+}
+
+/* фикс: textarea причины отказа в репортах */
+.action-col textarea,
+.action-col .reason-input,
+.action-col .reason-textarea {
+  min-height: 110px;
+  padding: 12px 14px;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+/* чтобы кнопка не налезала на поле */
+.action-col .btn,
+.action-col button {
+  margin-top: 10px;
+}

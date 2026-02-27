@@ -1,7 +1,9 @@
+// frontend/src/App.js
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import { UserProvider } from './context/UserContext';
+import { SocialProvider } from './context/SocialContext';
 import GridScan from './GridScan';
 import Shuffle from './components/Shuffle';
 import Login from './Login';
@@ -9,8 +11,19 @@ import Register from './Register';
 import ForgotPassword from './ForgotPassword';
 import ProtectedApp from './ProtectedApp';
 import TrackPage from './components/TrackPage';
+import PlaylistPage from './components/PlaylistPage';
 import UploadPage from './components/UploadPage';
 import ProfilePage from './components/ProfilePage';
+import LibraryPage from './components/LibraryPage';
+import FeedPage from './components/FeedPage';
+import BannedScreen from './components/BannedScreen';
+import BanGuard from './components/BanGuard';
+import AppealPage from './components/AppealPage';
+import AdminMenu from './components/AdminMenu';
+import AdminUsersPage from './components/AdminUsersPage';
+import AdminTracksPage from './components/AdminTracksPage';
+import AdminPlaylistsPage from './components/AdminPlaylistsPage';
+import AdminReportsPage from './components/AdminReportsPage';
 import { apiFetch } from './api/apiFetch';
 import './App.css';
 
@@ -19,10 +32,13 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 function App() {
   const navigate = useNavigate();
   
-  // 1️⃣ ФУНКЦИЯ НОРМАЛИЗАЦИИ ТРЕКА (ИСПРАВЛЕНА!)
+  const hasRecordedPlayRef = useRef(false);
+  const lastNowPlayingRef = useRef({ trackId: null, isPlaying: null, ts: 0 });
+  const lastHistoryFetchAtRef = useRef(0);
+  const [sessionVersion, setSessionVersion] = useState(0);
+  const [playbackContext, setPlaybackContext] = useState(null);
+
   const normalizeTrack = useCallback((track) => {
-    console.log('🔧 App: Нормализация трека:', track.id, track.title);
-    
     let audioUrl = '';
     if (track.audio_url) {
       audioUrl = track.audio_url;
@@ -72,74 +88,44 @@ function App() {
       artistName = track.uploaded_by.username;
     }
     
-    // 🔥 ИСПРАВЛЕНО: Убеждаемся, что artistId всегда есть
-    // Сначала пробуем получить ID из разных источников
     let artistId = null;
     
-    // Источник 1: явно переданный artistId
     if (track.artistId) {
       artistId = track.artistId;
-    }
-    // Источник 2: поле artist_id
-    else if (track.artist_id) {
+    } else if (track.artist_id) {
       artistId = track.artist_id;
-    }
-    // Источник 3: из uploaded_by объекта (самый важный!)
-    else if (track.uploaded_by?.id) {
+    } else if (track.uploaded_by?.id) {
       artistId = track.uploaded_by.id;
-    }
-    // Источник 4: если это объект user
-    else if (track.user?.id) {
+    } else if (track.user?.id) {
       artistId = track.user.id;
-      // Также обновляем artistName если нужно
       if (!artistName || artistName === 'Unknown artist') {
         artistName = track.user.username || artistName;
       }
-    }
-    // Источник 5: из поля uploader_id (если есть)
-    else if (track.uploader_id) {
+    } else if (track.uploader_id) {
       artistId = track.uploader_id;
     }
-    
-    console.log('🔍 App: Полученный artistId:', {
-      artistId,
-      fromArtistId: track.artistId,
-      fromArtist_id: track.artist_id,
-      fromUploadedBy: track.uploaded_by?.id,
-      fromUser: track.user?.id,
-      trackData: track
-    });
     
     const normalized = {
       id: track.id,
       title: track.title || 'Без названия',
       artist: artistName,
-      artistId: artistId, // 🔥 Теперь точно будет ID
+      artistId: artistId,
       artistUsername: track.artistUsername || track.artist_username || track.uploaded_by?.username || track.user?.username,
       audio_url: audioUrl,
       cover: coverUrl,
       duration: durationValue,
       play_count: track.play_count || 0,
       like_count: track.like_count || 0,
-      uploaded_by: track.uploaded_by || track.user, // Сохраняем полный объект если есть
+      repost_count: track.repost_count || 0,
+      uploaded_by: track.uploaded_by || track.user,
       created_at: track.created_at,
       source: track.source || 'server',
-      // Добавляем все оригинальные поля для совместимости
       ...track
     };
-    
-    console.log('✅ App: Нормализованный трек:', {
-      id: normalized.id,
-      title: normalized.title,
-      artist: normalized.artist,
-      artistId: normalized.artistId, // Должен быть заполнен!
-      hasUploadedBy: !!normalized.uploaded_by
-    });
     
     return normalized;
   }, []);
 
-  // 2️⃣ СОСТОЯНИЯ
   const [tracksById, setTracksById] = useState({});
   const [currentTrackId, setCurrentTrackId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -149,7 +135,7 @@ function App() {
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [likedTrackIds, setLikedTrackIds] = useState([]);
-  const [recentTrackIds, setRecentTrackIds] = useState([]);
+  const [playQueueIds, setPlayQueueIds] = useState([]);
   const [history, setHistory] = useState([]);
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
   const [lastPathname, setLastPathname] = useState('');
@@ -157,15 +143,156 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // 3️⃣ REFS
+  const autoPlayNextRef = useRef(false);
+  const autoPlayTrackIdRef = useRef(null);
+
+  const getRecentKey = (userId) => `rg_recent:v1:${userId || 'anon'}`;
+
+  const recentHydratedRef = useRef(false);
+  const lastRecentUserIdRef = useRef(null);
+
+  const [recentTrackIds, setRecentTrackIds] = useState(() => {
+    try {
+      const raw = localStorage.getItem(getRecentKey(null));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const uid = user?.id;
+    if (!uid) return;
+
+    if (lastRecentUserIdRef.current === uid) return;
+    lastRecentUserIdRef.current = uid;
+
+    try {
+      const userKey = getRecentKey(uid);
+      const rawUser = localStorage.getItem(userKey);
+
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        if (Array.isArray(parsed)) setRecentTrackIds(parsed);
+      } else {
+        const rawAnon = localStorage.getItem(getRecentKey(null));
+        const parsedAnon = rawAnon ? JSON.parse(rawAnon) : [];
+        if (Array.isArray(parsedAnon) && parsedAnon.length > 0) {
+          setRecentTrackIds(parsedAnon);
+          localStorage.setItem(userKey, JSON.stringify(parsedAnon));
+          localStorage.removeItem(getRecentKey(null));
+        }
+      }
+    } catch {}
+
+    recentHydratedRef.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
+    const uid = user?.id;
+    const key = getRecentKey(uid);
+
+    if (uid && !recentHydratedRef.current) return;
+
+    try {
+      localStorage.setItem(key, JSON.stringify(recentTrackIds || []));
+    } catch {}
+  }, [recentTrackIds, user?.id]);
+
   const isSeekingRef = useRef(false);
   const audioRef = useRef(null);
   const lastTrackIdRef = useRef(null);
+  const autoPlayAfterLoadRef = useRef(false);
 
-  // 4️⃣ ФУНКЦИЯ ЛОГАУТА
-  const handleLogout = useCallback(() => {
-    console.log('👋 App: Принудительный выход из-за истечения токена');
+  const recordPlay = useCallback(async (trackId) => {
+    try {
+      const payload = {
+        track_id: trackId,
+        listened_seconds: Math.floor(currentTime)
+      };
+
+      const response = await apiFetch(`/api/track/${trackId}/record-play/`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.counted) {
+        setTracksById(prev => ({
+          ...prev,
+          [trackId]: {
+            ...prev[trackId],
+            play_count: data.play_count
+          }
+        }));
+        
+        const t = tracksById?.[trackId];
+        
+        if (t) {
+          setHistory(prev => {
+            const item = {
+              trackId: t.id,
+              title: t.title,
+              artist: t.artist,
+              cover: t.cover || t.cover_url,
+              playedAt: new Date().toISOString()
+            };
+            const filtered = (prev || []).filter(x => (x.trackId ?? x.track_id) !== t.id);
+            return [item, ...filtered].slice(0, 100);
+          });
+
+          setRecentTrackIds(prev => {
+            const filtered = (prev || []).filter(id => id !== t.id);
+            return [t.id, ...filtered].slice(0, 50);
+          });
+        }
+        
+        window.dispatchEvent(new CustomEvent('playCountUpdated', {
+          detail: { 
+            trackId, 
+            playCount: data.play_count,
+            counted: true,
+            success: true
+          }
+        }));
+        
+        return data;
+      }
+      
+      return data;
+    } catch (err) {
+      return null;
+    }
+  }, [currentTime, tracksById]);
+
+  useEffect(() => {
+    hasRecordedPlayRef.current = false;
+  }, [currentTrackId]);
+
+  useEffect(() => {
+    const handlePlayCountUpdated = (event) => {
+      const { trackId, playCount } = event.detail || {};
+      if (trackId && playCount !== undefined) {
+        setTracksById(prev => ({
+          ...prev,
+          [trackId]: {
+            ...prev[trackId],
+            play_count: playCount
+          }
+        }));
+      }
+    };
+
+    window.addEventListener('playCountUpdated', handlePlayCountUpdated);
     
+    return () => {
+      window.removeEventListener('playCountUpdated', handlePlayCountUpdated);
+    };
+  }, []);
+
+  const handleLogout = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -178,27 +305,40 @@ function App() {
     setCurrentTime(0);
     setDuration(0);
     setLikedTrackIds([]);
+    setPlayQueueIds([]);
     setRecentTrackIds([]);
     setHistory([]);
+    setTracksById({});
+    setPlaybackContext(null);
+    
     lastTrackIdRef.current = null;
+    hasRecordedPlayRef.current = false;
+    autoPlayAfterLoadRef.current = false;
+    autoPlayNextRef.current = false;
+    autoPlayTrackIdRef.current = null;
     
     localStorage.removeItem('access');
     localStorage.removeItem('refresh');
     localStorage.removeItem('user');
     localStorage.removeItem('likedTracks');
     localStorage.removeItem('userAvatar');
+    localStorage.removeItem('pendingPlays');
     
-    console.log('✅ App: Все данные пользователя очищены');
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('likedTrackIds:')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (_) {}
+    
+    setSessionVersion(v => v + 1);
     
     navigate('/login');
   }, [navigate]);
 
-  // 5️⃣ SEEK TO
   const seekTo = useCallback((time) => {
-    console.log('🎯 App: Seek to', time, 'seconds');
-    
     if (!audioRef.current || !audioRef.current.duration) {
-      console.error('❌ App: Нет audio элемента для seek');
       return;
     }
     
@@ -208,72 +348,59 @@ function App() {
     
     setTimeout(() => {
       isSeekingRef.current = false;
-      console.log('✅ App: Завершена перемотка');
     }, 100);
   }, []);
 
-  // 6️⃣ TOGGLE PLAY/PAUSE
   const togglePlayPause = useCallback(() => {
-    console.log('⏯️ App: togglePlayPause вызван', {
-      currentTrackId,
-      isPlaying,
-      audio: audioRef.current ? {
-        paused: audioRef.current.paused,
-        readyState: audioRef.current.readyState
-      } : 'no audio'
-    });
-    
     if (!audioRef.current) {
-      console.error('❌ App: Нет audio элемента');
       return;
     }
     
     if (!currentTrackId) {
-      console.log('⚠️ App: Нет текущего трека');
       return;
     }
     
     const audio = audioRef.current;
     
     if (isPlaying) {
-      console.log('⏸️ App: Пауза');
       audio.pause();
       setIsPlaying(false);
+      
+      if (currentTime >= 30 && !hasRecordedPlayRef.current) {
+        hasRecordedPlayRef.current = true;
+        recordPlay(currentTrackId);
+      }
     } else {
-      console.log('▶️ App: Воспроизведение');
+      if (audio.ended || (audio.duration && audio.currentTime >= audio.duration - 0.1)) {
+        audio.currentTime = 0;
+        setCurrentTime(0);
+      }
+      
       audio.play()
         .then(() => {
-          console.log('✅ App: Воспроизведение успешно');
           setIsPlaying(true);
         })
-        .catch(error => {
-          console.error('❌ App: Ошибка воспроизведения:', error);
+        .catch(() => {
           setIsPlaying(false);
         });
     }
-  }, [currentTrackId, isPlaying]);
+  }, [currentTrackId, isPlaying, currentTime, recordPlay]);
 
-  // 7️⃣ ДОБАВЛЕНИЕ ТРЕКОВ
   const addTracks = useCallback((tracks = []) => {
-    console.log(`📦 App: Добавление ${tracks.length} треков в стор`);
-    
     setTracksById(prev => {
       const updated = { ...prev };
       tracks.forEach(track => {
         if (!track?.id) return;
         const normalized = normalizeTrack(track);
-        console.log(`📝 App: Добавлен трек ${track.id} с artistId:`, normalized.artistId);
         updated[track.id] = normalized;
       });
       return updated;
     });
   }, [normalizeTrack]);
   
-  // 8️⃣ ЗАГРУЗКА ТРЕКА С СЕРВЕРА
   const loadTrackFromServer = useCallback(async (trackId) => {
     if (!trackId) return;
     
-    console.log(`🔄 App: Загрузка трека ${trackId} с сервера...`);
     setIsLoadingTrack(true);
     
     try {
@@ -284,13 +411,6 @@ function App() {
       }
       
       const trackData = await response.json();
-      console.log('📥 App: Данные с сервера:', {
-        id: trackData.id,
-        title: trackData.title,
-        uploaded_by: trackData.uploaded_by,
-        user: trackData.user
-      });
-      
       const normalizedTrack = normalizeTrack(trackData);
       
       setTracksById(prev => ({
@@ -298,18 +418,9 @@ function App() {
         [trackId]: normalizedTrack
       }));
       
-      console.log(`✅ App: Трек ${trackId} загружен с сервера:`, {
-        title: normalizedTrack.title,
-        artistId: normalizedTrack.artistId,
-        hasArtistId: !!normalizedTrack.artistId
-      });
-      
       setCurrentTrackId(trackId);
       
     } catch (error) {
-      console.error(`❌ App: Ошибка загрузки трека ${trackId}:`, error);
-      
-      // Демо-данные с правильными artistId
       const demoFallback = {
         1: {
           id: 1,
@@ -345,7 +456,6 @@ function App() {
       
       const demoTrack = demoFallback[trackId];
       if (demoTrack) {
-        console.log(`✅ App: Используем демо-трек для ${trackId}`);
         const normalizedDemoTrack = normalizeTrack(demoTrack);
         setTracksById(prev => ({
           ...prev,
@@ -358,61 +468,37 @@ function App() {
     }
   }, [normalizeTrack]);
 
-  // 🔥 9️⃣ ФУНКЦИЯ ВОСПРОИЗВЕДЕНИЯ ТРЕКА (ОСНОВНАЯ!)
   const playTrack = useCallback((track) => {
     if (!track?.id) {
-      console.error('❌ App: Невалидный трек для воспроизведения');
       return;
     }
+
+    if (playQueueIds.length > 0 && !playQueueIds.includes(track.id)) {
+      setPlayQueueIds([]);
+    }
     
-    console.log(`🎵 App: playTrack вызван для трека ${track.id}`, {
-      title: track.title,
-      incomingData: track,
-      hasUploadedBy: !!track.uploaded_by,
-      hasUser: !!track.user,
-      currentTrackId
-    });
-    
-    // Если трек уже играет, просто переключаем паузу
     if (currentTrackId === track.id) {
-      console.log('🔄 App: Тот же трек, переключаем паузу');
       togglePlayPause();
       return;
     }
     
-    // 🔥 ВАЖНО: Нормализуем трек перед использованием
     const normalizedTrack = normalizeTrack(track);
     
-    console.log('🔍 App: Нормализованные данные для воспроизведения:', {
-      id: normalizedTrack.id,
-      title: normalizedTrack.title,
-      artist: normalizedTrack.artist,
-      artistId: normalizedTrack.artistId, // ✅ Проверяем, есть ли artistId
-      uploaded_by: normalizedTrack.uploaded_by,
-      source: normalizedTrack.source
-    });
-    
-    if (!normalizedTrack.artistId) {
-      console.warn('⚠️ App: Внимание! Трек не имеет artistId после нормализации');
-      console.warn('🔍 Исходные данные:', track);
-    }
-    
-    // Сохраняем нормализованный трек в хранилище
     setTracksById(prev => ({
       ...prev,
       [track.id]: normalizedTrack
     }));
     
-    // Устанавливаем как текущий
+    autoPlayNextRef.current = true;
+    autoPlayTrackIdRef.current = track.id;
+    
     setCurrentTrackId(track.id);
     
-    // Добавляем в недавние
     setRecentTrackIds(prev => {
       const filtered = prev.filter(id => id !== track.id);
       return [track.id, ...filtered].slice(0, 50);
     });
     
-    // Добавляем в историю
     setHistory(prev => {
       const newHistoryItem = {
         trackId: track.id,
@@ -426,78 +512,131 @@ function App() {
       return [newHistoryItem, ...filtered].slice(0, 100);
     });
     
-    console.log(`✅ App: Трек "${track.title}" установлен для воспроизведения с artistId: ${normalizedTrack.artistId}`);
-  }, [currentTrackId, togglePlayPause, normalizeTrack]);
+  }, [currentTrackId, togglePlayPause, normalizeTrack, playQueueIds]);
 
-  // 🔟 СЛЕДУЮЩИЙ/ПРЕДЫДУЩИЙ ТРЕК
+  const getAutoQueueIds = useCallback(() => {
+    const ids = Object.keys(tracksById || {})
+      .map((x) => Number(x))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b);
+
+    if (currentTrackId && Number.isFinite(Number(currentTrackId))) {
+      const cid = Number(currentTrackId);
+      if (!ids.includes(cid)) ids.unshift(cid);
+    }
+
+    return ids;
+  }, [tracksById, currentTrackId]);
+
   const playNextTrack = useCallback(() => {
-    console.log('⏭️ App: playNextTrack вызван');
-    
-    if (!likedTrackIds || likedTrackIds.length === 0) {
-      console.log('⚠️ App: Нет лайкнутых треков для автоплея');
+    const isPlaylistQueue = (playQueueIds && playQueueIds.length > 0);
+    const queueIds = isPlaylistQueue ? playQueueIds : getAutoQueueIds();
+
+    if (!queueIds || queueIds.length === 0) {
       return;
     }
     
     let nextTrackId = null;
     
     if (currentTrackId) {
-      const currentIndex = likedTrackIds.indexOf(currentTrackId);
+      const currentIndex = queueIds.indexOf(currentTrackId);
       
       if (currentIndex === -1) {
-        nextTrackId = likedTrackIds[0];
+        nextTrackId = queueIds[0];
       } else {
-        const nextIndex = (currentIndex + 1) % likedTrackIds.length;
-        nextTrackId = likedTrackIds[nextIndex];
+        if (isPlaylistQueue && currentIndex >= queueIds.length - 1) {
+          setPlayQueueIds([]);
+          setIsPlaying(false);
+          return;
+        }
+        
+        const nextIndex = isPlaylistQueue
+          ? (currentIndex + 1)
+          : ((currentIndex + 1) % queueIds.length);
+        nextTrackId = queueIds[nextIndex];
       }
     } else {
-      nextTrackId = likedTrackIds[0];
+      nextTrackId = queueIds[0];
     }
     
     if (!nextTrackId) return;
     
     const nextTrack = tracksById[nextTrackId];
     if (nextTrack) {
-      console.log('▶️ App: Автопереход к следующему треку', nextTrack.title);
       playTrack(nextTrack);
     }
-  }, [currentTrackId, likedTrackIds, tracksById, playTrack]);
+  }, [currentTrackId, likedTrackIds, playQueueIds, tracksById, playTrack, getAutoQueueIds]);
   
   const playPreviousTrack = useCallback(() => {
-    if (!likedTrackIds || likedTrackIds.length === 0) return;
+    const isPlaylistQueue = (playQueueIds && playQueueIds.length > 0);
+    const queueIds = isPlaylistQueue ? playQueueIds : getAutoQueueIds();
+    
+    if (!queueIds || queueIds.length === 0) return;
     
     if (!currentTrackId) {
-      const firstTrack = tracksById[likedTrackIds[0]];
+      const firstTrack = tracksById[queueIds[0]];
       if (firstTrack) playTrack(firstTrack);
       return;
     }
     
-    const currentIndex = likedTrackIds.indexOf(currentTrackId);
+    const currentIndex = queueIds.indexOf(currentTrackId);
     if (currentIndex === -1) return;
     
-    const prevIndex = currentIndex === 0 ? likedTrackIds.length - 1 : currentIndex - 1;
-    const prevTrackId = likedTrackIds[prevIndex];
+    const prevIndex = currentIndex === 0 ? queueIds.length - 1 : currentIndex - 1;
+    const prevTrackId = queueIds[prevIndex];
     const prevTrack = tracksById[prevTrackId];
     
     if (prevTrack) {
       playTrack(prevTrack);
     }
-  }, [currentTrackId, likedTrackIds, tracksById, playTrack]);
+  }, [currentTrackId, likedTrackIds, playQueueIds, tracksById, playTrack, getAutoQueueIds]);
 
-  // 🎵 АУДИО ОБРАБОТКА
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleTimeUpdate = () => {
       if (isSeekingRef.current) return;
-      setCurrentTime(audio.currentTime);
+      
+      const newTime = audio.currentTime;
+      setCurrentTime(newTime);
+      
+      if (newTime >= 30 && !hasRecordedPlayRef.current && isPlaying) {
+        hasRecordedPlayRef.current = true;
+        if (currentTrackId) {
+          recordPlay(currentTrackId);
+        }
+      }
+    };
+
+    const handleEnded = () => {
+      if (currentTime >= 30 && !hasRecordedPlayRef.current && currentTrackId) {
+        hasRecordedPlayRef.current = true;
+        recordPlay(currentTrackId);
+      }
+
+      if (playbackContext === 'single') {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+        }
+        setIsPlaying(false);
+        return;
+      }
+
+      autoPlayAfterLoadRef.current = true;
+      setIsPlaying(false);
+      playNextTrack();
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
-    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
-  }, []);
+    audio.addEventListener('ended', handleEnded);
+    
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [currentTrackId, isPlaying, currentTime, recordPlay, playNextTrack, playbackContext]);
 
-  // 🔗 ОТСЛЕЖИВАНИЕ URL
   useEffect(() => {
     const checkURLForTrack = () => {
       const path = window.location.pathname;
@@ -511,19 +650,14 @@ function App() {
           const trackIdFromUrl = parseInt(trackMatch[1]);
           
           if (trackIdFromUrl === currentTrackId) {
-            console.log('✅ App: Тот же трек в URL, игнорируем');
             return;
           }
-          
-          console.log('🌐 App: Определен trackId из URL:', trackIdFromUrl);
           
           const trackInStore = tracksById[trackIdFromUrl];
           
           if (trackInStore) {
-            console.log('✅ App: Трек уже в сторе, устанавливаем как текущий');
             setCurrentTrackId(trackIdFromUrl);
           } else {
-            console.log('🔄 App: Трека нет в сторе, нужно загрузить с сервера');
             loadTrackFromServer(trackIdFromUrl);
           }
         }
@@ -536,49 +670,47 @@ function App() {
     return () => clearInterval(urlCheckInterval);
   }, [currentTrackId, tracksById, lastPathname, loadTrackFromServer]);
 
-  // 🎵 ИНИЦИАЛИЗАЦИЯ AUDIO ЭЛЕМЕНТА
   useEffect(() => {
-    console.log('🎵 App: Инициализация audio элемента');
-    
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.crossOrigin = 'anonymous';
       audioRef.current.preload = 'metadata';
       audioRef.current.volume = volume;
       audioRef.current.loop = loopEnabled;
-      console.log('✅ App: Audio элемент создан');
     }
 
     const audio = audioRef.current;
 
     const handleLoadedMetadata = () => {
-      console.log('✅ App: Метаданные загружены, duration:', audio.duration);
       setDuration(audio.duration || 0);
     };
 
     const handleCanPlay = () => {
-      console.log('✅ App: Данные загружены, можно играть');
       setIsLoadingTrack(false);
+
+      try {
+        const wantAuto =
+          autoPlayNextRef.current &&
+          String(autoPlayTrackIdRef.current) === String(currentTrackId);
+
+        if (wantAuto) {
+          autoPlayNextRef.current = false;
+          autoPlayTrackIdRef.current = null;
+
+          audio.play().catch(() => {});
+        }
+      } catch (e) {}
     };
 
     const handlePlay = () => {
-      console.log('▶️ App: Audio play event');
       setIsPlaying(true);
     };
     
     const handlePause = () => {
-      console.log('⏸️ App: Audio pause event');
       setIsPlaying(false);
     };
     
-    const handleEnded = () => {
-      console.log('⏹️ App: Трек завершен');
-      setIsPlaying(false);
-      playNextTrack();
-    };
-
-    const handleError = (e) => {
-      console.error('❌ App: Ошибка audio:', e.target.error);
+    const handleError = () => {
       setIsPlaying(false);
       setIsLoadingTrack(false);
     };
@@ -587,7 +719,6 @@ function App() {
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
-    audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
     return () => {
@@ -595,42 +726,27 @@ function App() {
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [volume, loopEnabled, playNextTrack]);
+  }, [volume, loopEnabled, currentTrackId]);
 
-  // 🔄 ЗАГРУЗКА ТРЕКА ПРИ СМЕНЕ currentTrackId
   useEffect(() => {
     if (!currentTrackId || !audioRef.current) {
-      console.log('⚠️ App: Нет трека для загрузки');
       return;
     }
 
     const trackInfo = tracksById[currentTrackId];
     if (!trackInfo) {
-      console.error('❌ App: Нет данных для трека:', currentTrackId);
       return;
     }
 
     const audio = audioRef.current;
     const newSrc = trackInfo.audio_url || '';
 
-    console.log('🔄 App: Обработка трека для воспроизведения:', {
-      currentTrackId,
-      trackTitle: trackInfo.title,
-      artistId: trackInfo.artistId, // ✅ Теперь есть!
-      newSrc,
-      lastTrackId: lastTrackIdRef.current,
-      audioSrc: audio.src
-    });
-
     if (lastTrackIdRef.current === currentTrackId) {
-      console.log('✅ App: Тот же трек, только управление воспроизведением');
       return;
     }
 
-    console.log('🔄 App: Начинаем загрузку нового трека');
     lastTrackIdRef.current = currentTrackId;
     
     audio.pause();
@@ -649,28 +765,34 @@ function App() {
       audioUrl = publicTestTracks[currentTrackId] || publicTestTracks[1];
     }
     
-    console.log('🎵 App: Устанавливаем audio.src:', audioUrl);
-    
     audio.src = audioUrl;
     audio.load();
+
+    const tryAutoPlay = () => {
+      if (!autoPlayAfterLoadRef.current) return;
+
+      autoPlayAfterLoadRef.current = false;
+
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+        });
+    };
+
+    audio.addEventListener('canplay', tryAutoPlay, { once: true });
     
   }, [currentTrackId, tracksById]);
 
-  // 🎛️ ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
   const handlePlayPause = useCallback(() => {
-    console.log('🎵 App: handlePlayPause вызван', {
-      currentTrackId,
-      isPlaying,
-      currentTrack: tracksById[currentTrackId]
-    });
-    
     if (!currentTrackId) {
-      console.log('⚠️ App: Нет текущего трека для play/pause');
       return;
     }
     
     togglePlayPause();
-  }, [currentTrackId, isPlaying, tracksById, togglePlayPause]);
+  }, [currentTrackId, togglePlayPause]);
   
   const handleVolumeChange = useCallback((newVolume) => {
     setVolume(newVolume);
@@ -684,19 +806,64 @@ function App() {
   }, [loopEnabled]);
   
   const getAuthToken = useCallback(() => {
-    return localStorage.getItem('access');
+    const token = localStorage.getItem('access') ||
+                  localStorage.getItem('accessToken') ||
+                  localStorage.getItem('token');
+    
+    return token;
   }, []);
 
-  // 📡 ЗАГРУЗКА ДАННЫХ
+  const getAuthTokenInternal = useCallback(() => {
+    return getAuthToken();
+  }, [getAuthToken]);
+
+  useEffect(() => {
+    const token = getAuthTokenInternal?.();
+    if (!token) return;
+
+    if (!currentTrackId) return;
+
+    const trackId = currentTrackId;
+    const playing = !!isPlaying;
+
+    const now = Date.now();
+    const last = lastNowPlayingRef.current;
+    if (last.trackId === trackId && last.isPlaying === playing && (now - last.ts) < 4000) return;
+
+    lastNowPlayingRef.current = { trackId, isPlaying: playing, ts: now };
+
+    apiFetch('/api/me/now-playing/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_id: trackId, is_playing: playing })
+    }).catch(() => {});
+  }, [currentTrackId, isPlaying, getAuthTokenInternal]);
+
+  const mergeRecentIds = useCallback((localIds, serverIds, limit = 50) => {
+    const out = [];
+    const seen = new Set();
+
+    const push = (id) => {
+      if (!id) return;
+      const v = Number(id);
+      const norm = Number.isFinite(v) ? v : id;
+      if (seen.has(norm)) return;
+      seen.add(norm);
+      out.push(norm);
+    };
+
+    (localIds || []).forEach(push);
+    (serverIds || []).forEach(push);
+
+    return out.slice(0, limit);
+  }, []);
+
   const fetchLikedTracks = useCallback(async () => {
     try {
-      console.log('❤️ App: Загрузка лайкнутых треков с сервера...');
-      
       const response = await apiFetch('/api/liked-tracks/');
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ App: Загружены лайкнутые треки:', data.tracks?.length || 0);
         
         const likedIds = data.tracks?.map(track => track.id) || [];
         setLikedTrackIds(likedIds);
@@ -704,39 +871,22 @@ function App() {
         localStorage.setItem('likedTracks', JSON.stringify(likedIds));
         
         if (data.tracks && data.tracks.length > 0) {
-          // 🔥 ВАЖНО: Добавляем треки с проверкой artistId
-          console.log('🔍 App: Проверяем данные лайкнутых треков:');
-          data.tracks.forEach(track => {
-            console.log(`  - Трек ${track.id}: ${track.title}`, {
-              hasUploadedBy: !!track.uploaded_by,
-              uploaded_by_id: track.uploaded_by?.id,
-              hasUser: !!track.user,
-              user_id: track.user?.id
-            });
-          });
-          
           addTracks(data.tracks);
         }
         
         return likedIds;
       } else {
-        console.error('❌ App: Ошибка загрузки лайкнутых треков:', response.status);
-        
         const likedFromStorage = localStorage.getItem('likedTracks');
         if (likedFromStorage) {
           const likedArray = JSON.parse(likedFromStorage);
           setLikedTrackIds(likedArray);
-          console.log('✅ App: Используем лайки из localStorage:', likedArray.length);
         }
       }
     } catch (error) {
-      console.error('❌ App: Ошибка сети при загрузке лайков:', error);
-      
       const likedFromStorage = localStorage.getItem('likedTracks');
       if (likedFromStorage) {
         const likedArray = JSON.parse(likedFromStorage);
         setLikedTrackIds(likedArray);
-        console.log('✅ App: Используем лайки из localStorage:', likedArray.length);
       }
     }
     
@@ -745,41 +895,37 @@ function App() {
 
   const fetchRecentTracks = useCallback(async () => {
     try {
-      console.log('🕒 App: Загрузка недавних треков с сервера...');
-      
       const response = await apiFetch('/api/recently-played/');
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ App: Загружены недавние треки:', data.tracks?.length || 0);
-        
-        const recentIds = data.tracks?.map(track => track.id) || [];
-        setRecentTrackIds(recentIds);
-        
+        const serverIds = (data.tracks || []).map(t => t?.id).filter(Boolean);
+
+        setRecentTrackIds(prev => mergeRecentIds(prev, serverIds, 50));
+
         if (data.tracks && data.tracks.length > 0) {
           addTracks(data.tracks);
         }
-        
-        return recentIds;
-      } else {
-        console.log('⚠️ App: Нет недавних треков на сервере');
+
+        return serverIds;
       }
-    } catch (error) {
-      console.error('❌ App: Ошибка сети при загрузке недавних треков:', error);
-    }
-    
-    return [];
-  }, [addTracks]);
+    } catch (error) {}
+
+    return null;
+  }, [addTracks, mergeRecentIds]);
 
   const fetchHistory = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastHistoryFetchAtRef.current < 120000) {
+      return;
+    }
+    lastHistoryFetchAtRef.current = now;
+
     try {
-      console.log('📚 App: Загрузка истории прослушиваний...');
-      
       const response = await apiFetch('/api/tracks/history/');
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ App: Загружена история:', data.history?.length || 0);
         
         setHistory(data.history || []);
         
@@ -788,25 +934,18 @@ function App() {
         }
         
         return data.history;
-      } else {
-        console.log('⚠️ App: Нет истории на сервере');
       }
-    } catch (error) {
-      console.error('❌ App: Ошибка сети при загрузке истории:', error);
-    }
+    } catch (error) {}
     
     return [];
   }, [addTracks]);
 
   const fetchUserData = useCallback(async () => {
-    const authToken = getAuthToken();
+    const authToken = getAuthTokenInternal?.();
     
     if (!authToken) {
-      console.log('⚠️ App: Нет токена, пользовательские данные не загружены');
       return;
     }
-    
-    console.log('🔄 App: Начинаем загрузку пользовательских данных...');
     
     try {
       await Promise.all([
@@ -814,100 +953,116 @@ function App() {
         fetchRecentTracks(),
         fetchHistory()
       ]);
-      
-      console.log('✅ App: Все пользовательские данные загружены');
-    } catch (error) {
-      console.error('❌ App: Ошибка загрузки пользовательских данных:', error);
-    }
-  }, [getAuthToken, fetchLikedTracks, fetchRecentTracks, fetchHistory]);
+    } catch (error) {}
+  }, [getAuthTokenInternal, fetchLikedTracks, fetchRecentTracks, fetchHistory]);
 
-  const handleToggleLike = useCallback(async (trackId) => {
-    console.log('❤️ App: Обработка лайка трека', trackId);
-    
-    const authToken = getAuthToken();
-    if (!authToken) {
-      alert('Войдите в систему, чтобы ставить лайки');
-      return false;
-    }
-    
-    const currentLiked = likedTrackIds.includes(trackId);
-    const newLiked = !currentLiked;
-    
-    if (newLiked) {
-      setLikedTrackIds(prev => [...prev, trackId]);
-    } else {
-      setLikedTrackIds(prev => prev.filter(id => id !== trackId));
-    }
-    
-    localStorage.setItem('likedTracks', JSON.stringify(
-      newLiked ? [...likedTrackIds, trackId] : likedTrackIds.filter(id => id !== trackId)
-    ));
-    
-    try {
-      const response = await apiFetch(`/api/track/${trackId}/toggle-like/`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          liked: newLiked 
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok || !data.success) {
-        if (newLiked) {
-          setLikedTrackIds(prev => prev.filter(id => id !== trackId));
-        } else {
-          setLikedTrackIds(prev => [...prev, trackId]);
-        }
-        alert(data.error || 'Ошибка при сохранении лайка');
-        return false;
-      }
-      
-      console.log('✅ App: Лайк успешно сохранен на сервере');
-      
-      setTracksById(prev => {
-        const updated = { ...prev };
-        if (updated[trackId]) {
-          updated[trackId] = {
-            ...updated[trackId],
-            like_count: data.like_count || (updated[trackId].like_count || 0) + (newLiked ? 1 : -1)
-          };
-        }
-        return updated;
-      });
-      
-      window.dispatchEvent(new CustomEvent('trackLikedFromApp', {
-        detail: { 
-          trackId: trackId, 
-          liked: newLiked,
-          count: data.like_count,
-          fromApp: true,
-          user: user?.username
-        }
-      }));
-      
-      return true;
-      
-    } catch (error) {
-      console.error('❌ App: Сетевая ошибка лайка трека:', error);
-      if (newLiked) {
-        setLikedTrackIds(prev => prev.filter(id => id !== trackId));
-      } else {
-        setLikedTrackIds(prev => [...prev, trackId]);
-      }
-      alert('Сетевая ошибка при сохранении лайка');
-      return false;
-    }
-  }, [getAuthToken, likedTrackIds, user]);
+  const handleToggleLike = useCallback((trackId) => {
+    return Promise.resolve(true);
+  }, []);
 
   const checkTrackLiked = useCallback((trackId) => {
     return likedTrackIds.includes(trackId);
   }, [likedTrackIds]);
 
-  // 🚀 ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
   useEffect(() => {
-    console.log('🎵 App: Инициализация приложения');
+    const handleTrackLikedFromApp = (e) => {
+      const { trackId, liked, count } = e.detail || {};
+      if (trackId && e.detail?.fromSocialContext) {
+        if (liked) {
+          setLikedTrackIds(prev => {
+            if (!prev.includes(trackId)) {
+              return [...prev, trackId];
+            }
+            return prev;
+          });
+        } else {
+          setLikedTrackIds(prev => prev.filter(id => id !== trackId));
+        }
+        
+        if (count !== undefined) {
+          setTracksById(prev => ({
+            ...prev,
+            [trackId]: {
+              ...prev[trackId],
+              like_count: count
+            }
+          }));
+        }
+      }
+    };
+
+    window.addEventListener('trackLikedFromApp', handleTrackLikedFromApp);
     
+    return () => {
+      window.removeEventListener('trackLikedFromApp', handleTrackLikedFromApp);
+    };
+  }, []);
+
+  const handleLogin = useCallback((userData, tokens) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    setTracksById({});
+    setCurrentTrackId(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setLikedTrackIds([]);
+    setPlayQueueIds([]);
+    setRecentTrackIds([]);
+    setHistory([]);
+    setIsLoadingTrack(false);
+    setPlaybackContext(null);
+
+    lastTrackIdRef.current = null;
+    hasRecordedPlayRef.current = false;
+    autoPlayAfterLoadRef.current = false;
+    autoPlayNextRef.current = false;
+    autoPlayTrackIdRef.current = null;
+
+    localStorage.removeItem('likedTracks');
+    localStorage.removeItem('pendingPlays');
+    
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('likedTrackIds:')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (_) {}
+    
+    setSessionVersion(v => v + 1);
+    
+    setUser(userData);
+    setIsAuthenticated(true);
+    
+    if (tokens?.access) {
+      localStorage.setItem('access', tokens.access);
+    }
+    
+    if (tokens?.refresh) {
+      localStorage.setItem('refresh', tokens.refresh);
+    }
+    
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    setTimeout(() => {
+      fetchUserData();
+    }, 500);
+    
+  }, [fetchUserData]);
+
+  const setPlaybackQueue = useCallback((ids = []) => {
+    const clean = Array.from(new Set((ids || [])
+      .map((x) => Number(x))
+      .filter((x) => Number.isFinite(x))
+    ));
+    setPlayQueueIds(clean);
+  }, []);
+
+  useEffect(() => {
     const token = localStorage.getItem('access');
     const refreshToken = localStorage.getItem('refresh');
     const savedUser = localStorage.getItem('user');
@@ -916,21 +1071,20 @@ function App() {
       try {
         setUser(JSON.parse(savedUser));
         setIsAuthenticated(true);
-        console.log('✅ App: Пользователь восстановлен');
         
         setTimeout(() => {
-          console.log('🔍 App: Проверка валидности токена при старте...');
           fetchUserData();
         }, 1000);
         
       } catch (error) {
         handleLogout();
       }
-    } else {
-      console.log('⚠️ App: Пользователь не аутентифицирован');
     }
     
-    // Демо-данные с правильными artistId
+    if (!localStorage.getItem('pendingPlays')) {
+      localStorage.setItem('pendingPlays', JSON.stringify({}));
+    }
+    
     const demoData = [
       {
         id: 1,
@@ -942,7 +1096,9 @@ function App() {
         audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
         duration: 200,
         duration_seconds: 200,
+        play_count: 254789,
         like_count: 56,
+        repost_count: 12,
         source: 'demo'
       },
       {
@@ -955,7 +1111,9 @@ function App() {
         audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
         duration: 322,
         duration_seconds: 322,
+        play_count: 12457896,
         like_count: 34,
+        repost_count: 8,
         source: 'demo'
       },
       {
@@ -968,7 +1126,9 @@ function App() {
         audio_url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
         duration: 245,
         duration_seconds: 245,
+        play_count: 567890,
         like_count: 23,
+        repost_count: 5,
         source: 'demo'
       }
     ];
@@ -980,39 +1140,39 @@ function App() {
       if (likedFromStorage) {
         const likedArray = JSON.parse(likedFromStorage);
         setLikedTrackIds(likedArray);
-        console.log('✅ App: Загружено лайков из localStorage:', likedArray.length);
       }
-    } catch (error) {
-      console.error('❌ App: Ошибка загрузки лайков:', error);
-    }
+    } catch (error) {}
     
     setIsLoading(false);
   }, [addTracks, fetchUserData, handleLogout]);
 
-  const handleLogin = (userData, tokens) => {
-    console.log('✅ App: Вход пользователя:', userData.username);
-    
-    setUser(userData);
-    setIsAuthenticated(true);
-    
-    if (tokens?.access) {
-      localStorage.setItem('access', tokens.access);
-      console.log('✅ Access токен сохранен');
-    }
-    
-    if (tokens?.refresh) {
-      localStorage.setItem('refresh', tokens.refresh);
-      console.log('✅ Refresh токен сохранен');
-    }
-    
-    localStorage.setItem('user', JSON.stringify(userData));
-    
-    setTimeout(() => {
-      fetchUserData();
-    }, 500);
+  const commonProps = {
+    user,
+    onLogout: handleLogout,
+    currentTrack: currentTrackId,
+    isPlaying,
+    onPlayPause: handlePlayPause,
+    onTogglePlayPause: togglePlayPause,
+    currentTime,
+    duration,
+    onSeek: seekTo,
+    volume,
+    onVolumeChange: handleVolumeChange,
+    onNext: playNextTrack,
+    onPrevious: playPreviousTrack,
+    loopEnabled,
+    onToggleLoop: handleToggleLoop,
+    onToggleLike: handleToggleLike,
+    likedTracks: likedTrackIds,
+    checkTrackLiked,
+    trackData: tracksById,
+    playTrack,
+    getAuthToken: getAuthTokenInternal,
+    onRecordPlay: recordPlay,
+    setPlaybackQueue,
+    playQueueIds,
   };
 
-  // 🖥️ РЕНДЕР
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -1048,164 +1208,113 @@ function App() {
     );
   }
   
-  // 🔥 ВАЖНО: Получаем текущий трек для передачи в GlassMusicPlayer
   const currentTrack = currentTrackId ? tracksById[currentTrackId] : null;
   
   return (
     <AuthProvider value={{ 
       user, 
       isAuthenticated,
-      getAuthToken,
+      getAuthToken: getAuthTokenInternal,
       handleLogout 
     }}>
-      <UserProvider>
-        <div className="App">
-          <Routes>
-            <Route
-              path="/login"
-              element={isAuthenticated ? 
-                <Navigate to="/" /> : 
-                <Login onLogin={handleLogin} />
-              }
-            />
-            <Route
-              path="/register"
-              element={isAuthenticated ? 
-                <Navigate to="/" /> : 
-                <Register onRegister={handleLogin} />
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={isAuthenticated ? 
-                <Navigate to="/" /> : 
-                <ForgotPassword />
-              }
-            />
-            <Route
-              path="/upload"
-              element={isAuthenticated ? 
-                <UploadPage
-                  user={user}
-                  onLogout={handleLogout}
-                  onUploadSuccess={(track) => {
-                    if (track) {
-                      addTracks([track]);
-                      playTrack(track);
-                    }
-                  }}
-                /> : 
-                <Navigate to="/login" />
-              }
-            />
-            <Route
-              path="/profile"
-              element={isAuthenticated ? 
-                <ProfilePage
-                  user={user}
-                  onLogout={handleLogout}
-                  currentTrack={currentTrackId}
-                  isPlaying={isPlaying}
-                  onPlayPause={handlePlayPause}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onSeek={seekTo}
-                  volume={volume}
-                  onVolumeChange={handleVolumeChange}
-                  loopEnabled={loopEnabled}
-                  onToggleLoop={handleToggleLoop}
-                  onToggleLike={handleToggleLike}
-                  likedTracks={likedTrackIds}
-                  checkTrackLiked={checkTrackLiked}
-                  trackData={tracksById}
-                /> : 
-                <Navigate to="/login" />
-              }
-            />
-            <Route
-              path="/profile/:id"
-              element={isAuthenticated ? 
-                <ProfilePage
-                  user={user}
-                  onLogout={handleLogout}
-                  currentTrack={currentTrackId}
-                  isPlaying={isPlaying}
-                  onPlayPause={handlePlayPause}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onSeek={seekTo}
-                  volume={volume}
-                  onVolumeChange={handleVolumeChange}
-                  loopEnabled={loopEnabled}
-                  onToggleLoop={handleToggleLoop}
-                  onToggleLike={handleToggleLike}
-                  likedTracks={likedTrackIds}
-                  checkTrackLiked={checkTrackLiked}
-                  trackData={tracksById}
-                /> : 
-                <Navigate to="/login" />
-              }
-            />
-            <Route
-              path="/track/:trackId"
-              element={isAuthenticated ? 
-                <TrackPage
-                  user={user}
-                  onLogout={handleLogout}
-                  currentTrack={currentTrackId}
-                  isPlaying={isPlaying}
-                  onPlayPause={handlePlayPause}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onSeek={seekTo}
-                  volume={volume}
-                  onVolumeChange={handleVolumeChange}
-                  loopEnabled={loopEnabled}
-                  onToggleLoop={handleToggleLoop}
-                  onToggleLike={handleToggleLike}
-                  likedTracks={likedTrackIds}
-                  checkTrackLiked={checkTrackLiked}
-                  trackData={tracksById}
-                /> : 
-                <Navigate to="/login" />
-              }
-            />
-            <Route
-              path="/"
-              element={isAuthenticated ? 
-                <ProtectedApp
-                  user={user}
-                  onLogout={handleLogout}
-                  currentTrack={currentTrackId}
-                  isPlaying={isPlaying}
-                  onPlayPause={handlePlayPause}
-                  onTogglePlayPause={togglePlayPause}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onSeek={seekTo}
-                  volume={volume}
-                  onVolumeChange={handleVolumeChange}
-                  onNext={playNextTrack}
-                  onPrevious={playPreviousTrack}
-                  loopEnabled={loopEnabled}
-                  onToggleLoop={handleToggleLoop}
-                  likedTrackIds={likedTrackIds}
-                  onToggleLike={handleToggleLike}
-                  tracksById={tracksById}
-                  recentTrackIds={recentTrackIds}
-                  history={history}
-                  playTrack={playTrack}
-                  addTracks={addTracks}
-                  isLoadingTrack={isLoadingTrack}
-                  navigate={navigate}
-                  // 🔥 ВАЖНО: Передаем полный объект текущего трека
-                  currentTrackFull={currentTrack} // ✅ Добавлено!
-                /> : 
-                <Navigate to="/login" />
-              }
-            />
-          </Routes>
-        </div>
+      <UserProvider key={`user-${sessionVersion}`}>
+        <SocialProvider 
+          key={`social-${sessionVersion}`}
+          getAuthToken={getAuthTokenInternal} 
+          currentUser={user}
+        >
+          <div className="App">
+            <BanGuard>
+              <Routes>
+                <Route
+                  path="/login"
+                  element={<Login onLogin={handleLogin} />}
+                />
+                <Route
+                  path="/register"
+                  element={<Register onRegister={handleLogin} />}
+                />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPassword />}
+                />
+                
+                <Route
+                  path="/banned"
+                  element={<BannedScreen />}
+                />
+                
+                <Route
+                  path="/appeal"
+                  element={<AppealPage />}
+                />
+                
+                {isAuthenticated ? (
+                  <>
+                    <Route
+                      path="/upload"
+                      element={
+                        <UploadPage
+                          user={user}
+                          onLogout={handleLogout}
+                          onUploadSuccess={(track) => {
+                            if (track) {
+                              addTracks([track]);
+                              playTrack(track);
+                            }
+                          }}
+                          getAuthToken={getAuthTokenInternal}
+                        />
+                      }
+                    />
+                    
+                    <Route
+                      path="/track/:trackId"
+                      element={
+                        <TrackPage
+                          {...commonProps}
+                          sessionToken={getAuthTokenInternal?.()}
+                          onPlayTrack={playTrack}
+                          setPlaybackContext={setPlaybackContext}
+                        />
+                      }
+                    />
+                    
+                    <Route
+                      path="/playlist/:playlistId"
+                      element={
+                        <PlaylistPage
+                          {...commonProps}
+                          addTracks={addTracks}
+                          setCurrentTrackId={setCurrentTrackId}
+                        />
+                      }
+                    />
+                    
+                    <Route
+                      path="/*"
+                      element={
+                        <ProtectedApp
+                          key={`protected-${sessionVersion}`}
+                          {...commonProps}
+                          currentTrackFull={currentTrack}
+                          tracksById={tracksById}
+                          recentTrackIds={recentTrackIds}
+                          history={history}
+                          addTracks={addTracks}
+                          isLoadingTrack={isLoadingTrack}
+                          navigate={navigate}
+                        />
+                      }
+                    />
+                  </>
+                ) : (
+                  <Route path="*" element={<Navigate to="/login" />} />
+                )}
+              </Routes>
+            </BanGuard>
+          </div>
+        </SocialProvider>
       </UserProvider>
     </AuthProvider>
   );

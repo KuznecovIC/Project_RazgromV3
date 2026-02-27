@@ -1,8 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Turnstile from 'react-turnstile'; // Правильный импорт
+import Turnstile from 'react-turnstile';
 import ColorBendsBackground from './ColorBendsBackground';
 import './Register.css';
+
+// 🔥 Хук для определения страны через геолокацию (OpenStreetMap Nominatim)
+const useGeolocationCountry = () => {
+  const [country, setCountry] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [geoTried, setGeoTried] = useState(false);
+
+  const fetchCountryFromCoords = async (lat, lon) => {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`;
+    try {
+      const resp = await fetch(url, {
+        headers: { 
+          'User-Agent': 'MusicPlatform (support@musicplatform.com)',
+          'Accept-Language': 'en'
+        },
+      });
+      if (!resp.ok) throw new Error(`Nominatim error ${resp.status}`);
+      const data = await resp.json();
+      const countryName = data.address?.country;
+      if (!countryName) throw new Error('Country not found in Nominatim response');
+      console.log('📍 Страна определена через геолокацию:', countryName);
+      setCountry(countryName);
+      setError(null);
+    } catch (e) {
+      console.warn('Не удалось получить страну через Nominatim:', e);
+      setError(e);
+    } finally {
+      setLoading(false);
+      setGeoTried(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.log('📍 Geolocation API не поддерживается браузером');
+      setError(new Error('Geolocation API не поддерживается'));
+      setLoading(false);
+      setGeoTried(true);
+      return;
+    }
+
+    console.log('📍 Запрашиваю геолокацию у пользователя...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        console.log('📍 Координаты получены:', latitude, longitude);
+        fetchCountryFromCoords(latitude, longitude);
+      },
+      (geoError) => {
+        console.warn('📍 Geolocation отклонена/ошибка:', geoError.message);
+        setError(geoError);
+        setLoading(false);
+        setGeoTried(true);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 60000,
+      }
+    );
+  }, []);
+
+  return { country, loading, error, geoTried };
+};
+
+// 🔥 Хук для определения страны через IP (fallback метод)
+const useDetectCountryByIP = ({ enabled }) => {
+  const [country, setCountry] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const fetchCountryByIP = async () => {
+      try {
+        console.log('🌐 Запрашиваю страну через IP...');
+        const response = await fetch('https://ipwho.is/');
+        if (!response.ok) throw new Error('Failed to fetch country by IP');
+        const data = await response.json();
+        
+        if (data && data.country) {
+          console.log('🌐 Страна определена через IP:', data.country);
+          setCountry(data.country);
+        } else {
+          throw new Error('Country not found in IP response');
+        }
+      } catch (err) {
+        console.warn('⚠️ Не удалось определить страну по IP:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCountryByIP();
+  }, [enabled]);
+
+  return { country, loading, error };
+};
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,7 +111,8 @@ const Register = () => {
     email: '',
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    country: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -26,9 +128,50 @@ const Register = () => {
   const [captchaError, setCaptchaError] = useState('');
   const [captchaLoading, setCaptchaLoading] = useState(false);
   
-  // Ключи Cloudflare Turnstile
   const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY || '0x4AAAAAACLl4TSRqjeGKzqP';
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // 🔥 ГЕОЛОКАЦИЯ - основной метод
+  const { 
+    country: geoCountry, 
+    loading: geoLoading, 
+    error: geoError,
+    geoTried 
+  } = useGeolocationCountry();
+
+  // 🔥 IP-определение - fallback метод
+  const { 
+    country: ipCountry, 
+    loading: ipLoading, 
+    error: ipError 
+  } = useDetectCountryByIP({
+    enabled: geoTried && !geoCountry && !geoLoading
+  });
+
+  // 🔥 Комбинированный результат
+  const detectedCountry = geoCountry || ipCountry;
+  const countryLoading = geoLoading || ipLoading;
+  const countryError = geoError || ipError;
+
+  useEffect(() => {
+    if (detectedCountry && !formData.country) {
+      console.log('✅ Устанавливаю определенную страну в форму:', detectedCountry);
+      setFormData(prev => ({
+        ...prev,
+        country: detectedCountry
+      }));
+    }
+  }, [detectedCountry, formData.country]);
+
+  useEffect(() => {
+    if (countryLoading) {
+      console.log('🔄 Определение страны...');
+    } else if (detectedCountry) {
+      console.log('✅ Страна определена:', detectedCountry);
+    } else if (countryError) {
+      console.warn('⚠️ Не удалось определить страну:', countryError.message);
+    }
+  }, [countryLoading, detectedCountry, countryError]);
 
   useEffect(() => {
     validatePassword(formData.password);
@@ -73,8 +216,14 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Пароли не совпадают';
     }
+
+    if (formData.country) {
+      const countryTrim = formData.country.trim();
+      if (countryTrim && !/^[A-Za-z\s-]+$/.test(countryTrim)) {
+        newErrors.country = 'Страна может содержать только английские буквы, пробелы и дефисы';
+      }
+    }
     
-    // Проверка капчи
     if (!captchaToken) {
       setCaptchaError('Пожалуйста, пройдите проверку "Я не робот"');
       newErrors.captcha = true;
@@ -145,10 +294,10 @@ const Register = () => {
       console.log('📤 Отправка регистрации с токеном капчи:', {
         email: formData.email.toLowerCase(),
         username: formData.username,
+        country: formData.country.trim() || detectedCountry || '',
         captcha_token_length: captchaToken.length
       });
       
-      // ✅ ИСПРАВЛЕНО: Используем правильный URL /api/register/ вместо /api/auth/register/
       const response = await fetch(`${API_URL}/api/register/`, {
         method: 'POST',
         headers: {
@@ -159,7 +308,8 @@ const Register = () => {
           username: formData.username,
           password: formData.password,
           confirm_password: formData.confirmPassword,
-          captcha_token: captchaToken // Реальный токен от Cloudflare
+          country: formData.country.trim() || detectedCountry || '',
+          captcha_token: captchaToken
         })
       });
 
@@ -177,7 +327,6 @@ const Register = () => {
       if (data.success) {
         setSuccessMessage('✅ Регистрация успешна! Перенаправляем на вход...');
         
-        // Красивая анимация успеха
         const successAnimation = document.createElement('div');
         successAnimation.innerHTML = `
           <div style="
@@ -228,7 +377,6 @@ const Register = () => {
           </div>
         `;
         
-        // Добавляем стили анимации
         const animationStyle = document.createElement('style');
         animationStyle.textContent = `
           @keyframes fadeIn {
@@ -244,17 +392,14 @@ const Register = () => {
         document.head.appendChild(animationStyle);
         document.body.appendChild(successAnimation.firstChild);
         
-        // Перенаправление через 2 секунды
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
-        // Обработка ошибок от сервера
         console.error('❌ Ошибка регистрации:', data.error);
         
         if (data.error && (data.error.includes('капч') || data.error.includes('безопасност') || data.error.includes('Turnstile'))) {
           setCaptchaError(data.error);
-          // Сбрасываем капчу если ошибка связана с ней
           setCaptchaToken('');
         } else if (data.error && data.error.includes('парол')) {
           setErrors(prev => ({ ...prev, password: data.error }));
@@ -262,6 +407,8 @@ const Register = () => {
           setErrors(prev => ({ ...prev, email: data.error }));
         } else if (data.error && data.error.includes('пользовател')) {
           setErrors(prev => ({ ...prev, username: data.error }));
+        } else if (data.error && (data.error.includes('страна') || data.error.includes('country'))) {
+          setErrors(prev => ({ ...prev, country: data.error }));
         } else {
           setErrors({ 
             general: data.error || 'Неизвестная ошибка регистрации' 
@@ -296,15 +443,18 @@ const Register = () => {
     return 'Отличный';
   };
 
-  const refreshCaptcha = () => {
-    console.log('🔄 Обновление капчи');
-    setCaptchaToken('');
-    setCaptchaError('');
-    setCaptchaLoading(true);
-    
-    // Turnstile автоматически обновится при изменении key
-    const newKey = TURNSTILE_SITE_KEY + '?refresh=' + Date.now();
-    // В реальности просто сбросим состояние, компонент обновится сам
+  const getCountryPlaceholder = () => {
+    if (countryLoading) {
+      return 'Определение страны...';
+    } else if (detectedCountry) {
+      return detectedCountry;
+    } else if (countryError && geoError && geoError.code === 1) {
+      return 'Разрешите геолокацию для автоматического определения';
+    } else if (countryError) {
+      return 'Страна не определена';
+    } else {
+      return 'Например: United States, Germany';
+    }
   };
 
   return (
@@ -417,6 +567,87 @@ const Register = () => {
             )}
           </div>
 
+          {/* ---------- ПОЛЕ СТРАНЫ ---------- */}
+          <div className="form-group">
+            <label 
+              htmlFor="country"
+              style={{ 
+                fontSize: '0.8rem',
+                fontFamily: "'Press Start 2P', sans-serif",
+                color: 'rgba(255, 255, 255, 0.9)',
+                letterSpacing: '0.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>СТРАНА</span>
+              <span 
+                style={{ 
+                  fontSize: '0.7rem',
+                  color: detectedCountry ? '#2ed573' : '#ffa502',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                {countryLoading ? (
+                  <>
+                    <span className="loading-spinner" style={{ width: '12px', height: '12px' }}></span>
+                    <span>определение...</span>
+                  </>
+                ) : detectedCountry ? (
+                  <>
+                    <span>📍</span>
+                    <span>определено</span>
+                  </>
+                ) : (
+                  <>
+                    <span>❓</span>
+                    <span>не определено</span>
+                  </>
+                )}
+              </span>
+            </label>
+            <input
+              type="text"
+              id="country"
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              placeholder={getCountryPlaceholder()}
+              disabled={loading || countryLoading}
+              className={errors.country ? 'input-error' : ''}
+              style={{
+                fontFamily: "'Press Start 2P', sans-serif",
+                letterSpacing: '0.5px'
+              }}
+            />
+            {errors.country && (
+              <div className="error-text">
+                <span style={{ 
+                  fontSize: '0.7rem',
+                  fontFamily: "'Press Start 2P', sans-serif",
+                  color: '#ff6b6b',
+                  letterSpacing: '0.5px'
+                }}>
+                  ⚠️ {errors.country}
+                </span>
+              </div>
+            )}
+            <div style={{ 
+              fontSize: '0.65rem',
+              color: 'rgba(255, 255, 255, 0.5)',
+              marginTop: '4px',
+              fontFamily: "'Press Start 2P', sans-serif",
+              letterSpacing: '0.5px'
+            }}>
+              {detectedCountry 
+                ? `Автоматически определено: ${detectedCountry}. Вы можете изменить.` 
+                : 'Страна может содержать только английские буквы, пробелы и дефисы'}
+            </div>
+          </div>
+
           <div className="form-group">
             <label 
               htmlFor="password"
@@ -445,7 +676,6 @@ const Register = () => {
               }}
             />
             
-            {/* Прогресс-бар и требования */}
             <div className="password-strength-container">
               <div className="password-strength-bar">
                 <div 
@@ -470,7 +700,6 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Требования к паролю */}
             <div className="password-requirements">
               <div className="requirement-item">
                 <span className={`requirement-icon ${passwordRequirements.length ? 'requirement-met' : ''}`}>
@@ -561,7 +790,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Cloudflare Turnstile - РЕАЛЬНАЯ КАПЧА */}
           <div className="captcha-container">
             <div style={{ 
               fontSize: '0.7rem', 
